@@ -6,7 +6,16 @@
     <description>Recent content in Posts on LeonHuayra&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 02 Nov 2021 23:19:12 +0800</lastBuildDate><atom:link href="http://localhost:1313/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 03 Nov 2021 22:53:38 +0800</lastBuildDate><atom:link href="http://localhost:1313/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>netlink 是 Go 和内核模块之间优秀的通信兵</title>
+      <link>http://localhost:1313/post/netlink-and-go/</link>
+      <pubDate>Wed, 03 Nov 2021 22:53:38 +0800</pubDate>
+      
+      <guid>http://localhost:1313/post/netlink-and-go/</guid>
+      <description>netlink 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 ip 命令，就是使用 netlink 去跟内核进行</description>
+    </item>
+    
     <item>
       <title>skbtracer: Linux 内核网络包路径追踪利器</title>
       <link>http://localhost:1313/post/skbtracer/</link>

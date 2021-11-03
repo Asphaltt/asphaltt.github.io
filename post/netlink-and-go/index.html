@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>netlink 是 Go 和内核模块之间优秀的通信兵 - LeonHuayra&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="LeonHuayra" /><meta name="description" content="netlink 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 ip 命令，就是使用 netlink 去跟内核进行" /><meta name="keywords" content="Go, eBPF" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/post/netlink-and-go/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="netlink 是 Go 和内核模块之间优秀的通信兵" />
+<meta property="og:description" content="netlink 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 ip 命令，就是使用 netlink 去跟内核进行" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/post/netlink-and-go/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2021-11-03T22:53:38+08:00" />
+<meta property="article:modified_time" content="2021-11-03T22:53:38+08:00" />
+
+<meta itemprop="name" content="netlink 是 Go 和内核模块之间优秀的通信兵">
+<meta itemprop="description" content="netlink 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 ip 命令，就是使用 netlink 去跟内核进行"><meta itemprop="datePublished" content="2021-11-03T22:53:38+08:00" />
+<meta itemprop="dateModified" content="2021-11-03T22:53:38+08:00" />
+<meta itemprop="wordCount" content="1069">
+<meta itemprop="keywords" content="netlink,Go," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="netlink 是 Go 和内核模块之间优秀的通信兵"/>
+<meta name="twitter:description" content="netlink 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 ip 命令，就是使用 netlink 去跟内核进行"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">netlink 是 Go 和内核模块之间优秀的通信兵</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-11-03 </span>
+        <div class="post-category">
+            <a href="/categories/linux/"> Linux </a>
+            </div>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#内核模块">内核模块</a></li>
+        <li><a href="#go-程序">Go 程序</a></li>
+        <li><a href="#实验效果">实验效果</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p><strong>netlink</strong> 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 <strong>ip</strong> 命令，就是使用 <strong>netlink</strong> 去跟内核进行通信的。</p>
+<p>TL,DR  使用 Go 通过 <strong>netlink</strong> 向内核模块发送消息，内核模块响应一条消息，源代码：<a href="https://github.com/Asphaltt/kernel-module-fun/blob/master/custom-netlink.c">内核模块</a>，<a href="https://github.com/Asphaltt/kernel-module-fun/blob/master/custom-netlink/main.go">Go 程序</a>。</p>
+<h2 id="内核模块">内核模块</h2>
+<blockquote>
+<p>注册 netlink</p>
+</blockquote>
+<p>在 <code>insmod custom-netlink.ko</code> 加载内核模块时，注册自定义的 <strong>netlink</strong> 处理函数。在 <code>rmmod custom_netlink</code> 卸载内核模块时，则注销自定义的 <strong>netlink</strong> 处理函数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="cp">#define NETLINK_CUSTOM 31
+</span><span class="cp"></span>
+<span class="k">static</span> <span class="kt">int</span> <span class="n">__init</span> <span class="nf">custom_nl_init</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">//This is for 3.6 kernels and above.
+</span><span class="c1"></span>    <span class="k">struct</span> <span class="n">netlink_kernel_cfg</span> <span class="n">cfg</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="p">.</span><span class="n">input</span> <span class="o">=</span> <span class="n">custom_nl_recv_msg</span><span class="p">,</span>
+    <span class="p">};</span>
+
+    <span class="n">nl_sk</span> <span class="o">=</span> <span class="n">netlink_kernel_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">init_net</span><span class="p">,</span> <span class="n">NETLINK_CUSTOM</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">cfg</span><span class="p">);</span>
+    <span class="p">......</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="n">__exit</span> <span class="nf">custom_nl_exit</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+
+    <span class="n">netlink_kernel_release</span><span class="p">(</span><span class="n">nl_sk</span><span class="p">);</span>
+    <span class="n">printk</span><span class="p">(</span><span class="n">KERN_INFO</span> <span class="s">&#34;[-] unregistered custom_netlink module.</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="n">module_init</span><span class="p">(</span><span class="n">custom_nl_init</span><span class="p">);</span>
+<span class="n">module_exit</span><span class="p">(</span><span class="n">custom_nl_exit</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>接收 <strong>netlink</strong> 消息</p>
+</blockquote>
+<p>消息格式如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0       4       8
++-+-+-+-+-+-+-+-+
+|msg len|  data |
++-+-+-+-+-+-+-+-+
+|     data      |
++-+-+-+-+-+-+-+-+
+</code></pre></td></tr></table>
+</div>
+</div><p>前 4 个字节代表后面的数据长度，后跟着一段字符串。为了防止在打印字符串的时候内存越界了，将字符串的最后一个字符置为 <code>\0</code>。</p>
+<p>打印字符串后，将该字符响应回去。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">enum</span>
+<span class="p">{</span>
+    <span class="n">nlresp_result_unspec</span><span class="p">,</span>
+    <span class="n">nlresp_result_ok</span><span class="p">,</span>
+    <span class="n">nlresp_result_invalid</span>
+<span class="p">};</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">custom_nl_recv_msg</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">nlmsghdr</span> <span class="o">*</span><span class="n">nlh</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">nl_data</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">;</span>
+    <span class="n">__u32</span> <span class="n">msg_size</span><span class="p">;</span>
+
+    <span class="n">nlh</span> <span class="o">=</span> <span class="n">nlmsg_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+    <span class="n">nl_data</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">NLMSG_DATA</span><span class="p">(</span><span class="n">nlh</span><span class="p">);</span>
+    <span class="n">msg_size</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">__u32</span><span class="o">*</span><span class="p">)</span><span class="n">nl_data</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">msg_size</span> <span class="o">&gt;</span> <span class="mi">1024</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">custom_nl_send_msg</span><span class="p">(</span><span class="n">nlh</span><span class="p">,</span> <span class="n">nlresp_result_invalid</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">msg</span> <span class="o">=</span> <span class="n">nl_data</span><span class="o">+</span><span class="mi">4</span><span class="p">;</span>
+    <span class="n">msg</span><span class="p">[</span><span class="n">msg_size</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+    <span class="n">printk</span><span class="p">(</span><span class="n">KERN_INFO</span> <span class="s">&#34;[Y] [custom netlink] receive msg from user: %s</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">msg</span><span class="p">);</span>
+
+    <span class="n">custom_nl_send_msg</span><span class="p">(</span><span class="n">nlh</span><span class="p">,</span> <span class="n">nlresp_result_ok</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">msg_size</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>响应 <strong>netlink</strong> 消息</p>
+</blockquote>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span>
+<span class="p">{</span>
+    <span class="n">__u32</span> <span class="n">result</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+<span class="p">}</span> <span class="n">custom_nl_resp_data_t</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">custom_nl_send_msg</span><span class="p">(</span><span class="k">struct</span> <span class="n">nlmsghdr</span> <span class="o">*</span><span class="n">nlh</span><span class="p">,</span> <span class="n">__u32</span> <span class="n">result</span><span class="p">,</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="n">__u32</span> <span class="n">data_size</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">custom_nl_resp_data_t</span> <span class="o">*</span><span class="n">resp</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">nlmsghdr</span> <span class="o">*</span><span class="n">nlh_resp</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">pid</span> <span class="o">=</span> <span class="n">nlh</span><span class="o">-&gt;</span><span class="n">nlmsg_pid</span><span class="p">,</span> <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+    <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">resp_msg</span> <span class="o">=</span> <span class="s">&#34;Echo from kernel: &#34;</span><span class="p">;</span>
+
+    <span class="n">data_size</span> <span class="o">+=</span> <span class="mi">4</span><span class="o">+</span><span class="mi">18</span><span class="p">;</span> <span class="c1">// 4 是 result 的长度，18 是 resp_msg 的长度
+</span><span class="c1"></span>    <span class="n">resp</span> <span class="o">=</span> <span class="n">kzalloc</span><span class="p">(</span><span class="n">data_size</span> <span class="o">+</span> <span class="mi">18</span><span class="p">,</span> <span class="n">GFP_KERNEL</span><span class="p">);</span>
+    <span class="n">memcpy</span><span class="p">(</span><span class="n">resp</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">resp_msg</span><span class="p">,</span> <span class="mi">18</span><span class="p">);</span> <span class="c1">// 复制 resp_msg
+</span><span class="c1"></span>    <span class="n">memcpy</span><span class="p">(</span><span class="n">resp</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">+</span> <span class="mi">18</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">data_size</span><span class="o">-</span><span class="mi">4</span><span class="p">);</span> <span class="c1">// 复制 Go 程序发送过来的字符串
+</span><span class="c1"></span>    <span class="n">resp</span><span class="o">-&gt;</span><span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">;</span>
+
+    <span class="n">skb</span> <span class="o">=</span> <span class="n">nlmsg_new</span><span class="p">(</span><span class="n">data_size</span><span class="p">,</span> <span class="n">GFP_KERNEL</span><span class="p">);</span> <span class="c1">// 内核自动释放内存，不需要手动释放
+</span><span class="c1"></span>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skb</span><span class="p">)</span>
+        <span class="k">goto</span> <span class="n">out</span><span class="p">;</span>
+
+    <span class="n">nlh_resp</span> <span class="o">=</span> <span class="n">nlmsg_put</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">pid</span><span class="p">,</span> <span class="n">nlh</span><span class="o">-&gt;</span><span class="n">nlmsg_seq</span><span class="p">,</span> <span class="n">NLMSG_DONE</span><span class="p">,</span> <span class="n">data_size</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="n">memcpy</span><span class="p">(</span><span class="n">NLMSG_DATA</span><span class="p">(</span><span class="n">nlh_resp</span><span class="p">),</span> <span class="n">resp</span><span class="p">,</span> <span class="n">data_size</span><span class="p">);</span> <span class="c1">// 填充 netlink 消息内容
+</span><span class="c1"></span>    <span class="n">res</span> <span class="o">=</span> <span class="n">nlmsg_unicast</span><span class="p">(</span><span class="n">nl_sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="n">pid</span><span class="p">);</span> <span class="c1">// 将消息响应给指定 pid 的程序
+</span><span class="c1"></span>
+<span class="nl">out</span><span class="p">:</span>
+    <span class="n">kfree</span><span class="p">(</span><span class="n">resp</span><span class="p">);</span> <span class="c1">// 用后释放内存
+</span><span class="c1"></span>    <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="go-程序">Go 程序</h2>
+<blockquote>
+<p>发起 <strong>netlink</strong> 连接</p>
+</blockquote>
+<p>使用跟内核模块一致的 <strong>netlink</strong> family 发起连接。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">const</span> <span class="p">(</span>
+	<span class="nx">netlinkCustom</span> <span class="p">=</span> <span class="mi">31</span>
+<span class="p">)</span>
+
+<span class="nx">conn</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">netlink</span><span class="p">.</span><span class="nf">Dial</span><span class="p">(</span><span class="nx">netlinkCustom</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>发送 <strong>netlink</strong> 消息</p>
+</blockquote>
+<p>封装 <strong>netlink</strong> 消息，并将提供的字符串复制到消息中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">  <span class="c1">// msg 是前面提供的字符串
+</span><span class="c1"></span>	<span class="nx">data</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="mi">4</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+	<span class="nx">nlenc</span><span class="p">.</span><span class="nf">PutUint32</span><span class="p">(</span><span class="nx">data</span><span class="p">[:</span><span class="mi">4</span><span class="p">],</span> <span class="nb">uint32</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nx">msg</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+	<span class="nb">copy</span><span class="p">(</span><span class="nx">data</span><span class="p">[</span><span class="mi">4</span><span class="p">:],</span> <span class="nx">msg</span><span class="p">)</span>
+
+	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="s">&#34;Send to kernel:&#34;</span><span class="p">,</span> <span class="nx">msg</span><span class="p">)</span>
+
+	<span class="kd">var</span> <span class="nx">nlmsg</span> <span class="nx">netlink</span><span class="p">.</span><span class="nx">Message</span>
+	<span class="nx">nlmsg</span><span class="p">.</span><span class="nx">Data</span> <span class="p">=</span> <span class="nx">data</span>
+
+	<span class="nx">msgs</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">conn</span><span class="p">.</span><span class="nf">Execute</span><span class="p">(</span><span class="nx">nlmsg</span><span class="p">)</span>
+</code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>接收 <strong>netlink</strong> 消息</p>
+</blockquote>
+<p>按如下格式接收消息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">0       4       8
++-+-+-+-+-+-+-+-+
+| result|  data |
++-+-+-+-+-+-+-+-+
+|     data      |
++-+-+-+-+-+-+-+-+
+</code></pre></td></tr></table>
+</div>
+</div><p>前 4 个字节是内核模块响应的结果，后跟着一段字符串。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">  <span class="nx">msgs</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">conn</span><span class="p">.</span><span class="nf">Execute</span><span class="p">(</span><span class="nx">nlmsg</span><span class="p">)</span>
+	<span class="o">......</span>
+
+	<span class="nx">nlmsg</span> <span class="p">=</span> <span class="nx">msgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+	<span class="o">......</span>
+
+	<span class="nx">fmt</span><span class="p">.</span><span class="nf">Println</span><span class="p">(</span><span class="nb">string</span><span class="p">(</span><span class="nx">nlmsg</span><span class="p">.</span><span class="nx">Data</span><span class="p">[</span><span class="mi">4</span><span class="p">:]))</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="实验效果">实验效果</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">➜  kernel-module-fun make
+make -C /lib/modules/4.19.0/build M=/root/Projects/kernel-module-fun modules
+make[1]: Entering directory &#39;/usr/src/linux-headers-4.19.0&#39;
+  CC [M]  /root/Projects/kernel-module-fun/custom-netlink.o
+  Building modules, stage 2.
+  MODPOST 4 modules
+  CC      /root/Projects/kernel-module-fun/custom-netlink.mod.o
+  LD [M]  /root/Projects/kernel-module-fun/custom-netlink.ko
+make[1]: Leaving directory &#39;/usr/src/linux-headers-4.19.0&#39;
+➜  kernel-module-fun insmod custom-netlink.ko
+➜  kernel-module-fun ./custom-netlink/custom-netlink
+Send to kernel: Hello from Go
+Echo from kernel: Hello from Go
+➜  kernel-module-fun rmmod custom_netlink
+➜  kernel-module-fun dmesg
+[2424642.636765] [+] registered custom_netlink module!
+[2424644.929387] [Y] [custom netlink] receive msg from user: Hello from Go
+[2424647.822184] [-] unregistered custom_netlink module.
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="小结">小结</h2>
+<p>使用 <strong>netlink</strong> 进行用户态程序和内核模块的 IPC 通信，能够动态地变更内核模块的配置，甚至动态地去开启、关闭内核模块里的功能。比如在收到配置后，再挂载 <strong>netfilter hook</strong>。</p>
+<p>使用 <strong>netlink</strong> 动态传配置的功能，可以取代 <code>insmod</code> 传参这一笨拙的传配置方式。</p>
+<p>P.S. <a href="https://github.com/Asphaltt/go-iproute2">go-iproute</a>：使用 Go 基于 <strong>netlink</strong> 实现的 <strong>iproute2</strong> 工具库</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">LeonHuayra</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2021-11-03
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/netlink/">netlink</a>
+          <a href="/tags/go/">Go</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/skbtracer/">
+            <span class="next-text nav-default">skbtracer: Linux 内核网络包路径追踪利器</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021<span class="heart"><i class="iconfont icon-heart"></i></span><span>LeonHuayra</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-X2X9EP3K14', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
