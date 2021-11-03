@@ -6,7 +6,16 @@
     <description>Recent content in Go on LeonHuayra&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 03 Nov 2021 22:53:38 +0800</lastBuildDate><atom:link href="http://localhost:1313/tags/go/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 03 Nov 2021 23:06:24 +0800</lastBuildDate><atom:link href="http://localhost:1313/tags/go/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>使用 Go 对接 iptables NFQUEUE 的例子</title>
+      <link>http://localhost:1313/post/go-nfnetlink-example/</link>
+      <pubDate>Wed, 03 Nov 2021 23:06:24 +0800</pubDate>
+      
+      <guid>http://localhost:1313/post/go-nfnetlink-example/</guid>
+      <description>最近在学习 iptables NFQUEUE 的时候，顺手使用 Go 语言写了一个例子。 源代码：https://github.com/Asphaltt/go-nfnetlink-</description>
+    </item>
+    
     <item>
       <title>netlink 是 Go 和内核模块之间优秀的通信兵</title>
       <link>http://localhost:1313/post/netlink-and-go/</link>
@@ -14,6 +23,15 @@
       
       <guid>http://localhost:1313/post/netlink-and-go/</guid>
       <description>netlink 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 ip 命令，就是使用 netlink 去跟内核进行</description>
+    </item>
+    
+    <item>
+      <title>skbtracer: Linux 内核网络包路径追踪利器</title>
+      <link>http://localhost:1313/post/skbtracer/</link>
+      <pubDate>Tue, 02 Nov 2021 23:19:12 +0800</pubDate>
+      
+      <guid>http://localhost:1313/post/skbtracer/</guid>
+      <description>skbtracer 是基于 eBPF 技术的 skb 网络包路径追踪利器，基于 goebpf , libbpf-bootstrap (required Linux Kernel 4.15+ with CONFIG_DEBUG_INFO_BTF=y, Go 1.16+) 实现，参考 Python 版本 github.com/DavadDi/skbtracer。 skbtracer</description>
     </item>
     
   </channel>

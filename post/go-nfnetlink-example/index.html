@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用 Go 对接 iptables NFQUEUE 的例子 - LeonHuayra&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="LeonHuayra" /><meta name="description" content="最近在学习 iptables NFQUEUE 的时候，顺手使用 Go 语言写了一个例子。 源代码：https://github.com/Asphaltt/go-nfnetlink-" /><meta name="keywords" content="Go, eBPF" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="http://localhost:1313/post/go-nfnetlink-example/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="使用 Go 对接 iptables NFQUEUE 的例子" />
+<meta property="og:description" content="最近在学习 iptables NFQUEUE 的时候，顺手使用 Go 语言写了一个例子。 源代码：https://github.com/Asphaltt/go-nfnetlink-" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="http://localhost:1313/post/go-nfnetlink-example/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2021-11-03T23:06:24+08:00" />
+<meta property="article:modified_time" content="2021-11-03T23:06:24+08:00" />
+
+<meta itemprop="name" content="使用 Go 对接 iptables NFQUEUE 的例子">
+<meta itemprop="description" content="最近在学习 iptables NFQUEUE 的时候，顺手使用 Go 语言写了一个例子。 源代码：https://github.com/Asphaltt/go-nfnetlink-"><meta itemprop="datePublished" content="2021-11-03T23:06:24+08:00" />
+<meta itemprop="dateModified" content="2021-11-03T23:06:24+08:00" />
+<meta itemprop="wordCount" content="592">
+<meta itemprop="keywords" content="nfnetlink,iptables,Go," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用 Go 对接 iptables NFQUEUE 的例子"/>
+<meta name="twitter:description" content="最近在学习 iptables NFQUEUE 的时候，顺手使用 Go 语言写了一个例子。 源代码：https://github.com/Asphaltt/go-nfnetlink-"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">使用 Go 对接 iptables NFQUEUE 的例子</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-11-03 </span>
+        <div class="post-category">
+            <a href="/categories/iptables/"> iptables </a>
+            </div>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#例子的效果">例子的效果</a></li>
+        <li><a href="#简洁的代码">简洁的代码</a></li>
+        <li><a href="#iptables-nfqueue"><code>iptables NFQUEUE</code></a>
+          <ul>
+            <li><a href="#nfqueue">NFQUEUE</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>最近在学习 <code>iptables NFQUEUE</code> 的时候，顺手使用 Go 语言写了一个例子。</p>
+<blockquote>
+<p>源代码：https://github.com/Asphaltt/go-nfnetlink-example</p>
+</blockquote>
+<h2 id="例子的效果">例子的效果</h2>
+<p>使用 <code>iptables NFQUEUE</code> 监听新建 tcp 连接：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">./nfnetlink-example
+A new tcp connection will be established: 192.168.x.yyy:61883 -&gt; xxx.yyy.219.56:80
+A new tcp connection will be established: 192.168.x.yyy:61886 -&gt; xxx.yyy.219.56:80
+A new tcp connection will be established: 192.168.x.yyy:61887 -&gt; xxx.yyy.235.132:80
+A new tcp connection will be established: 192.168.x.yyy:61888 -&gt; xxx.yyy.235.132:80
+A new tcp connection will be established: 192.168.x.yyy:61889 -&gt; xxx.yyy.137.56:443
+A new tcp connection will be established: 192.168.x.yyy:61890 -&gt; xxx.yyy.137.56:443
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="简洁的代码">简洁的代码</h2>
+<p>使用了 <a href="https://github.com/subgraph/go-nfnetlink">go-nfnetlink</a> 纯 Go 实现的 <code>nfnetlink</code> 库，不依赖 <code>libnetfilter_queue</code> Linux 系统库，编译后即可使用。</p>
+<p>从 <code>iptables NFQUEUE</code> 中接收 tcp 连接的 <strong>SYN</strong> 包，并从 <strong>SYN</strong> 包中解析得到源 IP 地址、源 tcp 端口、目的 IP 地址、目的 tcp 端口等信息。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go">	<span class="nx">q</span> <span class="o">:=</span> <span class="nx">nfqueue</span><span class="p">.</span><span class="nf">NewNFQueue</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+	<span class="nx">ps</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">q</span><span class="p">.</span><span class="nf">Open</span><span class="p">()</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Error opening NFQueue: %v\n&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+		<span class="nx">os</span><span class="p">.</span><span class="nf">Exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+	<span class="p">}</span>
+	<span class="k">defer</span> <span class="nx">q</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+
+	<span class="k">for</span> <span class="nx">p</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">ps</span> <span class="p">{</span>
+		<span class="nx">networkLayer</span> <span class="o">:=</span> <span class="nx">p</span><span class="p">.</span><span class="nx">Packet</span><span class="p">.</span><span class="nf">NetworkLayer</span><span class="p">()</span>
+		<span class="nx">ipsrc</span><span class="p">,</span> <span class="nx">ipdst</span> <span class="o">:=</span> <span class="nx">networkLayer</span><span class="p">.</span><span class="nf">NetworkFlow</span><span class="p">().</span><span class="nf">Endpoints</span><span class="p">()</span>
+
+		<span class="nx">transportLayer</span> <span class="o">:=</span> <span class="nx">p</span><span class="p">.</span><span class="nx">Packet</span><span class="p">.</span><span class="nf">TransportLayer</span><span class="p">()</span>
+		<span class="nx">tcpsrc</span><span class="p">,</span> <span class="nx">tcpdst</span> <span class="o">:=</span> <span class="nx">transportLayer</span><span class="p">.</span><span class="nf">TransportFlow</span><span class="p">().</span><span class="nf">Endpoints</span><span class="p">()</span>
+
+		<span class="nx">fmt</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;A new tcp connection will be established: %s:%s -&gt; %s:%s\n&#34;</span><span class="p">,</span>
+			<span class="nx">ipsrc</span><span class="p">,</span> <span class="nx">tcpsrc</span><span class="p">,</span> <span class="nx">ipdst</span><span class="p">,</span> <span class="nx">tcpdst</span><span class="p">)</span>
+		<span class="nx">p</span><span class="p">.</span><span class="nf">Accept</span><span class="p">()</span>
+	<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>使用的 <code>iptables</code> 规则如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -t raw -I PREROUTING -p tcp --syn -j NFQUEUE --queue-num<span class="o">=</span><span class="m">1</span> --queue-bypass
+</code></pre></td></tr></table>
+</div>
+</div><p>在 <code>raw</code> 表 <code>PREROUTING</code> 链上匹配 tcp 连接的 <strong>SYN</strong> 包。</p>
+<h2 id="iptables-nfqueue"><code>iptables NFQUEUE</code></h2>
+<blockquote>
+<h3 id="nfqueue">NFQUEUE</h3>
+<p>This target passes the packet to userspace using the <strong>nfnetlink_queue</strong> handler. The packet is put into the queue identified by its 16-bit queue number. Userspace can inspect and modify the packet if desired. Userspace must then drop or reinject the packet into the kernel. Please see libnetfilter_queue for details. <strong>nfnetlink_queue</strong> was added in Linux 2.6.14. The <strong>queue-balance</strong> option was added in Linux 2.6.31, <strong>queue-bypass</strong> in 2.6.39.</p>
+<ul>
+<li>
+<p><strong>&ndash;queue-num</strong> <em>value</em></p>
+<p>This specifies the QUEUE number to use. Valid queue numbers are 0 to 65535. The default value is 0.</p>
+</li>
+<li>
+<p><strong>&ndash;queue-balance</strong> <em>value</em>**:***value*</p>
+<p>This specifies a range of queues to use. Packets are then balanced across the given queues. This is useful for multicore systems: start multiple instances of the userspace program on queues x, x+1, .. x+n and use &ldquo;&ndash;queue-balance <em>x</em>**:***x+n*&rdquo;. Packets belonging to the same connection are put into the same nfqueue.</p>
+</li>
+<li>
+<p><strong>&ndash;queue-bypass</strong></p>
+<p>By default, if no userspace program is listening on an NFQUEUE, then all packets that are to be queued are dropped. When this option is used, the NFQUEUE rule behaves like ACCEPT instead, and the packet will move on to the next table.</p>
+</li>
+<li>
+<p><strong>&ndash;queue-cpu-fanout</strong></p>
+<p>Available starting Linux kernel 3.10. When used together with <strong>&ndash;queue-balance</strong> this will use the CPU ID as an index to map packets to the queues. The idea is that you can improve performance if there&rsquo;s a queue per CPU. This requires <strong>&ndash;queue-balance</strong> to be specified.</p>
+</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>Doc: <a href="https://ipset.netfilter.org/iptables-extensions.man.html">iptables-extensions</a></p>
+</blockquote>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">LeonHuayra</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2021-11-03
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/nfnetlink/">nfnetlink</a>
+          <a href="/tags/iptables/">iptables</a>
+          <a href="/tags/go/">Go</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/netlink-and-go/">
+            <span class="next-text nav-default">netlink 是 Go 和内核模块之间优秀的通信兵</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="http://localhost:1313/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021<span class="heart"><i class="iconfont icon-heart"></i></span><span>LeonHuayra</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-X2X9EP3K14', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
