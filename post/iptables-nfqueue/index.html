@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>一文吃透 iptables-nfqueue - LeonHuayra&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="Leon Huayra" /><meta name="description" content="iptables 常用，iptables-nfqueue 少用。因需要深度理解 iptables-nfqueue，所以顺手撸了一遍 iptables-nfqueue 的源代码。 iptables-nfqueue ，aka NFQU" /><meta name="keywords" content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/iptables-nfqueue/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="一文吃透 iptables-nfqueue" />
+<meta property="og:description" content="iptables 常用，iptables-nfqueue 少用。因需要深度理解 iptables-nfqueue，所以顺手撸了一遍 iptables-nfqueue 的源代码。 iptables-nfqueue ，aka NFQU" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/iptables-nfqueue/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2021-12-09T23:54:39+08:00" />
+<meta property="article:modified_time" content="2021-12-09T23:54:39+08:00" />
+
+<meta itemprop="name" content="一文吃透 iptables-nfqueue">
+<meta itemprop="description" content="iptables 常用，iptables-nfqueue 少用。因需要深度理解 iptables-nfqueue，所以顺手撸了一遍 iptables-nfqueue 的源代码。 iptables-nfqueue ，aka NFQU"><meta itemprop="datePublished" content="2021-12-09T23:54:39+08:00" />
+<meta itemprop="dateModified" content="2021-12-09T23:54:39+08:00" />
+<meta itemprop="wordCount" content="3152">
+<meta itemprop="keywords" content="iptables,iptables-nfqueue," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="一文吃透 iptables-nfqueue"/>
+<meta name="twitter:description" content="iptables 常用，iptables-nfqueue 少用。因需要深度理解 iptables-nfqueue，所以顺手撸了一遍 iptables-nfqueue 的源代码。 iptables-nfqueue ，aka NFQU"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">一文吃透 iptables-nfqueue</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-12-09 </span>
+        <div class="post-category">
+            <a href="/categories/iptables/"> iptables </a>
+            </div>
+          <span class="more-meta"> 约 3152 字 </span>
+          <span class="more-meta"> 预计阅读 7 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#nfqueue-的使用">NFQUEUE 的使用</a></li>
+        <li><a href="#nfqueue-的使用注意事项">NFQUEUE 的使用注意事项</a>
+          <ul>
+            <li><a href="#队列容量">队列容量</a></li>
+            <li><a href="#复制到用户程序的网络包的大小">复制到用户程序的网络包的大小</a></li>
+            <li><a href="#没有响应判决结果">没有响应判决结果</a></li>
+          </ul>
+        </li>
+        <li><a href="#nfqueue-的工作机制">NFQUEUE 的工作机制</a></li>
+        <li><a href="#nfqueue-的源码分析">NFQUEUE 的源码分析</a>
+          <ul>
+            <li><a href="#nfnetlink_queue"><code>nfnetlink_queue</code></a></li>
+            <li><a href="#用户程序绑定-nfqueue">用户程序绑定 NFQUEUE</a></li>
+            <li><a href="#nfqueue-上半场">NFQUEUE 上半场</a></li>
+            <li><a href="#nfqueue-下半场">NFQUEUE 下半场</a></li>
+            <li><a href="#nfqueue-的统计信息">NFQUEUE 的统计信息</a></li>
+          </ul>
+        </li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p><code>iptables</code> 常用，<code>iptables-nfqueue</code> 少用。因需要深度理解 <code>iptables-nfqueue</code>，所以顺手撸了一遍 <code>iptables-nfqueue</code> 的源代码。</p>
+<p><code>iptables-nfqueue</code> ，aka NFQUEUE，是将网络包发送到用户程序去做接收/丢弃决定的 <code>iptables</code> 特性。NFQUEUE 需要用户程序监听 NFQUEUE 队列，并对接收到的网络包响应对应的判决结果。</p>
+<h2 id="nfqueue-的使用">NFQUEUE 的使用</h2>
+<p>例子参考：<a href="https://asphaltt.github.io/post/go-nfnetlink-example/">使用 Go 对接 iptables NFQUEUE 的例子</a></p>
+<p>使用的 <code>iptables</code> 规则如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -t raw -I PREROUTING -p tcp --syn -j NFQUEUE --queue-num <span class="m">1</span> --queue-bypass
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li><code>--queue-num</code> 指当前规则将对应的网络包放到 1 号队列</li>
+<li><code>--queue-bypass</code> 指当没有用户程序监听当前队列时，默认放行网络包，而不是丢包</li>
+</ul>
+<h2 id="nfqueue-的使用注意事项">NFQUEUE 的使用注意事项</h2>
+<h3 id="队列容量">队列容量</h3>
+<p>NFQUEUE 是有容量限制的，默认是 <a href="https://elixir.bootlin.com/linux/v5.11/source/net/netfilter/nfnetlink_queue.c#L47">1024</a>；用户程序可以在监听队列的时候设置容量大小。如果队列满了，<code>iptables</code> 默认会丢包；在内核 3.6 之后，可以使用 <code>--fail-open</code> 选项将这默认丢包改为默认接收。</p>
+<h4 id="如何知道队列满了后发生丢包呢">如何知道队列满了后发生丢包呢？</h4>
+<p>有两种方式：</p>
+<ol>
+<li>每次丢包都会打印一条系统日志</li>
+<li><code>cat /proc/net/netfilter/nfnetlink_queue </code> 里有丢包统计</li>
+</ol>
+<blockquote>
+<p>无法通过程序的方式实时感知到队列满了、或者丢包了。</p>
+</blockquote>
+<h3 id="复制到用户程序的网络包的大小">复制到用户程序的网络包的大小</h3>
+<p>将网络包复制到用户程序的时候，对网络包的大小是有限制的，默认是 <a href="https://elixir.bootlin.com/linux/v5.11/source/net/netfilter/nfnetlink_queue.c#L51">65531</a>；用户程序可以在监听队列的时候设置复制网络包的最大值。</p>
+<p>如果只需要根据 IP 和端口进行判决，则可以将这个限制设置为 40（三层和四层的头部总大小），避免不必要的网络包内容复制。</p>
+<h3 id="没有响应判决结果">没有响应判决结果</h3>
+<p>如果没有对网络包响应其判决结果，则该网络包会永远阻塞在 <code>iptables</code>，<code>iptables</code> 不会自动丢弃这样的网络包。</p>
+<h2 id="nfqueue-的工作机制">NFQUEUE 的工作机制</h2>
+<p>NFQUEUE 的工作机制可分上下两场：</p>
+<ol>
+<li>上半场：
+<ol>
+<li>接收 <code>-j NFQUEUE</code> 发送过来的网络包</li>
+<li>入队</li>
+<li>通过 <code>nfnetlink</code> 将网络包发给用户程序</li>
+</ol>
+</li>
+<li>下半场：
+<ol>
+<li>接收用户程序通过 <code>nfnetlink</code> 发送过来的判决结果</li>
+<li>出队</li>
+<li>处理判决结果</li>
+<li>继续 <code>iptables</code> 后续的处理</li>
+</ol>
+</li>
+</ol>
+<p>上半场的函数调用栈如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="o">|--&gt;</span><span class="n">NF_HOOK</span><span class="p">()</span>                   <span class="c1">// include/linux/netfilter.h
+</span><span class="c1"></span>    <span class="o">|--&gt;</span><span class="n">nf_hook</span><span class="p">()</span>
+    <span class="o">|--&gt;</span><span class="n">nf_hook_slow</span><span class="p">()</span>          <span class="c1">// net/netfilter/core.c
+</span><span class="c1"></span>        <span class="o">|--&gt;</span><span class="n">nf_queue</span><span class="p">()</span>          <span class="c1">// net/netfilter/nf_queue.c
+</span><span class="c1"></span>            <span class="o">|--&gt;</span><span class="n">__nf_queue</span><span class="p">()</span>
+                <span class="o">|--&gt;</span><span class="k">struct</span> <span class="n">nf_queue_handler</span> <span class="o">*</span><span class="n">qh</span><span class="o">-&gt;</span><span class="n">outfn</span><span class="p">()</span>
+               <span class="o">/</span>
+              <span class="o">/</span>
+             <span class="o">/</span>
+            <span class="o">|--&gt;</span><span class="n">nfqnl_enqueue_packet</span><span class="p">()</span>          <span class="c1">// net/netfilter/nfnetlink_queue.c
+</span><span class="c1"></span>                <span class="o">|--&gt;</span><span class="n">__nfqnl_enqueue_packet</span><span class="p">()</span>
+                <span class="o">|--&gt;</span><span class="n">nfnetlink_unicast</span><span class="p">()</span>
+                <span class="o">|--&gt;</span><span class="n">__enqueue_entry</span><span class="p">()</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>下半场的函数调用栈如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="o">|--&gt;</span><span class="n">nfqnl_recv_verdict</span><span class="p">()</span>            <span class="c1">// net/netfilter/nfnetlink_queue.c
+</span><span class="c1"></span>    <span class="o">|--&gt;</span><span class="n">verdict_instance_lookup</span><span class="p">()</span>
+    <span class="o">|--&gt;</span><span class="n">find_dequeue_entry</span><span class="p">()</span>
+        <span class="o">|--&gt;</span><span class="n">__dequeue_entry</span><span class="p">()</span>
+    <span class="o">|--&gt;</span><span class="n">nfqnl_reinject</span><span class="p">()</span>
+    <span class="o">|--&gt;</span><span class="n">nf_reinject</span><span class="p">()</span>               <span class="c1">// net/netfilter/nf_queue.c
+</span><span class="c1"></span>        <span class="o">|--&gt;</span><span class="n">entry</span><span class="o">-&gt;</span><span class="n">state</span><span class="p">.</span><span class="n">okfn</span><span class="p">()</span>
+            <span class="o">|--&gt;</span><span class="c1">//继续 `iptables` 后续的处理
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="nfqueue-的源码分析">NFQUEUE 的源码分析</h2>
+<p>NFQUEU 的源代码分为 <code>nf_queue</code> 和 <code>nfnetlink_queue</code> 两部分。<code>nf_queue</code> 是 <code>iptables</code> 的一部分，<code>nfnetlink_queue</code> 是<code>netfilter</code> 的一个子模块。</p>
+<h3 id="nfnetlink_queue"><code>nfnetlink_queue</code></h3>
+<p><code>nfnetlink_queue</code> 是 <code>nf_queue</code> 跟用户程序之间的桥梁，是基于 <code>nfnetlink</code> 的专门用于 NFQUEUE 的通信机制；而 <code>nfnetlink</code> 是一套基于 <a href="https://asphaltt.github.io/post/netlink-and-go/">netlink</a> 的专门用于 <code>netfilter</code> 的通信机制。</p>
+<h4 id="nfnetlink_queue-初始化"><code>nfnetlink_queue</code> 初始化</h4>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="c1">// net/netfilter/nfnetlink_queue.c
+</span><span class="c1"></span>
+<span class="c1">// 模块初始化入口
+</span><span class="c1"></span><span class="n">module_init</span><span class="p">(</span><span class="n">nfnetlink_queue_init</span><span class="p">);</span>
+<span class="c1">// nfnetlink_queue 模块初始化函数
+</span><span class="c1"></span><span class="k">static</span> <span class="kt">int</span> <span class="n">__init</span> <span class="nf">nfnetlink_queue_init</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">status</span><span class="p">;</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">register_pernet_subsys</span><span class="p">(</span><span class="o">&amp;</span><span class="n">nfnl_queue_net_ops</span><span class="p">);</span> <span class="c1">// 注册到每个网络命名空间的 nfnl_queue 选项
+</span><span class="c1"></span>    <span class="n">netlink_register_notifier</span><span class="p">(</span><span class="o">&amp;</span><span class="n">nfqnl_rtnl_notifier</span><span class="p">);</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">nfnetlink_subsys_register</span><span class="p">(</span><span class="o">&amp;</span><span class="n">nfqnl_subsys</span><span class="p">);</span>  <span class="c1">// 将 nfnetlink_queue 注册到 nfnetlink 子系统中
+</span><span class="c1"></span>    <span class="n">status</span> <span class="o">=</span> <span class="n">register_netdevice_notifier</span><span class="p">(</span><span class="o">&amp;</span><span class="n">nfqnl_dev_notifier</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">status</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 注册到每个网络命名空间的 nfnl_queue 选项
+</span><span class="c1"></span><span class="k">static</span> <span class="k">struct</span> <span class="n">pernet_operations</span> <span class="n">nfnl_queue_net_ops</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">.</span><span class="n">init</span>		<span class="o">=</span> <span class="n">nfnl_queue_net_init</span><span class="p">,</span>
+    <span class="p">...</span>
+<span class="p">};</span>
+<span class="c1">// 每个网络命名空间内的 nfnetlink_queue 的初始化函数
+</span><span class="c1"></span><span class="k">static</span> <span class="kt">int</span> <span class="n">__net_init</span> <span class="nf">nfnl_queue_net_init</span><span class="p">(</span><span class="k">struct</span> <span class="n">net</span> <span class="o">*</span><span class="n">net</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="cp">#ifdef CONFIG_PROC_FS
+</span><span class="cp"></span>  <span class="c1">// 注册的路径为 /proc/net/netfilter/nfnetlink_queue，nfnetlink_queue 的一些统计信息会写入到这里
+</span><span class="c1"></span>    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">proc_create_net</span><span class="p">(</span><span class="s">&#34;nfnetlink_queue&#34;</span><span class="p">,</span> <span class="mo">0440</span><span class="p">,</span> <span class="n">net</span><span class="o">-&gt;</span><span class="n">nf</span><span class="p">.</span><span class="n">proc_netfilter</span><span class="p">,</span>
+            <span class="o">&amp;</span><span class="n">nfqnl_seq_ops</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">iter_state</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">ENOMEM</span><span class="p">;</span>
+<span class="cp">#endif
+</span><span class="cp"></span>    <span class="n">nf_register_queue_handler</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nfqh</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 每个网络命名空间内的 nfnetlink_queue 的“环卫工人”
+</span><span class="c1"></span><span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">nf_queue_handler</span> <span class="n">nfqh</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">.</span><span class="n">outfn</span>		<span class="o">=</span> <span class="n">nfqnl_enqueue_packet</span><span class="p">,</span> <span class="c1">// 在后面分析上半场的时候再分析该函数
+</span><span class="c1"></span>    <span class="p">.</span><span class="n">nf_hook_drop</span>	<span class="o">=</span> <span class="n">nfqnl_nf_hook_drop</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="c1">// 将 nfnetlink_queue 注册到 nfnetlink 子系统中
+</span><span class="c1"></span><span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">nfnetlink_subsystem</span> <span class="n">nfqnl_subsys</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">.</span><span class="n">name</span>		<span class="o">=</span> <span class="s">&#34;nf_queue&#34;</span><span class="p">,</span>
+    <span class="p">...</span>
+    <span class="p">.</span><span class="n">cb</span>		<span class="o">=</span> <span class="n">nfqnl_cb</span><span class="p">,</span>
+<span class="p">};</span>
+<span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">nfnl_callback</span> <span class="n">nfqnl_cb</span><span class="p">[</span><span class="n">NFQNL_MSG_MAX</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">[</span><span class="n">NFQNL_MSG_PACKET</span><span class="p">]</span>	<span class="o">=</span> <span class="p">{</span> <span class="p">.</span><span class="n">call_rcu</span> <span class="o">=</span> <span class="n">nfqnl_recv_unsupp</span><span class="p">,</span> <span class="c1">// 不支持的选项
+</span><span class="c1"></span>                    <span class="p">.</span><span class="n">attr_count</span> <span class="o">=</span> <span class="n">NFQA_MAX</span><span class="p">,</span> <span class="p">},</span>
+    <span class="p">[</span><span class="n">NFQNL_MSG_VERDICT</span><span class="p">]</span>	<span class="o">=</span> <span class="p">{</span> <span class="p">.</span><span class="n">call_rcu</span> <span class="o">=</span> <span class="n">nfqnl_recv_verdict</span><span class="p">,</span> <span class="c1">// 用户程序进行判决的函数
+</span><span class="c1"></span>                    <span class="p">.</span><span class="n">attr_count</span> <span class="o">=</span> <span class="n">NFQA_MAX</span><span class="p">,</span>
+                    <span class="p">.</span><span class="n">policy</span> <span class="o">=</span> <span class="n">nfqa_verdict_policy</span> <span class="p">},</span>
+    <span class="p">[</span><span class="n">NFQNL_MSG_CONFIG</span><span class="p">]</span>	<span class="o">=</span> <span class="p">{</span> <span class="p">.</span><span class="n">call</span> <span class="o">=</span> <span class="n">nfqnl_recv_config</span><span class="p">,</span>  <span class="c1">// 用户程序配置 nfnetlink 的函数
+</span><span class="c1"></span>                    <span class="p">.</span><span class="n">attr_count</span> <span class="o">=</span> <span class="n">NFQA_CFG_MAX</span><span class="p">,</span>
+                    <span class="p">.</span><span class="n">policy</span> <span class="o">=</span> <span class="n">nfqa_cfg_policy</span> <span class="p">},</span>
+    <span class="p">[</span><span class="n">NFQNL_MSG_VERDICT_BATCH</span><span class="p">]</span><span class="o">=</span><span class="p">{</span> <span class="p">.</span><span class="n">call_rcu</span> <span class="o">=</span> <span class="n">nfqnl_recv_verdict_batch</span><span class="p">,</span>  <span class="c1">// 用户程序进行批量判决的函数
+</span><span class="c1"></span>                    <span class="p">.</span><span class="n">attr_count</span> <span class="o">=</span> <span class="n">NFQA_MAX</span><span class="p">,</span>
+                    <span class="p">.</span><span class="n">policy</span> <span class="o">=</span> <span class="n">nfqa_verdict_batch_policy</span> <span class="p">},</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="用户程序绑定-nfqueue">用户程序绑定 NFQUEUE</h3>
+<p>内核的 <code>nfnetlink_queue</code> 已初始化完毕，当用户程序需要监听 NFQUEUE 队列，会执行哪些代码呢？</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="c1">// net/netfilter/nfnetlink_queue.c
+</span><span class="c1"></span>
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">nfqnl_recv_config</span><span class="p">(...)</span>
+<span class="p">{</span>
+    <span class="p">...</span>
+    <span class="n">queue</span> <span class="o">=</span> <span class="n">instance_lookup</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">queue_num</span><span class="p">);</span> <span class="c1">// 根据 queue_num 查找队列结构体实例
+</span><span class="c1"></span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">cmd</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">switch</span> <span class="p">(</span><span class="n">cmd</span><span class="o">-&gt;</span><span class="n">command</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="nl">NFQNL_CFG_CMD_BIND</span><span class="p">:</span>
+            <span class="p">...</span>
+            <span class="c1">// 使用用户程序指定的 queue_num 创建一个队列监听结构体的实例
+</span><span class="c1"></span>            <span class="n">queue</span> <span class="o">=</span> <span class="n">instance_create</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">queue_num</span><span class="p">,</span>
+                        <span class="n">NETLINK_CB</span><span class="p">(</span><span class="n">skb</span><span class="p">).</span><span class="n">portid</span><span class="p">);</span>
+            <span class="p">...</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="k">case</span> <span class="nl">NFQNL_CFG_CMD_UNBIND</span><span class="p">:</span>
+            <span class="p">...</span>
+            <span class="c1">// 销毁 queue_num 对应的队列结构体实例
+</span><span class="c1"></span>            <span class="n">instance_destroy</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">queue</span><span class="p">);</span>
+            <span class="k">goto</span> <span class="n">err_out_unlock</span><span class="p">;</span>
+        <span class="k">case</span> <span class="nl">NFQNL_CFG_CMD_PF_BIND</span><span class="p">:</span>
+        <span class="k">case</span> <span class="nl">NFQNL_CFG_CMD_PF_UNBIND</span><span class="p">:</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="k">default</span><span class="o">:</span>
+            <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="n">ENOTSUPP</span><span class="p">;</span>
+            <span class="k">goto</span> <span class="n">err_out_unlock</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">nfqa</span><span class="p">[</span><span class="n">NFQA_CFG_PARAMS</span><span class="p">])</span> <span class="p">{</span>
+        <span class="k">struct</span> <span class="n">nfqnl_msg_config_params</span> <span class="o">*</span><span class="n">params</span> <span class="o">=</span>
+            <span class="n">nla_data</span><span class="p">(</span><span class="n">nfqa</span><span class="p">[</span><span class="n">NFQA_CFG_PARAMS</span><span class="p">]);</span>
+
+        <span class="c1">// 设置队列的复制模式和网络包复制范围
+</span><span class="c1"></span>        <span class="n">nfqnl_set_mode</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">params</span><span class="o">-&gt;</span><span class="n">copy_mode</span><span class="p">,</span>
+                <span class="n">ntohl</span><span class="p">(</span><span class="n">params</span><span class="o">-&gt;</span><span class="n">copy_range</span><span class="p">));</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">nfqa</span><span class="p">[</span><span class="n">NFQA_CFG_QUEUE_MAXLEN</span><span class="p">])</span> <span class="p">{</span>
+        <span class="n">__be32</span> <span class="o">*</span><span class="n">queue_maxlen</span> <span class="o">=</span> <span class="n">nla_data</span><span class="p">(</span><span class="n">nfqa</span><span class="p">[</span><span class="n">NFQA_CFG_QUEUE_MAXLEN</span><span class="p">]);</span>
+        <span class="c1">// 设置队列容量
+</span><span class="c1"></span>        <span class="n">queue</span><span class="o">-&gt;</span><span class="n">queue_maxlen</span> <span class="o">=</span> <span class="n">ntohl</span><span class="p">(</span><span class="o">*</span><span class="n">queue_maxlen</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="nfqueue-上半场">NFQUEUE 上半场</h3>
+<p>用户程序运行起来后，网络包是怎么从 <code>iptables</code> 到达用户程序的？</p>
+<p>下面从 PREROUTING 链为 <code>iptables</code> 入口，到 <code>iptables-nfqueue</code>，再到 <code>nfnetlink_queue</code> 发送 <code>netlink</code> 消息给用户程序。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span><span class="lnt">132
+</span><span class="lnt">133
+</span><span class="lnt">134
+</span><span class="lnt">135
+</span><span class="lnt">136
+</span><span class="lnt">137
+</span><span class="lnt">138
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="c1">// net/ipv4/ip_input.c
+</span><span class="c1"></span>
+<span class="kt">int</span> <span class="nf">ip_rcv</span><span class="p">(...)</span>
+<span class="p">{</span>
+    <span class="p">...</span>
+    <span class="k">return</span> <span class="n">NF_HOOK</span><span class="p">(</span><span class="n">NFPROTO_IPV4</span><span class="p">,</span> <span class="n">NF_INET_PRE_ROUTING</span><span class="p">,</span>
+               <span class="n">net</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="n">dev</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span>
+               <span class="n">ip_rcv_finish</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="c1">// include/linux/netfilter.h
+</span><span class="c1"></span>
+<span class="n">NF_HOOK</span><span class="p">(...)</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">nf_hook</span><span class="p">(</span><span class="n">pf</span><span class="p">,</span> <span class="n">hook</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="n">in</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">okfn</span><span class="p">);</span>
+    <span class="p">...</span>
+    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+<span class="p">}</span>
+<span class="c1">// 执行一个 netfilter 钩子
+</span><span class="c1"></span><span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="n">nf_hook</span><span class="p">(...)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">nf_hook_entries</span> <span class="o">*</span><span class="n">hook_head</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="p">...</span>
+    <span class="k">switch</span> <span class="p">(</span><span class="n">pf</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="nl">NFPROTO_IPV4</span><span class="p">:</span>
+        <span class="n">hook_head</span> <span class="o">=</span> <span class="n">rcu_dereference</span><span class="p">(</span><span class="n">net</span><span class="o">-&gt;</span><span class="n">nf</span><span class="p">.</span><span class="n">hooks_ipv4</span><span class="p">[</span><span class="n">hook</span><span class="p">]);</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="k">case</span> <span class="nl">NFPROTO_IPV6</span><span class="p">:</span>
+        <span class="n">hook_head</span> <span class="o">=</span> <span class="n">rcu_dereference</span><span class="p">(</span><span class="n">net</span><span class="o">-&gt;</span><span class="n">nf</span><span class="p">.</span><span class="n">hooks_ipv6</span><span class="p">[</span><span class="n">hook</span><span class="p">]);</span>
+        <span class="k">break</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">hook_head</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">struct</span> <span class="n">nf_hook_state</span> <span class="n">state</span><span class="p">;</span>
+        <span class="n">nf_hook_state_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">state</span><span class="p">,</span> <span class="n">hook</span><span class="p">,</span> <span class="n">pf</span><span class="p">,</span> <span class="n">indev</span><span class="p">,</span> <span class="n">outdev</span><span class="p">,</span>
+                   <span class="n">sk</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">okfn</span><span class="p">);</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">nf_hook_slow</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">state</span><span class="p">,</span> <span class="n">hook_head</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// net/netfilter/core.c
+</span><span class="c1"></span>
+<span class="c1">// 返回值：
+</span><span class="c1">//          1: 调用者需要执行 okfn()
+</span><span class="c1">//          -EPERM: NF_DROP
+</span><span class="c1">//          0: 其它情况
+</span><span class="c1"></span><span class="kt">int</span> <span class="n">nf_hook_slow</span><span class="p">(...)</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">verdict</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(;</span> <span class="n">s</span> <span class="o">&lt;</span> <span class="n">e</span><span class="o">-&gt;</span><span class="n">num_hook_entries</span><span class="p">;</span> <span class="n">s</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// 执行 iptables 规则，得到规则的判决
+</span><span class="c1"></span>        <span class="n">verdict</span> <span class="o">=</span> <span class="n">nf_hook_entry_hookfn</span><span class="p">(</span><span class="o">&amp;</span><span class="n">e</span><span class="o">-&gt;</span><span class="n">hooks</span><span class="p">[</span><span class="n">s</span><span class="p">],</span> <span class="n">skb</span><span class="p">,</span> <span class="n">state</span><span class="p">);</span>
+        <span class="k">switch</span> <span class="p">(</span><span class="n">verdict</span> <span class="o">&amp;</span> <span class="n">NF_VERDICT_MASK</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="nl">NF_ACCEPT</span><span class="p">:</span>  <span class="c1">// -j ACCEPT
+</span><span class="c1"></span>            <span class="k">break</span><span class="p">;</span>
+        <span class="k">case</span> <span class="nl">NF_DROP</span><span class="p">:</span>    <span class="c1">// -j DROP
+</span><span class="c1"></span>        <span class="k">case</span> <span class="nl">NF_QUEUE</span><span class="p">:</span>   <span class="c1">// -j QUEUE
+</span><span class="c1"></span>            <span class="n">ret</span> <span class="o">=</span> <span class="n">nf_queue</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">verdict</span><span class="p">);</span>
+      <span class="k">break</span><span class="p">;</span>
+        <span class="k">default</span><span class="o">:</span>
+            <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// net/netfilter/nf_queue.c
+</span><span class="c1"></span>
+<span class="cm">/* 从这个函数离开的网络包必须从 nf_reinject() 回来 */</span>
+<span class="kt">int</span> <span class="n">nf_queue</span><span class="p">(...)</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="n">__nf_queue</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">entries</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">verdict</span> <span class="o">&gt;&gt;</span> <span class="n">NF_VERDICT_QBITS</span><span class="p">);</span> <span class="c1">// 其中 verdict &gt;&gt; NF_VERDICT_QBITS 是 iptables 规则中 --queue-num 指定的队列号
+</span><span class="c1"></span>    <span class="p">...</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">int</span> <span class="n">__nf_queue</span><span class="p">(...)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">nf_queue_entry</span> <span class="o">*</span><span class="n">entry</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="k">const</span> <span class="k">struct</span> <span class="n">nf_queue_handler</span> <span class="o">*</span><span class="n">qh</span><span class="p">;</span>
+
+    <span class="c1">// 查找当前网络命名空间里 nfnetlink_queue 的“环卫工人”，在系统初始化时已设置了 queue_handler
+</span><span class="c1"></span>    <span class="n">qh</span> <span class="o">=</span> <span class="n">rcu_dereference</span><span class="p">(</span><span class="n">net</span><span class="o">-&gt;</span><span class="n">nf</span><span class="p">.</span><span class="n">queue_handler</span><span class="p">);</span>
+    <span class="c1">// 初始化一个 nfnetlink_queue “队员”
+</span><span class="c1"></span>    <span class="n">entry</span> <span class="o">=</span> <span class="n">kmalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">entry</span><span class="p">)</span> <span class="o">+</span> <span class="n">route_key_size</span><span class="p">,</span> <span class="n">GFP_ATOMIC</span><span class="p">);</span>
+    <span class="o">*</span><span class="n">entry</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">nf_queue_entry</span><span class="p">)</span> <span class="p">{</span>
+        <span class="p">.</span><span class="n">skb</span>	<span class="o">=</span> <span class="n">skb</span><span class="p">,</span> <span class="c1">// 引用当前网络包
+</span><span class="c1"></span>        <span class="p">.</span><span class="n">state</span>	<span class="o">=</span> <span class="o">*</span><span class="n">state</span><span class="p">,</span>  <span class="c1">// 当前 iptables 状态
+</span><span class="c1"></span>        <span class="p">.</span><span class="n">hook_index</span> <span class="o">=</span> <span class="n">index</span><span class="p">,</span>
+        <span class="p">.</span><span class="n">size</span>	<span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">entry</span><span class="p">)</span> <span class="o">+</span> <span class="n">route_key_size</span><span class="p">,</span>
+    <span class="p">};</span>
+    <span class="c1">// 处理当前“队员”
+</span><span class="c1"></span>    <span class="n">status</span> <span class="o">=</span> <span class="n">qh</span><span class="o">-&gt;</span><span class="n">outfn</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">queuenum</span><span class="p">);</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// net/netfilter/nfnetlink_queue.c
+</span><span class="c1"></span>
+<span class="k">static</span> <span class="kt">int</span>
+<span class="n">nfqnl_enqueue_packet</span><span class="p">(</span><span class="k">struct</span> <span class="n">nf_queue_entry</span> <span class="o">*</span><span class="n">entry</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">queuenum</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// 找到 queuenum 对应的队列
+</span><span class="c1"></span>    <span class="n">queue</span> <span class="o">=</span> <span class="n">instance_lookup</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">queuenum</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">queue</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">NFQA_CFG_F_GSO</span><span class="p">)</span> <span class="o">||</span> <span class="o">!</span><span class="n">skb_is_gso</span><span class="p">(</span><span class="n">skb</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">__nfqnl_enqueue_packet</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span> <span class="n">entry</span><span class="p">);</span>
+    <span class="p">...</span>
+    <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">int</span>
+<span class="n">__nfqnl_enqueue_packet</span><span class="p">(...)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">nskb</span><span class="p">;</span>
+    <span class="n">nskb</span> <span class="o">=</span> <span class="n">nfqnl_build_packet_message</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">queue</span><span class="p">,</span> <span class="n">entry</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">packet_id_ptr</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">queue</span><span class="o">-&gt;</span><span class="n">queue_total</span> <span class="o">&gt;=</span> <span class="n">queue</span><span class="o">-&gt;</span><span class="n">queue_maxlen</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// 队列满了
+</span><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">queue</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">NFQA_CFG_F_FAIL_OPEN</span><span class="p">)</span> <span class="p">{</span>  <span class="c1">// --fail-open，也可以是设置 flags
+</span><span class="c1"></span>            <span class="n">failopen</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="n">queue</span><span class="o">-&gt;</span><span class="n">queue_dropped</span><span class="o">++</span><span class="p">;</span> <span class="c1">// 丢包统计
+</span><span class="c1"></span>            <span class="n">net_warn_ratelimited</span><span class="p">(</span><span class="s">&#34;nf_queue: full at %d entries, dropping packets(s)</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span>
+                         <span class="n">queue</span><span class="o">-&gt;</span><span class="n">queue_total</span><span class="p">);</span> <span class="c1">// 打印一条系统日志
+</span><span class="c1"></span>        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="n">entry</span><span class="o">-&gt;</span><span class="n">id</span> <span class="o">=</span> <span class="o">++</span><span class="n">queue</span><span class="o">-&gt;</span><span class="n">id_sequence</span><span class="p">;</span> <span class="c1">// 自增的“队员”ID，nf_reinject() 时就根据这个 ID 去查找对应的“队员”
+</span><span class="c1"></span>    <span class="c1">// 通过 nfnetlink 将消息发送给用户程序
+</span><span class="c1"></span>    <span class="n">err</span> <span class="o">=</span> <span class="n">nfnetlink_unicast</span><span class="p">(</span><span class="n">nskb</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">queue</span><span class="o">-&gt;</span><span class="n">peer_portid</span><span class="p">,</span> <span class="n">MSG_DONTWAIT</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">queue</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">NFQA_CFG_F_FAIL_OPEN</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">failopen</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+            <span class="n">queue</span><span class="o">-&gt;</span><span class="n">queue_user_dropped</span><span class="o">++</span><span class="p">;</span> <span class="c1">// 发送失败的统计
+</span><span class="c1"></span>        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="n">__enqueue_entry</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">entry</span><span class="p">);</span> <span class="c1">// “队员”入队
+</span><span class="c1"></span>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="nfqueue-下半场">NFQUEUE 下半场</h3>
+<p>用户程序响应回来的判决是怎么生效的呢？</p>
+<p>由 <strong><code>nfnetlink_queue</code> 初始化</strong> 知道，用户回复判决会调用函数 <code>nfqnl_recv_verdict</code>，就接着该函数进行分析吧。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="c1">// net/netfilter/nfnetlink_queue.c
+</span><span class="c1"></span>
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">nfqnl_recv_verdict</span><span class="p">(...)</span>
+<span class="p">{</span>
+    <span class="n">u_int16_t</span> <span class="n">queue_num</span> <span class="o">=</span> <span class="n">ntohs</span><span class="p">(</span><span class="n">nfmsg</span><span class="o">-&gt;</span><span class="n">res_id</span><span class="p">);</span>
+    <span class="k">struct</span> <span class="n">nfnl_queue_net</span> <span class="o">*</span><span class="n">q</span> <span class="o">=</span> <span class="n">nfnl_queue_pernet</span><span class="p">(</span><span class="n">net</span><span class="p">);</span>
+
+    <span class="n">queue</span> <span class="o">=</span> <span class="n">verdict_instance_lookup</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">queue_num</span><span class="p">,</span>
+                    <span class="n">NETLINK_CB</span><span class="p">(</span><span class="n">skb</span><span class="p">).</span><span class="n">portid</span><span class="p">);</span>
+    <span class="n">verdict</span> <span class="o">=</span> <span class="n">ntohl</span><span class="p">(</span><span class="n">vhdr</span><span class="o">-&gt;</span><span class="n">verdict</span><span class="p">);</span>
+    <span class="n">entry</span> <span class="o">=</span> <span class="n">find_dequeue_entry</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">ntohl</span><span class="p">(</span><span class="n">vhdr</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">));</span>
+    <span class="n">nfqnl_reinject</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">verdict</span><span class="p">);</span> <span class="c1">// nf_queue 出去，nf_reinject 回来
+</span><span class="c1"></span>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// 根据 ID 在队列里找“队员”
+</span><span class="c1"></span><span class="k">static</span> <span class="k">struct</span> <span class="n">nf_queue_entry</span> <span class="o">*</span>
+<span class="nf">find_dequeue_entry</span><span class="p">(</span><span class="k">struct</span> <span class="n">nfqnl_instance</span> <span class="o">*</span><span class="n">queue</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">nf_queue_entry</span> <span class="o">*</span><span class="n">entry</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">*</span><span class="n">i</span><span class="p">;</span>
+    <span class="n">list_for_each_entry</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">queue</span><span class="o">-&gt;</span><span class="n">queue_list</span><span class="p">,</span> <span class="n">list</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="o">-&gt;</span><span class="n">id</span> <span class="o">==</span> <span class="n">id</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+            <span class="k">break</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+        <span class="n">__dequeue_entry</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">entry</span><span class="p">);</span> <span class="c1">// “队员”出队，对应 __enqueue_entry
+</span><span class="c1"></span>    <span class="k">return</span> <span class="n">entry</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">nfqnl_reinject</span><span class="p">(</span><span class="k">struct</span> <span class="n">nf_queue_entry</span> <span class="o">*</span><span class="n">entry</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">verdict</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="p">...</span>
+    <span class="n">nf_reinject</span><span class="p">(</span><span class="n">entry</span><span class="p">,</span> <span class="n">verdict</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="kt">void</span> <span class="nf">nf_reinject</span><span class="p">(</span><span class="k">struct</span> <span class="n">nf_queue_entry</span> <span class="o">*</span><span class="n">entry</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">verdict</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">switch</span> <span class="p">(</span><span class="n">verdict</span> <span class="o">&amp;</span> <span class="n">NF_VERDICT_MASK</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="nl">NF_ACCEPT</span><span class="p">:</span>
+    <span class="k">case</span> <span class="nl">NF_STOP</span><span class="p">:</span>
+        <span class="n">entry</span><span class="o">-&gt;</span><span class="n">state</span><span class="p">.</span><span class="n">okfn</span><span class="p">(</span><span class="n">entry</span><span class="o">-&gt;</span><span class="n">state</span><span class="p">.</span><span class="n">net</span><span class="p">,</span> <span class="n">entry</span><span class="o">-&gt;</span><span class="n">state</span><span class="p">.</span><span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span> <span class="c1">// 继续 iptables 后续的处理
+</span><span class="c1"></span>        <span class="k">break</span><span class="p">;</span>
+    <span class="p">...</span>
+    <span class="p">}</span>
+    <span class="n">kfree</span><span class="p">(</span><span class="n">entry</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="nfqueue-的统计信息">NFQUEUE 的统计信息</h3>
+<p>每个 NFQUEUE 的统计信息保存在 <code>struct nfqnl_instance</code> 中，并且每个一行地打印到 <code>/proc/net/netfilter/nfnetlink_queue</code> 中。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">nfqnl_instance</span> <span class="p">{</span>
+    <span class="p">...</span>
+    <span class="n">u32</span> <span class="n">peer_portid</span><span class="p">;</span>                    <span class="c1">// 该 id 可能是用户程序的 pid
+</span><span class="c1"></span>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">queue_maxlen</span><span class="p">;</span>          <span class="c1">// 队列容量
+</span><span class="c1"></span>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">copy_range</span><span class="p">;</span>            <span class="c1">// 网络包复制范围
+</span><span class="c1"></span>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">queue_dropped</span><span class="p">;</span>         <span class="c1">// 因队列满了而发生的丢包数量
+</span><span class="c1"></span>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">queue_user_dropped</span><span class="p">;</span>    <span class="c1">// 将网络包发送给用户程序失败的数量
+</span><span class="c1"></span>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">queue_total</span><span class="p">;</span>           <span class="c1">// 当前队列里网络包的数量
+</span><span class="c1"></span>    <span class="p">...</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>统计信息是如何打印到 <code>/proc/net/netfilter/nfnetlink_queue</code> 的？</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">static</span> <span class="kt">int</span> <span class="n">__net_init</span> <span class="nf">nfnl_queue_net_init</span><span class="p">(</span><span class="k">struct</span> <span class="n">net</span> <span class="o">*</span><span class="n">net</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="p">...</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">proc_create_net</span><span class="p">(</span><span class="s">&#34;nfnetlink_queue&#34;</span><span class="p">,</span> <span class="mo">0440</span><span class="p">,</span> <span class="n">net</span><span class="o">-&gt;</span><span class="n">nf</span><span class="p">.</span><span class="n">proc_netfilter</span><span class="p">,</span>
+            <span class="o">&amp;</span><span class="n">nfqnl_seq_ops</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">iter_state</span><span class="p">)))</span>
+    <span class="p">...</span>
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">seq_operations</span> <span class="n">nfqnl_seq_ops</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="p">...</span>
+    <span class="p">.</span><span class="n">show</span>	<span class="o">=</span> <span class="n">seq_show</span><span class="p">,</span>
+<span class="p">};</span>
+
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">seq_show</span><span class="p">(</span><span class="k">struct</span> <span class="n">seq_file</span> <span class="o">*</span><span class="n">s</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">v</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">const</span> <span class="k">struct</span> <span class="n">nfqnl_instance</span> <span class="o">*</span><span class="n">inst</span> <span class="o">=</span> <span class="n">v</span><span class="p">;</span>
+    <span class="n">seq_printf</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="s">&#34;%5u %6u %5u %1u %5u %5u %5u %8u %2d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span>
+        <span class="n">inst</span><span class="o">-&gt;</span><span class="n">queue_num</span><span class="p">,</span>           <span class="c1">// 当前队列号码
+</span><span class="c1"></span>        <span class="n">inst</span><span class="o">-&gt;</span><span class="n">peer_portid</span><span class="p">,</span>         <span class="c1">// 监听当前队列的用户程序的 pid
+</span><span class="c1"></span>        <span class="n">inst</span><span class="o">-&gt;</span><span class="n">queue_total</span><span class="p">,</span>         <span class="c1">// 当前队列里等待处理的网络包数量
+</span><span class="c1"></span>        <span class="n">inst</span><span class="o">-&gt;</span><span class="n">copy_mode</span><span class="p">,</span>           <span class="c1">// 复制模式，一般使用 NFQNL_COPY_PACKET 复制网络包模式
+</span><span class="c1"></span>        <span class="n">inst</span><span class="o">-&gt;</span><span class="n">copy_range</span><span class="p">,</span>          <span class="c1">// 网络包复制范围，默认 65531
+</span><span class="c1"></span>        <span class="n">inst</span><span class="o">-&gt;</span><span class="n">queue_dropped</span><span class="p">,</span>       <span class="c1">// 因队列满了而发生的丢包数量
+</span><span class="c1"></span>        <span class="n">inst</span><span class="o">-&gt;</span><span class="n">queue_user_dropped</span><span class="p">,</span>  <span class="c1">// 将网络包发送给用户程序失败的数量
+</span><span class="c1"></span>        <span class="n">inst</span><span class="o">-&gt;</span><span class="n">id_sequence</span><span class="p">,</span>         <span class="c1">// 下一个“队员”的 ID
+</span><span class="c1"></span>        <span class="mi">1</span><span class="p">);</span>                        <span class="c1">// 固定是 1
+</span><span class="c1"></span>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>纵观 NFQUEUE 的源代码，NFQUEUE 并没有直接提供 API 去获取丢包事件。</p>
+<h2 id="总结">总结</h2>
+<p>NFQUEUE 因为需要将网络包发送给用户程序，所以它的性能并不高；但相比于堆叠 iptables 规则，NFQUEUE 的处理方式更加灵活。而对于 <code>XDP</code>、<code>xt_bpf</code> 等拥有同等灵活性的新技术而言，NFQUEUE 的适用范围更广、能够适配很多老旧系统。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Huayra</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2021-12-09
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/iptables/">iptables</a>
+          <a href="/tags/iptables-nfqueue/">iptables-nfqueue</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/go-nfnetlink-example/">
+            <span class="next-text nav-default">使用 Go 对接 iptables NFQUEUE 的例子</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Huayra</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-X2X9EP3K14', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
