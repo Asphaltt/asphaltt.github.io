@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>iptables-nfqueue 的使用 - LeonHuayra&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="Leon Huayra" /><meta name="description" content="本文主要翻译自 Using NFQUEUE and libnetfilter_queue，将 C 代码例子换成 Go 代码例子。 介绍 NFQUEUE 是一种 iptables 和 ip6tables 的目标（an iptables and ip6tables target），将" /><meta name="keywords" content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/iptables-nfqueue-usage/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="iptables-nfqueue 的使用" />
+<meta property="og:description" content="本文主要翻译自 Using NFQUEUE and libnetfilter_queue，将 C 代码例子换成 Go 代码例子。 介绍 NFQUEUE 是一种 iptables 和 ip6tables 的目标（an iptables and ip6tables target），将" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/iptables-nfqueue-usage/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2021-12-12T15:10:20+08:00" />
+<meta property="article:modified_time" content="2021-12-12T15:10:20+08:00" />
+
+<meta itemprop="name" content="iptables-nfqueue 的使用">
+<meta itemprop="description" content="本文主要翻译自 Using NFQUEUE and libnetfilter_queue，将 C 代码例子换成 Go 代码例子。 介绍 NFQUEUE 是一种 iptables 和 ip6tables 的目标（an iptables and ip6tables target），将"><meta itemprop="datePublished" content="2021-12-12T15:10:20+08:00" />
+<meta itemprop="dateModified" content="2021-12-12T15:10:20+08:00" />
+<meta itemprop="wordCount" content="1620">
+<meta itemprop="keywords" content="iptables,iptables-nfqueue," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="iptables-nfqueue 的使用"/>
+<meta name="twitter:description" content="本文主要翻译自 Using NFQUEUE and libnetfilter_queue，将 C 代码例子换成 Go 代码例子。 介绍 NFQUEUE 是一种 iptables 和 ip6tables 的目标（an iptables and ip6tables target），将"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">iptables-nfqueue 的使用</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-12-12 </span>
+        <div class="post-category">
+            <a href="/categories/iptables/"> iptables </a>
+            </div>
+          <span class="more-meta"> 约 1620 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#介绍">介绍</a></li>
+        <li><a href="#内部实现">内部实现</a></li>
+        <li><a href="#内核和用户态之间的通信协议">内核和用户态之间的通信协议</a></li>
+        <li><a href="#go-例子">Go 例子</a></li>
+        <li><a href="#高级特性">高级特性</a>
+          <ul>
+            <li><a href="#多队列">多队列</a></li>
+            <li><a href="#--queue-bypass"><code>--queue-bypass</code></a></li>
+            <li><a href="#失败开关">失败开关</a></li>
+            <li><a href="#批量判决">批量判决</a></li>
+          </ul>
+        </li>
+        <li><a href="#杂项">杂项</a>
+          <ul>
+            <li><a href="#proc-下的-nfnetlink_queue">/proc 下的 nfnetlink_queue</a></li>
+          </ul>
+        </li>
+        <li><a href="#faq">FAQ</a>
+          <ul>
+            <li><a href="#多线程">多线程</a></li>
+            <li><a href="#包重排序">包重排序</a></li>
+            <li><a href="#零拷贝">零拷贝</a></li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>本文主要翻译自 <a href="https://home.regit.org/netfilter-en/using-nfqueue-and-libnetfilter_queue/">Using NFQUEUE and libnetfilter_queue</a>，将 C 代码例子换成 Go 代码例子。</p>
+<hr>
+<h2 id="介绍">介绍</h2>
+<p>NFQUEUE 是一种 iptables 和 ip6tables 的目标（an iptables and ip6tables target），将网络包处理决定委托给用户态软件。比如，下面的规则将所有接收到的网络包（all packet going to the box）委托给监听中的用户态程序去决策。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -A INPUT -j NFQUEUE --queue-num <span class="m">0</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>用户态软件必须监听队列 0（connect to queue 0），并从内核获取消息；然后给每个网络包给出判决（verdict）。</p>
+<h2 id="内部实现">内部实现</h2>
+<p>为了理解 NFQUEUE，最简单的方式是理解 Linux 内核内部架构。当一个网络包触发 NFQUEUE 目标，它将被插入到 <code>--queue-num</code> 指定的队列里。网络包队列是一个链式列表，列表元素是网络包和元数据（Linux 内核 skb）：</p>
+<ul>
+<li>固定长度的链式列表</li>
+<li>使用整数索引网络包</li>
+<li>当用户态程序对指定整数索引的网络包做出判决后，该网络包将被释放掉</li>
+<li>当队列满了，队列不再接收网络包</li>
+</ul>
+<p>用户态程序会有如下影响：</p>
+<ul>
+<li>批量读取消息，并批量给出判决。当队列未满时，批量处理不会产生影响。</li>
+<li>可以无序地给网络包做出判决。比如，得到 1、2、3、4 网络包，以 4、2、3、1 顺序做出判决。</li>
+<li>过慢的判决会导致队列充满。此时，内核会丢掉新来的网络包，而不是插入队列。</li>
+</ul>
+<h2 id="内核和用户态之间的通信协议">内核和用户态之间的通信协议</h2>
+<p>内核和用户态之间的通信协议使用的是 nfnetlink。这是一种不共享内存的基于消息的通信协议。当一个网络包入队时，内核将包含了网络包数据和相关信息的 nfnetlink 消息发送到某个套接字（socket），用户态程序就能够读取到这条消息。用户态程序进行判决的做法是，将包含了网络包整数索引的 nfnetlink 消息发送到那个套接字。</p>
+<h2 id="go-例子">Go 例子</h2>
+<p><a href="https://github.com/Asphaltt/learn-by-example/tree/main/nfqueue">使用 Go 对接 iptables-nfqueue 的例子</a></p>
+<h2 id="高级特性">高级特性</h2>
+<h3 id="多队列">多队列</h3>
+<p><code>--queue-balance</code> 是 NFQUEUE 选项，由 Florian Westphal 实现，实现了同一条 iptables 规则的网络包负载均衡到多个队列。用法非常简单。比如，负载均衡 INPUT 流量到 0-3 队列的规则如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -A INPUT -j NFQUEUE --queue-balance 0:3
+</code></pre></td></tr></table>
+</div>
+</div><p>注意，负载均衡是基于流实现的（made with respect to the flow），一条流的所有网络包会发送到同一个队列。</p>
+<p>可用范围：Linux 内核 &gt;= 2.6.31，iptables &gt;= 1.4.5。</p>
+<h3 id="--queue-bypass"><code>--queue-bypass</code></h3>
+<p><code>--queue-bypass</code> 也是由 Florian Westphal 实现的 NFQUEUE 选项。当没有用户态程序监听队列时，不再是丢包，而是放行。</p>
+<p>适用范围：Linux 内核 &gt;= 2.6.39，iptables &gt;= 1.4.11。</p>
+<p>该特性不适用于内核 3.10 到 3.12 版本。</p>
+<h3 id="失败开关">失败开关</h3>
+<p>从 Linux 内核 3.6 版本开始，当队列满了，该选项允许放行而不是丢包。</p>
+<h3 id="批量判决">批量判决</h3>
+<p>从 Linux 内核 3.1 版本开始，能够使用批量判决了。不再是一个网络包做一次判决，能够对 ID 范围的所有网络包只做一次判决（send a verdict to all packets with an id inferior to a given id）。</p>
+<p>这能够提高系统处理网络包的性能，但会增大网络包的延迟。所以，用户态程序需要更快地去发出判决消息，以此减小延迟；此时需要注意很少网络包的场景。</p>
+<h2 id="杂项">杂项</h2>
+<h3 id="proc-下的-nfnetlink_queue">/proc 下的 nfnetlink_queue</h3>
+<p>nfnetlink_queue 在 /proc 下的路径：<code>/proc/net/netfilter/nfnetlink_queue</code></p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">cat /proc/net/netfilter/nfnetlink_queue 
+   <span class="m">40</span>  <span class="m">23948</span>     <span class="m">0</span> <span class="m">2</span> <span class="m">65531</span>     <span class="m">0</span>     <span class="m">0</span>      <span class="m">106</span>  <span class="m">1</span>
+</code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>
+<p>队列号：由 <code>--queue-number</code> 指定</p>
+</li>
+<li>
+<p>对端接口 ID：监听队列的 pid</p>
+</li>
+<li>
+<p>队列数量：当前在队列里等待的网络包数量</p>
+</li>
+<li>
+<p>复制模式：0 和 1 只提供元数据；2 同时还会提供限定复制范围的部分网络包内容（a part of packet of size copy range）。</p>
+</li>
+<li>
+<p>复制范围：放进消息里的网络包长度</p>
+</li>
+<li>
+<p>队列丢包数量：因队列满了而丢包的网络包数量</p>
+</li>
+<li>
+<p>用户丢包数量：因不能发送到用户态而丢包的网络包数量。如果该数值不为 0，尝试增大 netlink 缓存大小（increase netlink buffer size）。在程序侧，如果发生丢包，可以看到整数索引不连续了（see gap in packet id）。</p>
+</li>
+<li>
+<p>ID 序列：最后一个网络包的整数索引</p>
+</li>
+<li>
+<p>1</p>
+</li>
+</ul>
+<h2 id="faq">FAQ</h2>
+<h3 id="多线程">多线程</h3>
+<p>收包/发包（nfnetlink 包）操作需要被锁保护，防止并发写。</p>
+<p>收包和发包是完全分开的操作，它们不共享内存。判决只用到包 ID（packet index）。与此同时，上锁能让不同线程对任何包进行判决。</p>
+<h3 id="包重排序">包重排序</h3>
+<p>NFQUEUE 很容易地为任意入队的包做包重排序。然而，需要注意的是内核是使用链式列表来排队包的；所以，乱序判决会带来一定的损耗。</p>
+<h3 id="零拷贝">零拷贝</h3>
+<p>内核和用户态之间使用 netlink 进行通信，不存在零拷贝这样的好事。Patrick McHardy 已开始  <a href="https://lwn.net/Articles/512442/">memory mapped implementation of netlink</a>，所以未来可能会有零拷贝。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Huayra</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2021-12-12
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/iptables/">iptables</a>
+          <a href="/tags/iptables-nfqueue/">iptables-nfqueue</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/iptables-nfqueue/">
+            <span class="next-text nav-default">一文吃透 iptables-nfqueue</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Huayra</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-X2X9EP3K14', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
