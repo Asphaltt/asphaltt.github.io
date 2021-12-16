@@ -6,7 +6,16 @@
     <description>Recent content in iptables on LeonHuayra&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 12 Dec 2021 15:10:20 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/iptables/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 16 Dec 2021 23:26:45 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/iptables/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>该如此玩转 iptables-bpf</title>
+      <link>https://asphaltt.github.io/post/iptables-bpf/</link>
+      <pubDate>Thu, 16 Dec 2021 23:26:45 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/iptables-bpf/</guid>
+      <description>在看 iptables-nfqueue 源代码的时候，发现 iptables 有 bpf 特性，于是查了下 iptables-bpf 的资料。 使用iptables的bpf match来优化规则集-HiPAC/ipset/n+1模</description>
+    </item>
+    
     <item>
       <title>iptables-nfqueue 的使用</title>
       <link>https://asphaltt.github.io/post/iptables-nfqueue-usage/</link>

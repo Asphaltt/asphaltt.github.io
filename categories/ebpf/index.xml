@@ -6,7 +6,16 @@
     <description>Recent content in eBPF on LeonHuayra&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 02 Nov 2021 23:19:12 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 16 Dec 2021 23:26:45 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>该如此玩转 iptables-bpf</title>
+      <link>https://asphaltt.github.io/post/iptables-bpf/</link>
+      <pubDate>Thu, 16 Dec 2021 23:26:45 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/iptables-bpf/</guid>
+      <description>在看 iptables-nfqueue 源代码的时候，发现 iptables 有 bpf 特性，于是查了下 iptables-bpf 的资料。 使用iptables的bpf match来优化规则集-HiPAC/ipset/n+1模</description>
+    </item>
+    
     <item>
       <title>skbtracer: Linux 内核网络包路径追踪利器</title>
       <link>https://asphaltt.github.io/post/skbtracer/</link>
