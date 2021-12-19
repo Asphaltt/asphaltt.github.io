@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>iptables-bpf 的实现原理分析 - LeonHuayra&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="Leon Huayra" /><meta name="description" content="该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一" /><meta name="keywords" content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/iptables-bpf-source-code-reading/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="iptables-bpf 的实现原理分析" />
+<meta property="og:description" content="该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/iptables-bpf-source-code-reading/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2021-12-19T14:27:19+08:00" />
+<meta property="article:modified_time" content="2021-12-19T14:27:19+08:00" />
+
+<meta itemprop="name" content="iptables-bpf 的实现原理分析">
+<meta itemprop="description" content="该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一"><meta itemprop="datePublished" content="2021-12-19T14:27:19+08:00" />
+<meta itemprop="dateModified" content="2021-12-19T14:27:19+08:00" />
+<meta itemprop="wordCount" content="554">
+<meta itemprop="keywords" content="iptables,iptables-bpf,eBPF," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="iptables-bpf 的实现原理分析"/>
+<meta name="twitter:description" content="该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">iptables-bpf 的实现原理分析</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-12-19 </span>
+        <div class="post-category">
+            <a href="/categories/iptables/"> iptables </a>
+            <a href="/categories/ebpf/"> eBPF </a>
+            </div>
+          <span class="more-meta"> 约 554 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#实现原理">实现原理</a></li>
+        <li><a href="#源代码分析">源代码分析</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p><a href="https://asphaltt.github.io/post/iptables-bpf/">该如此玩转 iptables-bpf</a></p>
+<p>原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。</p>
+<h2 id="实现原理">实现原理</h2>
+<p>用法：<code>iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP</code></p>
+<p>bpf 是 iptables 的一个 match 模块，在 iptables 里执行一段指定的 BPF_PROG_TYPE_SOCKET_FILTER 类型的 bpf 程序。<code>--object-pinned</code> 指定包含了 <code>SEC(&quot;socket&quot;)</code> 的 pinned 到 <code>/sys/fs/bpf</code> bpf 文件系统挂载点下的 bpf 程序；<code>--bytecode</code> 指定一段 bpf 程序的字节码。</p>
+<p>iptables 拿到 bpf 程序的结果，如果匹配结果是 <code>true</code> 则执行 <code>-j</code> 指定的 target，否则继续执行后面的 iptables 规则。</p>
+<h2 id="源代码分析">源代码分析</h2>
+<p>源码位置：<a href="https://elixir.bootlin.com/linux/latest/source/net/netfilter/xt_bpf.c">/net/netfilter/xt_bpf.c</a></p>
+<p>模块初始化：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">static</span> <span class="k">struct</span> <span class="n">xt_match</span> <span class="n">bpf_mt_reg</span><span class="p">[]</span> <span class="n">__read_mostly</span> <span class="o">=</span> <span class="p">{</span>
+	<span class="p">...</span>
+	<span class="p">{</span>
+		<span class="p">.</span><span class="n">name</span>		<span class="o">=</span> <span class="s">&#34;bpf&#34;</span><span class="p">,</span>
+		<span class="p">.</span><span class="n">revision</span>	<span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+		<span class="p">.</span><span class="n">family</span>		<span class="o">=</span> <span class="n">NFPROTO_UNSPEC</span><span class="p">,</span>
+		<span class="p">.</span><span class="n">checkentry</span>	<span class="o">=</span> <span class="n">bpf_mt_check_v1</span><span class="p">,</span>  <span class="c1">// 检查 bpf 程序的函数
+</span><span class="c1"></span>		<span class="p">.</span><span class="n">match</span>		<span class="o">=</span> <span class="n">bpf_mt_v1</span><span class="p">,</span>        <span class="c1">// 匹配网络包的函数
+</span><span class="c1"></span>		<span class="p">.</span><span class="n">destroy</span>	<span class="o">=</span> <span class="n">bpf_mt_destroy_v1</span><span class="p">,</span>
+		<span class="p">.</span><span class="n">matchsize</span>	<span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">xt_bpf_info_v1</span><span class="p">),</span>
+		<span class="p">.</span><span class="n">usersize</span>	<span class="o">=</span> <span class="n">offsetof</span><span class="p">(</span><span class="k">struct</span> <span class="n">xt_bpf_info_v1</span><span class="p">,</span> <span class="n">filter</span><span class="p">),</span>
+		<span class="p">.</span><span class="n">me</span>		<span class="o">=</span> <span class="n">THIS_MODULE</span><span class="p">,</span>
+	<span class="p">},</span>
+<span class="p">};</span>
+
+<span class="k">static</span> <span class="kt">int</span> <span class="n">__init</span> <span class="nf">bpf_mt_init</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">return</span> <span class="n">xt_register_matches</span><span class="p">(</span><span class="n">bpf_mt_reg</span><span class="p">,</span> <span class="n">ARRAY_SIZE</span><span class="p">(</span><span class="n">bpf_mt_reg</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="n">module_init</span><span class="p">(</span><span class="n">bpf_mt_init</span><span class="p">);</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>检查 bpf 程序：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">static</span> <span class="kt">int</span> <span class="nf">bpf_mt_check_v1</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">xt_mtchk_param</span> <span class="o">*</span><span class="n">par</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">struct</span> <span class="n">xt_bpf_info_v1</span> <span class="o">*</span><span class="n">info</span> <span class="o">=</span> <span class="n">par</span><span class="o">-&gt;</span><span class="n">matchinfo</span><span class="p">;</span>
+	<span class="p">...</span>
+	<span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">info</span><span class="o">-&gt;</span><span class="n">mode</span> <span class="o">==</span> <span class="n">XT_BPF_MODE_PATH_PINNED</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">__bpf_mt_check_path</span><span class="p">(</span><span class="n">info</span><span class="o">-&gt;</span><span class="n">path</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">info</span><span class="o">-&gt;</span><span class="n">filter</span><span class="p">);</span>
+	<span class="k">else</span>
+		<span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">__bpf_mt_check_path</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">path</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">**</span><span class="n">ret</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">if</span> <span class="p">(</span><span class="n">strnlen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">XT_BPF_PATH_MAX</span><span class="p">)</span> <span class="o">==</span> <span class="n">XT_BPF_PATH_MAX</span><span class="p">)</span>
+		<span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+	<span class="o">*</span><span class="n">ret</span> <span class="o">=</span> <span class="n">bpf_prog_get_type_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">BPF_PROG_TYPE_SOCKET_FILTER</span><span class="p">);</span>  <span class="c1">// 指定了 socket 类型
+</span><span class="c1"></span>	<span class="k">return</span> <span class="n">PTR_ERR_OR_ZERO</span><span class="p">(</span><span class="o">*</span><span class="n">ret</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><code>struct xt_bpf_info_v1</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="n">xt_bpf_info_v1</span> <span class="p">{</span>
+	<span class="n">__u16</span> <span class="n">mode</span><span class="p">;</span>
+	<span class="n">__u16</span> <span class="n">bpf_program_num_elem</span><span class="p">;</span>
+	<span class="n">__s32</span> <span class="n">fd</span><span class="p">;</span>
+	<span class="k">union</span> <span class="p">{</span>
+		<span class="k">struct</span> <span class="n">sock_filter</span> <span class="n">bpf_program</span><span class="p">[</span><span class="n">XT_BPF_MAX_NUM_INSTR</span><span class="p">];</span>
+		<span class="kt">char</span> <span class="n">path</span><span class="p">[</span><span class="n">XT_BPF_PATH_MAX</span><span class="p">];</span>
+	<span class="p">};</span>
+	<span class="cm">/* only used in the kernel */</span>
+	<span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">filter</span> <span class="nf">__attribute__</span><span class="p">((</span><span class="n">aligned</span><span class="p">(</span><span class="mi">8</span><span class="p">)));</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>匹配网络包：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">static</span> <span class="kt">bool</span> <span class="nf">bpf_mt_v1</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">xt_action_param</span> <span class="o">*</span><span class="n">par</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="k">const</span> <span class="k">struct</span> <span class="n">xt_bpf_info_v1</span> <span class="o">*</span><span class="n">info</span> <span class="o">=</span> <span class="n">par</span><span class="o">-&gt;</span><span class="n">matchinfo</span><span class="p">;</span>
+	<span class="k">return</span> <span class="o">!!</span><span class="n">bpf_prog_run_save_cb</span><span class="p">(</span><span class="n">info</span><span class="o">-&gt;</span><span class="n">filter</span><span class="p">,</span> <span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="p">)</span> <span class="n">skb</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="总结">总结</h2>
+<p>源代码非常简单。不看不知，原来在内核模块里可以这么使用 bpf。而我之前折腾的在内核模块里使用 bpf-map 的实现并不优雅，可以试试如 iptables-bpf 这样优雅的方式了。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Huayra</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2021-12-19
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/iptables/">iptables</a>
+          <a href="/tags/iptables-bpf/">iptables-bpf</a>
+          <a href="/tags/ebpf/">eBPF</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/iptables-bpf/">
+            <span class="next-text nav-default">该如此玩转 iptables-bpf</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Huayra</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-X2X9EP3K14', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

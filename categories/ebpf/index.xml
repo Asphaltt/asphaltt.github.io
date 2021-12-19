@@ -6,7 +6,16 @@
     <description>Recent content in eBPF on LeonHuayra&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Thu, 16 Dec 2021 23:26:45 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 19 Dec 2021 14:27:19 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>iptables-bpf 的实现原理分析</title>
+      <link>https://asphaltt.github.io/post/iptables-bpf-source-code-reading/</link>
+      <pubDate>Sun, 19 Dec 2021 14:27:19 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/iptables-bpf-source-code-reading/</guid>
+      <description>该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一</description>
+    </item>
+    
     <item>
       <title>该如此玩转 iptables-bpf</title>
       <link>https://asphaltt.github.io/post/iptables-bpf/</link>
