@@ -6,7 +6,16 @@
     <description>Recent content in Posts on LeonHuayra&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 19 Dec 2021 14:27:19 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 19 Dec 2021 16:50:09 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>在内核模块里运行 bpf 程序</title>
+      <link>https://asphaltt.github.io/post/kernel-module-with-bpf/</link>
+      <pubDate>Sun, 19 Dec 2021 16:50:09 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/kernel-module-with-bpf/</guid>
+      <description>参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序参考 iptables-bpf 效果 1 2 3 4 5 6 7 8 9 10 11 12 # make # insmod ./run-bpf-prog.ko bpf_path=/sys/fs/bpf/iptbpf # ping -c4 223.5.5.5 # rmmod run_bpf_prog # dmesg |</description>
+    </item>
+    
     <item>
       <title>iptables-bpf 的实现原理分析</title>
       <link>https://asphaltt.github.io/post/iptables-bpf-source-code-reading/</link>

@@ -122,6 +122,30 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/kernel-module-with-bpf/">在内核模块里运行 bpf 程序</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-12-19 </span>
+      <div class="post-category">
+          <a href="/categories/linux/"> Linux </a>
+          <a href="/categories/ebpf/"> eBPF </a>
+          </div>
+        <span class="more-meta"> 约 602 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序参考 iptables-bpf 效果 1 2 3 4 5 6 7 8 9 10 11 12 # make # insmod ./run-bpf-prog.ko bpf_path=/sys/fs/bpf/iptbpf # ping -c4 223.5.5.5 # rmmod run_bpf_prog # dmesg |
+    </div>
+    <div class="read-more">
+      <a href="/post/kernel-module-with-bpf/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/iptables-bpf-source-code-reading/">iptables-bpf 的实现原理分析</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2021-12-19 </span>
