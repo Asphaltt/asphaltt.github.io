@@ -35,6 +35,15 @@
     </item>
     
     <item>
+      <title>Linux bridge 强制泛洪实验</title>
+      <link>https://asphaltt.github.io/post/linux-bridge-try-flood/</link>
+      <pubDate>Sat, 16 Jan 2021 16:34:24 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/linux-bridge-try-flood/</guid>
+      <description>在上一章 Linux bridge 泛洪 中介绍了 Linux bridge 强制泛洪的原理，接下来抓一下 bridge 泛洪出来的网络包。 环境准备 学习了 docker网络之namespace 、 docker</description>
+    </item>
+    
+    <item>
       <title>Linux bridge 泛洪</title>
       <link>https://asphaltt.github.io/post/linux-bridge-flood/</link>
       <pubDate>Wed, 13 Jan 2021 23:39:25 +0800</pubDate>
