@@ -129,14 +129,14 @@
           <a href="/categories/linux/"> Linux </a>
           <a href="/categories/ebpf/"> eBPF </a>
           </div>
-        <span class="more-meta"> 约 602 字 </span>
+        <span class="more-meta"> 约 614 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序参考 iptables-bpf 效果 1 2 3 4 5 6 7 8 9 10 11 12 # make # insmod ./run-bpf-prog.ko bpf_path=/sys/fs/bpf/iptbpf # ping -c4 223.5.5.5 # rmmod run_bpf_prog # dmesg |
+      参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序参考 iptables-bpf 源代码：Kernel module fun 效果 1 2 3 4 5 6 7 8 9 10 11 12 # make # insmod
     </div>
     <div class="read-more">
       <a href="/post/kernel-module-with-bpf/" class="read-more-link">阅读更多</a>
@@ -326,6 +326,29 @@
     </div>
     <div class="read-more">
       <a href="/post/skbtracer/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/linux-bridge-flood/">Linux bridge 泛洪</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-01-13 </span>
+      <div class="post-category">
+          <a href="/categories/linux/"> Linux </a>
+          </div>
+        <span class="more-meta"> 约 540 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在 Linux 中，bridge 是虚拟的二层网络设备。不同于 eth 或 ens 等真实的网络设备，bridge 能够让同一 Linux 系统内的其他网络设备连接起来；比如 docker 默认的网
+    </div>
+    <div class="read-more">
+      <a href="/post/linux-bridge-flood/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
