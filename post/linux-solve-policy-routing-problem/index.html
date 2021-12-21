@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Linux 策略路由导流到本地 - LeonHuayra&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="Leon Huayra" /><meta name="description" content="在做 Linux 代理流量回放实验 时，因 ip route 配置失误导致实验失败；排查了一个星期，最终在阅读 Inline on a Linux router 博客时发现了配置失误的地方。 代理流量回放实验 在 namespace server" /><meta name="keywords" content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/linux-solve-policy-routing-problem/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="Linux 策略路由导流到本地" />
+<meta property="og:description" content="在做 Linux 代理流量回放实验 时，因 ip route 配置失误导致实验失败；排查了一个星期，最终在阅读 Inline on a Linux router 博客时发现了配置失误的地方。 代理流量回放实验 在 namespace server" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/linux-solve-policy-routing-problem/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2021-01-23T18:33:40+08:00" />
+<meta property="article:modified_time" content="2021-01-23T18:33:40+08:00" />
+
+<meta itemprop="name" content="Linux 策略路由导流到本地">
+<meta itemprop="description" content="在做 Linux 代理流量回放实验 时，因 ip route 配置失误导致实验失败；排查了一个星期，最终在阅读 Inline on a Linux router 博客时发现了配置失误的地方。 代理流量回放实验 在 namespace server"><meta itemprop="datePublished" content="2021-01-23T18:33:40+08:00" />
+<meta itemprop="dateModified" content="2021-01-23T18:33:40+08:00" />
+<meta itemprop="wordCount" content="1164">
+<meta itemprop="keywords" content="Linux,iptables,ip-rule,ip-route," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Linux 策略路由导流到本地"/>
+<meta name="twitter:description" content="在做 Linux 代理流量回放实验 时，因 ip route 配置失误导致实验失败；排查了一个星期，最终在阅读 Inline on a Linux router 博客时发现了配置失误的地方。 代理流量回放实验 在 namespace server"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">Linux 策略路由导流到本地</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2021-01-23 </span>
+        <div class="post-category">
+            <a href="/categories/linux/"> Linux </a>
+            </div>
+          <span class="more-meta"> 约 1164 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#代理流量回放实验">代理流量回放实验</a></li>
+        <li><a href="#学习-linux-收包过程">学习 Linux 收包过程</a></li>
+        <li><a href="#使用-bpf-排查问题">使用 bpf 排查问题</a></li>
+        <li><a href="#继续阅读-tproxy-相关的博客">继续阅读 TProxy 相关的博客</a></li>
+        <li><a href="#local-是什么">local 是什么？</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>在做 <a href="https://asphaltt.github.io/post/linux-replay-proxy-traffic-experiment/">Linux 代理流量回放实验</a> 时，因 <code>ip route</code> 配置失误导致实验失败；排查了一个星期，最终在阅读 <a href="http://people.apache.org/~amc/tiphares/router-inline.html">Inline on a Linux router</a> 博客时发现了配置失误的地方。</p>
+<h2 id="代理流量回放实验">代理流量回放实验</h2>
+<p>在 namespace server 中，使用策略路由将 client 程序发送过来的任意 IP、TCP 端口的 IP 包导流到 server 程序，其中在 namespace server 中的策略路由配置如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -t mangle -N DIVERT
+iptables -t mangle -A PREROUTING -p tcp -m socket -j DIVERT
+iptables -t mangle -A DIVERT -j MARK --set-mark <span class="m">1</span>
+iptables -t mangle -A DIVERT -j ACCEPT
+iptables -t mangle -A PREROUTING -p tcp -j TPROXY --tproxy-mark 0x1/0x1 --on-port <span class="si">${</span><span class="nv">LISTEN_PORT</span><span class="si">}</span>
+ip rule add fwmark <span class="m">1</span> lookup <span class="m">100</span>
+ip route add default dev <span class="si">${</span><span class="nv">VETH_SERVER_INNER</span><span class="si">}</span> scope host table <span class="m">100</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>其中最后那条 ip route 的配置是有问题的，下面就是该问题的排查过程。</p>
+<h2 id="学习-linux-收包过程">学习 Linux 收包过程</h2>
+<p>学习资料：</p>
+<ol>
+<li><a href="http://abcdxyzk.github.io/blog/2015/03/04/kernel-net-ip/">linux TCP/IP协议栈-IP层</a></li>
+<li><a href="https://blog.cloudflare.com/its-crowded-in-here/">It&rsquo;s crowded in here! - The Cloudflare Blog</a></li>
+</ol>
+<p>其中 Cloudflare 的博客提到的 Linux 接收网络包的阶段：</p>
+<p><img src="/linux%20policy%20routing%20bpf%20inet_lookup.png" alt="bpf inet_lookup"></p>
+<p>既然提到了 bpf，那就使用 bpf 来排查一下吧。</p>
+<h2 id="使用-bpf-排查问题">使用 bpf 排查问题</h2>
+<p>使用性能优化大师 Brendan Gregg 在 <a href="http://www.brendangregg.com/bpf-performance-tools-book.html">BPF Performance Tools</a> 书中提供的 <a href="https://github.com/brendangregg/bpf-perf-tools-book/blob/master/originals/Ch10_Networking/skbdrop.bt">skbdrop.bt</a> 工具，执行结果如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">bpftrace --unsafe skbdrop.bt
+Attaching <span class="m">3</span> probes...
+Tracing unusual skb drop stacks. Hit Ctrl-C to end.
+^C#kernel
+IpInReceives                    <span class="m">17</span>                 0.0
+IpInDelivers                    <span class="m">17</span>                 0.0
+IpOutRequests                   <span class="m">22</span>                 0.0
+TcpInSegs                       <span class="m">17</span>                 0.0
+TcpOutSegs                      <span class="m">21</span>                 0.0
+TcpRetransSegs                  <span class="m">1</span>                  0.0
+TcpExtTCPHPHits                 <span class="m">1</span>                  0.0
+TcpExtTCPPureAcks               <span class="m">8</span>                  0.0
+TcpExtTCPHPAcks                 <span class="m">5</span>                  0.0
+TcpExtTCPTimeouts               <span class="m">1</span>                  0.0
+TcpExtTCPSynRetrans             <span class="m">1</span>                  0.0
+TcpExtTCPOrigDataSent           <span class="m">20</span>                 0.0
+TcpExtTCPDelivered              <span class="m">20</span>                 0.0
+TcpExtTcpTimeoutRehash          <span class="m">1</span>                  0.0
+IpExtInOctets                   <span class="m">880</span>                0.0
+IpExtOutOctets                  <span class="m">2239</span>               0.0
+IpExtInNoECTPkts                <span class="m">17</span>                 0.0
+
+@<span class="o">[</span>
+    kfree_skb+118
+    kfree_skb+118
+    ip_error+134
+    ip_rcv_finish+135
+    ip_rcv+188
+    __netif_receive_skb_one_core+136
+    __netif_receive_skb+24
+    process_backlog+169
+<span class="o">]</span>: <span class="m">2</span>
+@<span class="o">[</span>
+    kfree_skb+118
+    kfree_skb+118
+    unix_stream_connect+1919
+    __sys_connect_file+95
+    __sys_connect+161
+    __x64_sys_connect+26
+    do_syscall_64+73
+    entry_SYSCALL_64_after_hwframe+68
+<span class="o">]</span>: <span class="m">2</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>根据 <code>uname -r</code> 去查看 <a href="https://elixir.bootlin.com/linux/v5.8/source/net/ipv4/ip_input.c#L414">ip_rcv_finish</a> 源代码，发现 <code>ip_rcv_finish</code> 函数里并没有调用 <code>ip_error；</code>根据协议栈来排查这问题的办法无法进行下去了，因为不知道该如何继续阅读 <code>ip_rcv_finish</code> 后面的代码。</p>
+<h2 id="继续阅读-tproxy-相关的博客">继续阅读 TProxy 相关的博客</h2>
+<p>在阅读  <a href="http://people.apache.org/~amc/tiphares/router-inline.html">Inline on a Linux router</a>  博客的时候，留意了一下这条命令： <code>ip route add local 0.0.0.0/0 dev lo table 1</code> ，这里为什么会有个 <em>local</em> 呢？</p>
+<p>不管三七二十一，先加上再说。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -t mangle -N DIVERT
+iptables -t mangle -A PREROUTING -p tcp -m socket -j DIVERT
+iptables -t mangle -A DIVERT -j MARK --set-mark <span class="m">1</span>
+iptables -t mangle -A DIVERT -j ACCEPT
+iptables -t mangle -A PREROUTING -p tcp -j TPROXY --tproxy-mark 0x1/0x1 --on-port <span class="si">${</span><span class="nv">LISTEN_PORT</span><span class="si">}</span>
+ip rule add fwmark <span class="m">1</span> lookup <span class="m">100</span>
+ip route add <span class="nb">local</span> default dev <span class="si">${</span><span class="nv">VETH_SERVER_INNER</span><span class="si">}</span> scope host table <span class="m">100</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>终于，实验成功了。</p>
+<h2 id="local-是什么">local 是什么？</h2>
+<p>有问题，就找 man：<code>man ip-route</code>，在线文档：<a href="https://man7.org/linux/man-pages/man8/ip-route.8.html">iproute(8)</a>。 其中有一段内容：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-man" data-lang="man">       Route types:
+
+               unicast - the route entry describes real paths to the destinations covered by the route prefix.
+
+               unreachable - these destinations are unreachable. Packets are discarded and the ICMP message host unreachable is generated.  The
+               local senders get an EHOSTUNREACH error.
+
+               blackhole - these destinations are unreachable. Packets are discarded silently.  The local senders get an EINVAL error.
+
+               prohibit - these destinations are unreachable. Packets are discarded and the ICMP message communication administratively prohib‐
+               ited is generated. The local senders get an EACCES error.
+
+               local - the destinations are assigned to this host. The packets are looped back and delivered locally.
+
+               broadcast - the destinations are broadcast addresses. The packets are sent as link broadcasts.
+
+               throw - a special control route used together with policy rules. If such a route is selected, lookup in this table is terminated
+               pretending that no route was found. Without policy routing it is equivalent to the absence of the route in the routing table. The
+               packets are dropped and the ICMP message net unreachable is generated. The local senders get an ENETUNREACH error.
+
+               nat - a special NAT route. Destinations covered by the prefix are considered to be dummy (or external) addresses which require
+               translation to real (or internal) ones before forwarding. The addresses to translate to are selected with the attribute via.
+               Warning: Route NAT is no longer supported in Linux 2.6.
+
+               anycast - not implemented the destinations are anycast addresses assigned to this host. They are mainly equivalent to local with
+               one difference: such addresses are invalid when used as the source address of any packet.
+
+               multicast - a special type used for multicast routing. It is not present in normal routing tables.
+</code></pre></td></tr></table>
+</div>
+</div><p><strong>local</strong> 是一个路由类型，指将网络包发给系统本地协议栈。</p>
+<h2 id="总结">总结</h2>
+<p>一个 &ldquo;小小的&rdquo; 偏差，导致了一个星期的时间消耗，只能说明自己的知识储备还不够深厚。</p>
+<p>得好好阅读一下内核网络协议栈的源代码，加深对 Linux 系统收发网络包的理解。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Huayra</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2021-01-23
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/linux/">Linux</a>
+          <a href="/tags/iptables/">iptables</a>
+          <a href="/tags/ip-rule/">ip-rule</a>
+          <a href="/tags/ip-route/">ip-route</a>
+          </div>
+      <nav class="post-nav">
+        <a class="prev" href="/post/skbtracer/">
+            <i class="iconfont icon-left"></i>
+            <span class="prev-text nav-default">skbtracer: Linux 内核网络包路径追踪利器</span>
+            <span class="prev-text nav-mobile">上一篇</span>
+          </a>
+        <a class="next" href="/post/linux-replay-proxy-traffic-experiment/">
+            <span class="next-text nav-default">Linux 代理流量回放实验</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Huayra</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-X2X9EP3K14', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
