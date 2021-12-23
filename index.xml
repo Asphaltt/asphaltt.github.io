@@ -89,6 +89,15 @@
     </item>
     
     <item>
+      <title>Linux netfilter 钩子执行过程</title>
+      <link>https://asphaltt.github.io/post/linux-how-netfilter-works/</link>
+      <pubDate>Wed, 21 Apr 2021 22:27:15 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/linux-how-netfilter-works/</guid>
+      <description>netfilter 框架是 Linux 网络子系统里的一个核心模块，iptables 就是基于 netfilter 框架实现的一个网络包处理工具。 netfilter 框架原理介绍 在内核里，每个网络命名空间（ne</description>
+    </item>
+    
+    <item>
       <title>knetstat：查看 socket 的 IP_TRANSPARENT 选项</title>
       <link>https://asphaltt.github.io/post/linux-show-socket-ip_transparent-option/</link>
       <pubDate>Fri, 12 Feb 2021 23:34:58 +0800</pubDate>

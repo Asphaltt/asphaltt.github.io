@@ -191,6 +191,20 @@
   </url>
   
   <url>
+    <loc>https://asphaltt.github.io/post/linux-how-netfilter-works/</loc>
+    <lastmod>2021-04-21T22:27:15+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/netfilter/</loc>
+    <lastmod>2021-04-21T22:27:15+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
     <loc>https://asphaltt.github.io/tags/knetstat/</loc>
     <lastmod>2021-02-12T23:34:58+08:00</lastmod>
     <changefreq>weekly</changefreq>
