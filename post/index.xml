@@ -89,9 +89,18 @@
     </item>
     
     <item>
+      <title>Linux 自定义 netfilter 钩子实验</title>
+      <link>https://asphaltt.github.io/post/linux-custom-netfilter-hook-experiment/</link>
+      <pubDate>Mon, 19 Apr 2021 23:48:58 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/linux-custom-netfilter-hook-experiment/</guid>
+      <description>学习了 Linux netfilter 钩子执行过程，接下来在内核模块里实现一个自定义的 netfilter 钩子。 netfilter 的网络包处理流程 下图比较详细地描述了 iptables 和 ebtables 的规则执行时机： 图片来源：wi</description>
+    </item>
+    
+    <item>
       <title>Linux netfilter 钩子执行过程</title>
       <link>https://asphaltt.github.io/post/linux-how-netfilter-works/</link>
-      <pubDate>Wed, 21 Apr 2021 22:27:15 +0800</pubDate>
+      <pubDate>Sun, 18 Apr 2021 12:25:15 +0800</pubDate>
       
       <guid>https://asphaltt.github.io/post/linux-how-netfilter-works/</guid>
       <description>netfilter 框架是 Linux 网络子系统里的一个核心模块，iptables 就是基于 netfilter 框架实现的一个网络包处理工具。 netfilter 框架原理介绍 在内核里，每个网络命名空间（ne</description>
