@@ -6,14 +6,23 @@
     <description>Recent content on LeonHuayra&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 19 Dec 2021 16:50:09 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 24 Dec 2021 23:34:52 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>一文吃透 Linux TProxy 透明代理</title>
+      <link>https://asphaltt.github.io/post/linux-how-iptable-tproxy-works/</link>
+      <pubDate>Fri, 24 Dec 2021 23:34:52 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/linux-how-iptable-tproxy-works/</guid>
+      <description>Linux 透明代理并不是一个独立的功能模块，而是一个功能特性。在使用 Linux 透明代理的时候，需要 iptables, ip-rule, ip-route 和应用程序一起协同工作。 Linux 透明代理相关博客： knet</description>
+    </item>
+    
     <item>
       <title>在内核模块里运行 bpf 程序</title>
       <link>https://asphaltt.github.io/post/kernel-module-with-bpf/</link>
       <pubDate>Sun, 19 Dec 2021 16:50:09 +0800</pubDate>
       
       <guid>https://asphaltt.github.io/post/kernel-module-with-bpf/</guid>
-      <description>参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序参考 iptables-bpf 源代码：Kernel module fun 效果 1 2 3 4 5 6 7 8 9 10 11 12 # make # insmod</description>
+      <description>参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序源代码： iptables-bpf 内核模块源代码：Kernel module fun 效果 1 2 3 4 5 6 7 8 9 10</description>
     </item>
     
     <item>
