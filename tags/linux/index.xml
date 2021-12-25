@@ -44,6 +44,15 @@
     </item>
     
     <item>
+      <title>Linux 对抗 synflood 的实现</title>
+      <link>https://asphaltt.github.io/post/linux-how-anti-synflood-works/</link>
+      <pubDate>Wed, 19 May 2021 21:54:30 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/linux-how-anti-synflood-works/</guid>
+      <description>synflood 介绍 synflood 是一种 TCP 半连接攻击，会消耗尽服务器资源从而导致服务器拒绝服务。 参考搜狗百科：syn flood。 Linux 中对抗 synflood 的手段 Linux 中对抗 synflood 的主要手段是</description>
+    </item>
+    
+    <item>
       <title>Linux 自定义 netfilter 钩子实验</title>
       <link>https://asphaltt.github.io/post/linux-custom-netfilter-hook-experiment/</link>
       <pubDate>Mon, 19 Apr 2021 23:48:58 +0800</pubDate>
