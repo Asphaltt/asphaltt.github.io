@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>一文吃透 Linux nsenter - LeonHuayra&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="Leon Huayra" /><meta name="description" content="nsenter 套娃 在 Linux 系统里，nsenter 是一个命令行工具，用于进入到另一个 namespace。譬如，nsenter -n -t 1 bash 就是进入到 pid 为 1 的进程所在" /><meta name="keywords" content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/linux-how-nsenter-works/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="一文吃透 Linux nsenter" />
+<meta property="og:description" content="nsenter 套娃 在 Linux 系统里，nsenter 是一个命令行工具，用于进入到另一个 namespace。譬如，nsenter -n -t 1 bash 就是进入到 pid 为 1 的进程所在" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/linux-how-nsenter-works/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2022-01-22T14:03:18+08:00" />
+<meta property="article:modified_time" content="2022-01-22T14:03:18+08:00" />
+
+<meta itemprop="name" content="一文吃透 Linux nsenter">
+<meta itemprop="description" content="nsenter 套娃 在 Linux 系统里，nsenter 是一个命令行工具，用于进入到另一个 namespace。譬如，nsenter -n -t 1 bash 就是进入到 pid 为 1 的进程所在"><meta itemprop="datePublished" content="2022-01-22T14:03:18+08:00" />
+<meta itemprop="dateModified" content="2022-01-22T14:03:18+08:00" />
+<meta itemprop="wordCount" content="1952">
+<meta itemprop="keywords" content="Linux,Linux namespace," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="一文吃透 Linux nsenter"/>
+<meta name="twitter:description" content="nsenter 套娃 在 Linux 系统里，nsenter 是一个命令行工具，用于进入到另一个 namespace。譬如，nsenter -n -t 1 bash 就是进入到 pid 为 1 的进程所在"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">LeonHuayra&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">一文吃透 Linux nsenter</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-01-22 </span>
+        <div class="post-category">
+            <a href="/categories/linux/"> Linux </a>
+            </div>
+          <span class="more-meta"> 约 1952 字 </span>
+          <span class="more-meta"> 预计阅读 4 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#nsenter-套娃">nsenter 套娃</a></li>
+        <li><a href="#go-代码-nsenter-示例">Go 代码 nsenter 示例</a>
+          <ul>
+            <li><a href="#对-namespace-的一个误解">对 <code>namespace</code> 的一个误解</a></li>
+            <li><a href="#nsenter-带来的希望">nsenter 带来的希望</a></li>
+          </ul>
+        </li>
+        <li><a href="#nsenter-背后的原理">nsenter 背后的原理</a>
+          <ul>
+            <li><a href="#内核是怎么看网络-namespace-的">内核是怎么看网络 <code>namespace</code> 的？</a></li>
+            <li><a href="#nsenter-函数的实现原理">nsenter 函数的实现原理</a></li>
+          </ul>
+        </li>
+        <li><a href="#nsenter-的源代码分析">nsenter 的源代码分析</a>
+          <ul>
+            <li><a href="#setns-系统调用">setns 系统调用</a></li>
+            <li><a href="#socket-系统调用">socket 系统调用</a></li>
+            <li><a href="#nsenter-函数退出时">nsenter 函数退出时</a></li>
+          </ul>
+        </li>
+        <li><a href="#小结">小结</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <h2 id="nsenter-套娃">nsenter 套娃</h2>
+<p>在 Linux 系统里，<code>nsenter</code> 是一个命令行工具，用于进入到另一个 <code>namespace</code>。譬如，<code>nsenter -n -t 1 bash</code> 就是进入到 <code>pid</code> 为 1 的进程所在的网络 <code>namespace</code> 里。</p>
+<p>如果不断的执行 <code>nsenter</code> 命令，就形成了一个 <code>nsenter</code> 套娃。</p>
+<p><img src="/nsenter%20matryoshka.png" alt="nsenter 套娃"></p>
+<p>而在 Linux 系统里，会不会形成一个 <code>namespace</code> 栈呢？以便在退出里层的 <code>namespace</code> 后，就回到外层的 <code>namespace</code>。</p>
+<blockquote>
+<p>答案：不会。</p>
+</blockquote>
+<p>本篇博客后面的内容，以 Go 代码的 <code>nsenter</code> 的实现为例，分析一下在 <code>nsenter</code> 背后 Linux 系统的实现。</p>
+<h2 id="go-代码-nsenter-示例">Go 代码 nsenter 示例</h2>
+<p>需要实现的需求是，在一个 Go 进程里去对接处于不同 <code>namespace</code> 的 <code>iptables-nfqueue</code>。</p>
+<p>使用 Go 对接 <code>iptables-nfqueue</code>，请参考：<a href="https://asphaltt.github.io/post/go-nfnetlink-example/">使用 Go 对接 iptables NFQUEUE 的例子</a>。</p>
+<h3 id="对-namespace-的一个误解">对 <code>namespace</code> 的一个误解</h3>
+<p>在找到 <a href="https://github.com/kata-containers/runtime/tree/master/virtcontainers/pkg/nsenter">kata-containers/nsenter</a> 之前，一直以为 <code>namespace</code> 是 Go 程序运行的外部环境，导致一个 Go 程序无法处理跨 <code>namespace</code> 的事情。</p>
+<p>因为这个错误的理解，导致在某个项目中，将原本可以写成一个 Go 程序的方案、变成了两个 Go 程序，每个 Go 程序各自在一个 <code>namespace</code> 里，进而导致了复杂的方案带来的性能损耗。非常遗憾采用了比较复杂的方案。</p>
+<h3 id="nsenter-带来的希望">nsenter 带来的希望</h3>
+<p><a href="https://github.com/kata-containers/runtime/tree/master/virtcontainers/pkg/nsenter">kata-containers/nsenter</a> 解决了一个 Go 程序对接处于不同 <code>namespace</code> 的 <code>iptables-nfqueue</code> 的需求，使用的代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kn">import</span> <span class="nx">knsenter</span> <span class="s">&#34;github.com/kata-containers/runtime/virtcontainers/pkg/nsenter&#34;</span>
+
+<span class="kd">func</span> <span class="nf">nsenter</span><span class="p">(</span><span class="nx">pid</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">fn</span> <span class="kd">func</span><span class="p">()</span> <span class="kt">error</span><span class="p">)</span> <span class="kt">error</span> <span class="p">{</span>
+   <span class="nx">netns</span> <span class="o">:=</span> <span class="nx">knsenter</span><span class="p">.</span><span class="nx">Namespace</span><span class="p">{</span><span class="nx">PID</span><span class="p">:</span> <span class="nx">pid</span><span class="p">,</span> <span class="nx">Type</span><span class="p">:</span> <span class="nx">knsenter</span><span class="p">.</span><span class="nx">NSTypeNet</span><span class="p">}</span>
+   <span class="k">return</span> <span class="nx">knsenter</span><span class="p">.</span><span class="nf">NsEnter</span><span class="p">([]</span><span class="nx">knsenter</span><span class="p">.</span><span class="nx">Namespace</span><span class="p">{</span><span class="nx">netns</span><span class="p">},</span> <span class="nx">fn</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>对接指定 PID 的网络 <code>namespace</code> 的 <code>iptables-nfqueue</code> 时，即可使用如下代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kn">import</span> <span class="s">&#34;github.com/subgraph/go-nfnetlink/nfqueue&#34;</span>
+
+<span class="kd">func</span> <span class="nf">openNfqueue</span><span class="p">(</span><span class="nx">pid</span><span class="p">,</span> <span class="nx">nfqueueNum</span> <span class="kt">int</span><span class="p">)</span> <span class="p">(</span><span class="nx">ch</span> <span class="o">&lt;-</span><span class="kd">chan</span> <span class="o">*</span><span class="nx">nfqueue</span><span class="p">.</span><span class="nx">NFQPacket</span><span class="p">,</span> <span class="nx">err</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">err</span> <span class="p">=</span> <span class="nf">nsenter</span><span class="p">(</span><span class="nx">pid</span><span class="p">,</span> <span class="kd">func</span><span class="p">()</span> <span class="kt">error</span> <span class="p">{</span>
+        <span class="nx">nfq</span> <span class="o">:=</span> <span class="nx">nfqueue</span><span class="p">.</span><span class="nf">NewNFQueue</span><span class="p">(</span><span class="nx">nfqueueNum</span><span class="p">)</span>
+        <span class="nx">ch</span><span class="p">,</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">nfq</span><span class="p">.</span><span class="nf">Open</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nx">err</span>
+    <span class="p">})</span>
+    <span class="k">return</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这段代码的作用是：</p>
+<ol>
+<li>进入到指定 PID 的网络 <code>namespace</code> 里</li>
+<li>监听指定序号的 NFQUEUE</li>
+<li>退出网络 <code>namespace</code></li>
+<li>返回一个网络包 <code>chan</code></li>
+</ol>
+<p>调用 <code>openNfqueue</code> 函数后，从 <code>chan</code> 取到的网络包就是从指定 PID 的网络 <code>namespace</code> 里 NFQUEUE 发过来的网络包。</p>
+<p>这里产生一个疑问：为什么退出网络 <code>namespace</code> 后，用户程序的 NFQUEUE 不会从网络 <code>namespace</code> 里退出呢？</p>
+<h2 id="nsenter-背后的原理">nsenter 背后的原理</h2>
+<p>在阅读内核源代码之前，完全想不明白内核怎么实现 <code>namespace</code> 切换。</p>
+<p><code>iptables-nfqueue</code> 是基于 <code>netlink</code> 跟用户程序进行通信；则在用户程序中，会创建一个 <code>netlink</code> 的 <code>socket fd</code> 去接收 NFQUEUE 发送过来的网络包；则该 <code>socket fd</code> 是怎么跟网络 <code>namespace</code> 绑定到一起的？</p>
+<h3 id="内核是怎么看网络-namespace-的">内核是怎么看网络 <code>namespace</code> 的？</h3>
+<p>其实在内核中，一个网络 <code>namespace</code> 就是一个 <a href="https://github.com/torvalds/linux/blob/master/include/net/net_namespace.h#L57"><code>struct net</code></a>，并采用引用计数来管理 <code>struct net</code> 的生命周期。所以，在创建网络 <code>namespace</code> 后，需要有某个地方引用这个网络 <code>namespace</code>；譬如，使用命令 <code>ip netns add nstest</code> 后，会创建一个文件 <code>/var/run/netns/nstest</code>，并将这个文件的 <code>fd</code> 引用这个网络 <code>namespace</code>。</p>
+<p>在内核中，进程和线程都是使用 <a href="https://github.com/torvalds/linux/blob/master/include/linux/sched.h#L732"><code>struct task_struct</code></a> 来管理，并使用 <code>struct nsproxy</code> 去引用 <code>namespace</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="c1">// https://github.com/torvalds/linux/blob/master/include/linux/nsproxy.h#L31
+</span><span class="c1"></span><span class="k">struct</span> <span class="n">nsproxy</span> <span class="p">{</span>
+	<span class="n">atomic_t</span> <span class="n">count</span><span class="p">;</span>
+	<span class="k">struct</span> <span class="n">uts_namespace</span> <span class="o">*</span><span class="n">uts_ns</span><span class="p">;</span>
+	<span class="k">struct</span> <span class="n">ipc_namespace</span> <span class="o">*</span><span class="n">ipc_ns</span><span class="p">;</span>
+	<span class="k">struct</span> <span class="n">mnt_namespace</span> <span class="o">*</span><span class="n">mnt_ns</span><span class="p">;</span>
+	<span class="k">struct</span> <span class="n">pid_namespace</span> <span class="o">*</span><span class="n">pid_ns_for_children</span><span class="p">;</span>
+	<span class="k">struct</span> <span class="n">net</span>           <span class="o">*</span><span class="n">net_ns</span><span class="p">;</span>
+	<span class="k">struct</span> <span class="n">time_namespace</span> <span class="o">*</span><span class="n">time_ns</span><span class="p">;</span>
+	<span class="k">struct</span> <span class="n">time_namespace</span> <span class="o">*</span><span class="n">time_ns_for_children</span><span class="p">;</span>
+	<span class="k">struct</span> <span class="n">cgroup_namespace</span> <span class="o">*</span><span class="n">cgroup_ns</span><span class="p">;</span>
+<span class="p">};</span>
+</code></pre></td></tr></table>
+</div>
+</div><h3 id="nsenter-函数的实现原理">nsenter 函数的实现原理</h3>
+<p><code>openNfqueue</code> 函数的实现过程如下：</p>
+<ol>
+<li>将当前线程的 <code>nsproxy-&gt;net_ns</code> 指向目标网络 <code>namespace</code></li>
+<li>创建 <code>netlink socket</code>，使得 <code>socket fd</code> 引用目标网络 <code>namespace</code></li>
+<li>将当前线程的 <code>nsproxy-&gt;net_ns</code> 指向原来的网络 <code>namespace</code></li>
+</ol>
+<p><img src="/golang%20nsenter%20procedure.png" alt="Go nsenter procedure"></p>
+<h2 id="nsenter-的源代码分析">nsenter 的源代码分析</h2>
+<p>以 <code>openNfqueue</code> Go 函数为例，翻开内核源代码看看 <code>nsenter</code> 涉及的源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// https://github.com/kata-containers/runtime/blob/master/virtcontainers/pkg/nsenter/nsenter.go#L101
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">unix</span><span class="p">.</span><span class="nf">Setns</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nx">nsFile</span><span class="p">.</span><span class="nf">Fd</span><span class="p">()),</span> <span class="nx">nsFlag</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;Error switching to ns %v: %v&#34;</span><span class="p">,</span> <span class="nx">nsFile</span><span class="p">.</span><span class="nf">Name</span><span class="p">(),</span> <span class="nx">err</span><span class="p">)</span>
+	<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>最终调用的是 <code>setns</code> 系统调用。</p>
+<h3 id="setns-系统调用">setns 系统调用</h3>
+<p><code>setns</code> 系统调用的文档：<a href="https://man7.org/linux/man-pages/man2/setns.2.html">setns(2)</a>。</p>
+<p>接着，暴力翻看 <code>setns</code> 系统调用的源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="n">SYSCALL_DEFINE2</span><span class="p">(</span><span class="n">setns</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span> <span class="c1">// kernel/nsproxy.c
+</span><span class="c1"></span><span class="o">|--&gt;</span><span class="n">file</span> <span class="o">=</span> <span class="n">fget</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+<span class="o">|--&gt;</span><span class="n">ns</span> <span class="o">=</span> <span class="n">get_proc_ns</span><span class="p">(</span><span class="n">file_inode</span><span class="p">(</span><span class="n">file</span><span class="p">));</span> <span class="c1">// 根据 fd 获取对应的 namespace
+</span><span class="c1"></span><span class="o">|--&gt;</span><span class="n">prepare_nsset</span><span class="p">(</span><span class="n">flags</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">nsset</span><span class="p">);</span>
+<span class="o">|--&gt;</span><span class="n">validate_ns</span><span class="p">(</span><span class="o">&amp;</span><span class="n">nsset</span><span class="p">,</span> <span class="n">ns</span><span class="p">);</span>
+<span class="o">|</span>   <span class="o">|--&gt;</span><span class="n">ns</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="n">install</span><span class="p">(</span><span class="n">nsset</span><span class="p">,</span> <span class="n">ns</span><span class="p">);</span>
+<span class="o">|</span>    \
+<span class="o">|</span>     \
+<span class="o">|</span>      \
+<span class="o">|</span>       <span class="o">|--&gt;</span><span class="n">netns_install</span><span class="p">(</span><span class="k">struct</span> <span class="n">nsproxy</span> <span class="o">*</span><span class="n">nsproxy</span><span class="p">,</span> <span class="k">struct</span> <span class="n">ns_common</span> <span class="o">*</span><span class="n">ns</span><span class="p">)</span> <span class="c1">// net/core/net_namespace.c
+</span><span class="c1"></span><span class="o">|</span>           <span class="o">|--&gt;</span><span class="n">put_net</span><span class="p">(</span><span class="n">nsproxy</span><span class="o">-&gt;</span><span class="n">net_ns</span><span class="p">);</span> <span class="c1">// 减少一个网络 namespace 引用
+</span><span class="c1"></span><span class="o">|</span>           <span class="o">|--&gt;</span><span class="n">nsproxy</span><span class="o">-&gt;</span><span class="n">net_ns</span> <span class="o">=</span> <span class="n">get_net</span><span class="p">(</span><span class="n">net</span><span class="p">);</span> <span class="c1">// 增加一个网络 namespace 引用，并且变更 nsproxy-&gt;net_ns 为目标网络 namespace
+</span><span class="c1"></span><span class="o">|--&gt;</span><span class="n">commit_nsset</span><span class="p">(</span><span class="o">&amp;</span><span class="n">nsset</span><span class="p">);</span>
+    <span class="o">|--&gt;</span><span class="n">switch_task_namespaces</span><span class="p">(</span><span class="n">me</span><span class="p">,</span> <span class="n">nsset</span><span class="o">-&gt;</span><span class="n">nsproxy</span><span class="p">);</span>
+        <span class="o">|--&gt;</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">nsproxy</span> <span class="o">=</span> <span class="n">new</span><span class="p">;</span> <span class="c1">// 变更当前 task_struct-&gt;nsproxy 为新的 nsproxy，新的 nsproxy-&gt;net_ns 引用了目标网络 namespace
+</span></code></pre></td></tr></table>
+</div>
+</div><p><code>setns</code> 实现的功能就是将当前线程引用的 <code>namespace</code> 引用目标 <code>namespace</code>。</p>
+<h3 id="socket-系统调用">socket 系统调用</h3>
+<p>跟踪 <code>nfqueue.NewNFQueue(nfqueueNum)</code> 函数的实现，最终会调用 <code>syscall.Socket</code> 系统调用去创建一个 <code>socket fd</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// https://github.com/subgraph/go-nfnetlink/blob/master/nfnl_sock.go#L69
+</span><span class="c1"></span><span class="kd">func</span> <span class="nf">NewNetlinkSocket</span><span class="p">(</span><span class="nx">bus</span> <span class="kt">int</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">NetlinkSocket</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+	<span class="nx">fd</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">syscall</span><span class="p">.</span><span class="nf">Socket</span><span class="p">(</span><span class="nx">syscall</span><span class="p">.</span><span class="nx">AF_NETLINK</span><span class="p">,</span> <span class="nx">syscall</span><span class="p">.</span><span class="nx">SOCK_RAW</span><span class="p">,</span> <span class="nx">bus</span><span class="p">)</span>
+	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span>
+	<span class="p">}</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><code>socket</code> 系统调用的文档：<a href="https://man7.org/linux/man-pages/man2/socket.2.html">socket(2)</a>。</p>
+<p>暴力翻看 <code>socket</code> 系统调用的源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="n">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">socket</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">protocol</span><span class="p">)</span> <span class="c1">// net/socket.c
+</span><span class="c1"></span><span class="o">|--&gt;</span><span class="n">__sys_socket</span><span class="p">(</span><span class="n">family</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="n">protocol</span><span class="p">);</span>
+    <span class="o">|--&gt;</span><span class="n">sock_create</span><span class="p">(</span><span class="n">family</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="n">protocol</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sock</span><span class="p">);</span>
+    <span class="o">|</span>   <span class="o">|--&gt;</span><span class="n">__sock_create</span><span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">nsproxy</span><span class="o">-&gt;</span><span class="n">net_ns</span><span class="p">,</span> <span class="n">family</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span> <span class="n">protocol</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span> <span class="c1">// 拿到当前的 task_struct-&gt;nsproxy-&gt;net_ns 所引用的网络 namespace
+</span><span class="c1"></span>    <span class="o">|</span>       <span class="o">|--&gt;</span><span class="n">pf</span> <span class="o">=</span> <span class="n">rcu_dereference</span><span class="p">(</span><span class="n">net_families</span><span class="p">[</span><span class="n">family</span><span class="p">]);</span>
+    <span class="o">|</span>       <span class="o">|--&gt;</span><span class="n">pf</span><span class="o">-&gt;</span><span class="n">create</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">protocol</span><span class="p">,</span> <span class="n">kern</span><span class="p">);</span> <span class="c1">// 以 netlink socket 为例，看下创建 socket 的时候是 socket 哪个属性引用网络 namespace 的
+</span><span class="c1"></span>    <span class="o">|</span>      <span class="o">/</span>
+    <span class="o">|</span>     <span class="o">/</span>
+    <span class="o">|</span>    <span class="o">/</span>
+    <span class="o">|</span>   <span class="o">|--&gt;</span><span class="n">netlink_create</span><span class="p">(</span><span class="k">struct</span> <span class="n">net</span> <span class="o">*</span><span class="n">net</span><span class="p">,</span> <span class="k">struct</span> <span class="n">socket</span> <span class="o">*</span><span class="n">sock</span><span class="p">,</span> <span class="kt">int</span> <span class="n">protocol</span><span class="p">,</span> <span class="kt">int</span> <span class="n">kern</span><span class="p">)</span> <span class="c1">// net/netlink/af_netlink.c
+</span><span class="c1"></span>    <span class="o">|</span>       <span class="o">|--&gt;</span><span class="n">__netlink_create</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">cb_mutex</span><span class="p">,</span> <span class="n">protocol</span><span class="p">,</span> <span class="n">kern</span><span class="p">);</span>
+    <span class="o">|</span>           <span class="o">|--&gt;</span><span class="n">sk</span> <span class="o">=</span> <span class="n">sk_alloc</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">PF_NETLINK</span><span class="p">,</span> <span class="n">GFP_KERNEL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">netlink_proto</span><span class="p">,</span> <span class="n">kern</span><span class="p">);</span> <span class="c1">// net/core/sock.c
+</span><span class="c1"></span>    <span class="o">|</span>           <span class="o">|</span>   <span class="o">|--&gt;</span><span class="n">sock_net_set</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">net</span><span class="p">);</span> <span class="c1">// include/net/sock.h
+</span><span class="c1"></span>    <span class="o">|</span>           <span class="o">|</span>       <span class="o">|--&gt;</span><span class="n">write_pnet</span><span class="p">(</span><span class="o">&amp;</span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_net</span><span class="p">,</span> <span class="n">net</span><span class="p">);</span> <span class="c1">// include/net/net_namespace.h
+</span><span class="c1"></span>    <span class="o">|</span>           <span class="o">|</span>           <span class="o">|--&gt;</span><span class="n">pnet</span><span class="o">-&gt;</span><span class="n">net</span> <span class="o">=</span> <span class="n">net</span><span class="p">;</span>
+    <span class="o">|</span>           <span class="o">|--&gt;</span><span class="n">sock_init_data</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span> <span class="n">sk</span><span class="p">);</span>
+    <span class="o">|</span>               <span class="o">|--&gt;</span><span class="n">sock</span><span class="o">-&gt;</span><span class="n">sk</span> <span class="o">=</span> <span class="n">sk</span><span class="p">;</span> <span class="c1">// net/core/sock.c
+</span><span class="c1"></span>    <span class="o">|--&gt;</span><span class="n">sock_map_fd</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span> <span class="n">flags</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">O_CLOEXEC</span> <span class="o">|</span> <span class="n">O_NONBLOCK</span><span class="p">));</span> <span class="c1">// 保存 struct socket 跟 fd 的映射关系
+</span></code></pre></td></tr></table>
+</div>
+</div><p>最终，一个 <code>socket fd</code> 引用网络 <code>namespace</code> 的地方是 <code>struct socket-&gt;struct sock-&gt;sk_net.net</code>。</p>
+<h3 id="nsenter-函数退出时">nsenter 函数退出时</h3>
+<p>查看<a href="https://github.com/kata-containers/runtime/blob/master/virtcontainers/pkg/nsenter/nsenter.go#L168"> <code>NsEnter</code> 函数</a>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="c1">// https://github.com/kata-containers/runtime/blob/master/virtcontainers/pkg/nsenter/nsenter.go#L168
+</span><span class="c1"></span>		<span class="k">for</span> <span class="nx">nsType</span><span class="p">,</span> <span class="nx">pair</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">targetNSList</span> <span class="p">{</span>
+			<span class="c1">// Switch to targeted namespace.
+</span><span class="c1"></span>			<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">setNS</span><span class="p">(</span><span class="nx">pair</span><span class="p">.</span><span class="nx">targetNS</span><span class="p">,</span> <span class="nx">nsType</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+				<span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;error switching to ns %v: %v&#34;</span><span class="p">,</span> <span class="nx">pair</span><span class="p">.</span><span class="nx">targetNS</span><span class="p">.</span><span class="nf">Name</span><span class="p">(),</span> <span class="nx">err</span><span class="p">)</span>
+			<span class="p">}</span>
+			<span class="c1">// Switch back to initial namespace after closure return.
+</span><span class="c1"></span>			<span class="k">defer</span> <span class="nf">setNS</span><span class="p">(</span><span class="nx">pair</span><span class="p">.</span><span class="nx">threadNS</span><span class="p">,</span> <span class="nx">nsType</span><span class="p">)</span>
+		<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>从这段代码可知，在函数退出时（<code>defer setNS</code>），会将当前线程发生变更的 <code>namespace</code> 恢复回原来的 <code>namespace</code>。<code>setNS</code> 函数是对 <code>setns</code> 系统调用的封装。</p>
+<h2 id="小结">小结</h2>
+<p>至此，<code>nsenter</code> 再无秘密。</p>
+<p>揭开 <code>nsenter</code> 的神秘面纱后，发现 <code>nsenter</code> 在项目中的用武之地还真不少，就是因为它带给用户程序处理跨 <code>namespace</code> 的能力。</p>
+<h2 id="总结">总结</h2>
+<p>经历了几次带着问题来查看源代码的过程，既能提升阅读源代码的能力，也扎实了计算机基础知识；特别是在阅读源代码解决了问题之后的那感觉，真美好。</p>
+<p>阅读内核源代码的工具推荐：</p>
+<ul>
+<li><a href="https://code.woboq.org/linux/linux">code.woboq.org </a> 支持函数直接跳转，但版本相对旧了点</li>
+<li><a href="https://elixir.bootlin.com">elixir.bootlin.com </a> 支持多个内核版本，但不支持函数直接跳转</li>
+</ul>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Huayra</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2022-01-22
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/linux/">Linux</a>
+          <a href="/tags/linux-namespace/">Linux namespace</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/linux-how-tproxy-works/">
+            <span class="next-text nav-default">一文吃透 Linux TProxy 透明代理</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Huayra</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-X2X9EP3K14', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
