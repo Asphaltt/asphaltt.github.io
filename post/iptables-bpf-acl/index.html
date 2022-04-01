@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>demo for 「eBPF 技术实践：高性能 ACL」 - LeonHuayra&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="Leon Huayra" /><meta name="description" content="在阅读了字节跳动发出的公众号文章 eBPF 技术实践：高性能 ACL 后，对其中提出的 O(1) 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，" /><meta name="keywords" content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/iptables-bpf-acl/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="demo for 「eBPF 技术实践：高性能 ACL」" />
+<meta property="og:description" content="在阅读了字节跳动发出的公众号文章 eBPF 技术实践：高性能 ACL 后，对其中提出的 O(1) 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/iptables-bpf-acl/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2022-04-01T21:14:32+08:00" />
+<meta property="article:modified_time" content="2022-04-01T21:14:32+08:00" />
+
+<meta itemprop="name" content="demo for 「eBPF 技术实践：高性能 ACL」">
+<meta itemprop="description" content="在阅读了字节跳动发出的公众号文章 eBPF 技术实践：高性能 ACL 后，对其中提出的 O(1) 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，"><meta itemprop="datePublished" content="2022-04-01T21:14:32+08:00" />
+<meta itemprop="dateModified" content="2022-04-01T21:14:32+08:00" />
+<meta itemprop="wordCount" content="1231">
+<meta itemprop="keywords" content="iptables,iptables-bpf,eBPF," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="demo for 「eBPF 技术实践：高性能 ACL」"/>
+<meta name="twitter:description" content="在阅读了字节跳动发出的公众号文章 eBPF 技术实践：高性能 ACL 后，对其中提出的 O(1) 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Huayra&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Huayra&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">demo for 「eBPF 技术实践：高性能 ACL」</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-04-01 </span>
+        <div class="post-category">
+            <a href="/categories/iptables/"> iptables </a>
+            <a href="/categories/ebpf/"> eBPF </a>
+            </div>
+          <span class="more-meta"> 约 1231 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#算法解读">算法解读</a>
+          <ul>
+            <li><a href="#iptables-规则映射">iptables 规则映射</a></li>
+            <li><a href="#规则映射例子">规则映射例子</a></li>
+          </ul>
+        </li>
+        <li><a href="#demo-效果">demo 效果</a></li>
+        <li><a href="#demo-系统环境">demo 系统环境</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>在阅读了字节跳动发出的公众号文章 <a href="https://mp.weixin.qq.com/s/25mhUrNhF3HW8H6-ES7waA">eBPF 技术实践：高性能 ACL</a> 后，对其中提出的 <strong>O(1)</strong> 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，迫不及待地写了这个小 demo 来验证该算法。</p>
+<blockquote>
+<p>源代码：<a href="https://github.com/Asphaltt/learn-by-example/tree/main/ebpf-acl">github.com/Asphaltt/learn-by-example/ebpf-acl</a></p>
+</blockquote>
+<h2 id="算法解读">算法解读</h2>
+<p>以本 demo 为例，在 iptables 中禁止对 1.1.1.1 这个 IP 进行 ping。则需要使用如下 iptables 规则：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -I OUTPUT -m bpf --object-pinned /sys/fs/bpf/ipt_acl -j DROP
+</code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>该 iptables 规则的理解请参考： <a href="https://asphaltt.github.io/post/iptables-bpf/">该如此玩转 iptables-bpf</a></p>
+</blockquote>
+<p>对其中的 eBPF 程序使用大小为 4 的 bitmap 进行解读。</p>
+<h3 id="iptables-规则映射">iptables 规则映射</h3>
+<p>在该算法中，每条规则的 ID 使用一个比特来表示。则第一条规则的 ID 如下：</p>
+<p><img src="/ebpf-acl-policy-id.jpg" alt="policy ID"></p>
+<p>对于源 IP，使用一个 eBPF map 保存源 IP 到规则 ID 的映射关系；如果多条规则使用到同一个源 IP，则将这些规则的 ID 进行位或操作、并保存到 eBPF map 中。对于目的 IP 进行类似的处理。</p>
+<p>对于 TCP、UDP、ICMP 等网络协议的处理，可采用类似的处理方式。在本 demo 中忽略对网络协议的映射处理。</p>
+<p>最后，使用一个 eBPF map 保存规则 ID 到规则动作的映射关系。</p>
+<p>匹配步骤如下：</p>
+<ol>
+<li>使用网络包中的源 IP 作为 key，到源 IP map 中查询得到结果 result1</li>
+<li>使用网络包中的目的 IP 作为 key，到目的 IP map 中查询得到结果 result2</li>
+<li>将它们按位与操作，result1&amp;result2 得到结果 result；此处注意，如果 result 中有多个比特为 1，则取最左侧比特为 1 作为最终结果，表示拿到优先级最高的那一条规则（一个比特位代表一条规则）</li>
+<li>将 result 作为 key，到规则 map 中查询得到最终结果</li>
+</ol>
+<h3 id="规则映射例子">规则映射例子</h3>
+<p>假如有 4 条 iptables 规则：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -A OUTPUT -s 192.168.1.113 -d 1.1.1.1 -p icmp -j DROP    <span class="c1"># rule1 =&gt; 0b0001</span>
+iptables -A OUTPUT -s 192.168.2.113 -d 8.8.8.8 -p icmp -j ACCEPT  <span class="c1"># rule2 =&gt; 0b0010</span>
+iptables -A OUTPUT -s 192.168.1.113 -d 8.8.8.8 -p icmp -j ACCEPT  <span class="c1"># rule3 =&gt; 0b0100</span>
+iptables -A OUTPUT -s 192.168.2.113 -d 1.1.1.1 -p icmp -j DROP    <span class="c1"># rule4 =&gt; 0b1000</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>对 iptables 规则进行预处理：</p>
+<p><img src="/ebpf-acl-prehandling.png" alt="rule prehandling"></p>
+<p>在 IP 为 192.168.2.113 的容器中 ping 1.1.1.1 的匹配过程如下：</p>
+<p><img src="/ebpf-acl-matching.png" alt="policy matching"></p>
+<h2 id="demo-效果">demo 效果</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># ping -c4 -W1 1.1.1.1</span>
+PING 1.1.1.1 <span class="o">(</span>1.1.1.1<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.910 ms
+<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.783 ms
+<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">3</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.936 ms
+<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">4</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.787 ms
+
+--- 1.1.1.1 ping statistics ---
+<span class="m">4</span> packets transmitted, <span class="m">4</span> received, 0% packet loss, <span class="nb">time</span> 3012ms
+rtt min/avg/max/mdev <span class="o">=</span> 0.783/0.854/0.936/0.069 ms
+
+<span class="c1"># make</span>
+clang -I./ebpf/headers -O2 -g -target bpf -c ebpf/acl.c  -o iptables-ebpf-acl.elf
+go build -v -trimpath -o iptables-ebpf-acl main.go
+
+<span class="c1"># make setup</span>
+bpftool prog load iptables-ebpf-acl.elf /sys/fs/bpf/ipt_acl
+libbpf: elf: skipping unrecognized data section<span class="o">(</span>6<span class="o">)</span> .rodata.str1.1
+iptables -I OUTPUT -m bpf --object-pinned /sys/fs/bpf/ipt_acl -j DROP
+
+<span class="c1"># ./iptables-ebpf-acl -s 149.28.xxx.yyy -d 1.1.1.1</span>
+2022/03/30 14:41:31 Found maps: map<span class="o">[</span>filter_daddrs:55 filter_rules:56 filter_saddrs:54<span class="o">]</span>
+2022/03/30 14:41:31 149.28.xxx.yyy -&gt; 1.1.1.1 is disallowed to be pinged
+
+<span class="c1"># ping -c4 -W1 1.1.1.1</span>
+PING 1.1.1.1 <span class="o">(</span>1.1.1.1<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+
+--- 1.1.1.1 ping statistics ---
+<span class="m">4</span> packets transmitted, <span class="m">0</span> received, 100% packet loss, <span class="nb">time</span> 3075ms
+
+<span class="c1"># make clean</span>
+rm -f iptables-ebpf-acl.elf
+rm -f iptables-ebpf-acl
+iptables -D OUTPUT -m bpf --object-pinned /sys/fs/bpf/ipt_acl -j DROP
+rm -f /sys/fs/bpf/ipt_acl
+
+<span class="c1"># ping -c4 -W1 1.1.1.1</span>
+PING 1.1.1.1 <span class="o">(</span>1.1.1.1<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>1.64 ms
+<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.841 ms
+<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">3</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.906 ms
+<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">4</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>3.26 ms
+
+--- 1.1.1.1 ping statistics ---
+<span class="m">4</span> packets transmitted, <span class="m">4</span> received, 0% packet loss, <span class="nb">time</span> 3021ms
+rtt min/avg/max/mdev <span class="o">=</span> 0.841/1.661/3.257/0.973 ms
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="demo-系统环境">demo 系统环境</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># lsb_release -a</span>
+No LSB modules are available.
+Distributor ID: Ubuntu
+Description:    Ubuntu 21.10
+Release:        21.10
+Codename:       impish
+
+<span class="c1"># uname -a</span>
+Linux vultr 5.13.0-28-generic <span class="c1">#31-Ubuntu SMP Thu Jan 13 17:41:06 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="小结">小结</h2>
+<p>诚如该公众号文章所说，该匹配算法并不局限于 iptables xt_bpf，而能够适用于任何使用 eBPF 匹配网络包的场景，譬如 XDP、TC，甚至是 Open vSwitch 中基于 eBPF 的扩展。</p>
+<p>看似完美的 <strong>O(1)</strong> 匹配算法，却有一个<em>致命</em>的缺陷：保存规则的 bitmap 有长度限制，在使用的时候就需要预估好 bitmap 的大小且无法动态扩容。比如，保存 1024 条规则需要使用 128 字节大小的 bitmap。然而，看似<em>致命</em>，但大部分场景使用的规则数量都不会超过 100 条。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Huayra</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2022-04-01
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/iptables/">iptables</a>
+          <a href="/tags/iptables-bpf/">iptables-bpf</a>
+          <a href="/tags/ebpf/">eBPF</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/linux-how-nsenter-works/">
+            <span class="next-text nav-default">一文吃透 Linux nsenter</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Huayra</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-X2X9EP3K14', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

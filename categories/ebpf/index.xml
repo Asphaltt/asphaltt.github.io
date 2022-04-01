@@ -6,7 +6,16 @@
     <description>Recent content in eBPF on LeonHuayra&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 19 Dec 2021 16:50:09 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 01 Apr 2022 21:14:32 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>demo for 「eBPF 技术实践：高性能 ACL」</title>
+      <link>https://asphaltt.github.io/post/iptables-bpf-acl/</link>
+      <pubDate>Fri, 01 Apr 2022 21:14:32 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/iptables-bpf-acl/</guid>
+      <description>在阅读了字节跳动发出的公众号文章 eBPF 技术实践：高性能 ACL 后，对其中提出的 O(1) 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，</description>
+    </item>
+    
     <item>
       <title>在内核模块里运行 bpf 程序</title>
       <link>https://asphaltt.github.io/post/kernel-module-with-bpf/</link>
