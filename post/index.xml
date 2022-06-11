@@ -6,7 +6,16 @@
     <description>Recent content in Posts on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 01 Apr 2022 21:14:32 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 11 Jun 2022 14:35:17 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>为 eBPF 程序注入黑魔法</title>
+      <link>https://asphaltt.github.io/post/ebpf-black-magic/</link>
+      <pubDate>Sat, 11 Jun 2022 14:35:17 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-black-magic/</guid>
+      <description>在 Kubernetes 集群环境下，如果跨节点的 Pod 需要组成多个 VPC 网络，使用 eBPF 的时候，该如何在 CNI 层面动态地为每个 Pod 分配 VXLAN VNI 或者 VLAN ID 呢？ 一个简单可行的办法是，每次 CNI</description>
+    </item>
+    
     <item>
       <title>demo for 「eBPF 技术实践：高性能 ACL」</title>
       <link>https://asphaltt.github.io/post/iptables-bpf-acl/</link>
