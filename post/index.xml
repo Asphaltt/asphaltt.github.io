@@ -6,7 +6,16 @@
     <description>Recent content in Posts on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 11 Jun 2022 14:35:17 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 24 Aug 2022 22:09:42 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>为 eBPF 程序注入黑魔法 【正确姿势】</title>
+      <link>https://asphaltt.github.io/post/ebpf-black-magic-correct/</link>
+      <pubDate>Wed, 24 Aug 2022 22:09:42 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-black-magic-correct/</guid>
+      <description>为 eBPF 程序注入黑魔法 【错误姿势】 中提出的在加载阶段中动态变更常量值的办法并不可靠，毕竟在 cilium/ebpf 中已提供了重写常量的函数 RewriteConstan</description>
+    </item>
+    
     <item>
       <title>为 eBPF 程序注入黑魔法 【错误姿势】</title>
       <link>https://asphaltt.github.io/post/ebpf-black-magic/</link>

@@ -3,42 +3,49 @@
   
   <url>
     <loc>https://asphaltt.github.io/categories/</loc>
-    <lastmod>2022-06-11T14:35:17+08:00</lastmod>
+    <lastmod>2022-08-24T22:09:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/ebpf/</loc>
-    <lastmod>2022-06-11T14:35:17+08:00</lastmod>
+    <lastmod>2022-08-24T22:09:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf/</loc>
-    <lastmod>2022-06-11T14:35:17+08:00</lastmod>
+    <lastmod>2022-08-24T22:09:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/</loc>
-    <lastmod>2022-06-11T14:35:17+08:00</lastmod>
+    <lastmod>2022-08-24T22:09:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/post/</loc>
-    <lastmod>2022-06-11T14:35:17+08:00</lastmod>
+    <lastmod>2022-08-24T22:09:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/</loc>
-    <lastmod>2022-06-11T14:35:17+08:00</lastmod>
+    <lastmod>2022-08-24T22:09:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/ebpf-black-magic-correct/</loc>
+    <lastmod>2022-08-24T22:09:42+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>

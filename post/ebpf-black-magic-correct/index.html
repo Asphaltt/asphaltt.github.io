@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>为 eBPF 程序注入黑魔法 【正确姿势】 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author" content="Leon Hwang" /><meta name="description" content="为 eBPF 程序注入黑魔法 【错误姿势】 中提出的在加载阶段中动态变更常量值的办法并不可靠，毕竟在 cilium/ebpf 中已提供了重写常量的函数 RewriteConstan" /><meta name="keywords" content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-black-magic-correct/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="为 eBPF 程序注入黑魔法 【正确姿势】" />
+<meta property="og:description" content="为 eBPF 程序注入黑魔法 【错误姿势】 中提出的在加载阶段中动态变更常量值的办法并不可靠，毕竟在 cilium/ebpf 中已提供了重写常量的函数 RewriteConstan" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-black-magic-correct/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2022-08-24T22:09:42+08:00" />
+<meta property="article:modified_time" content="2022-08-24T22:09:42+08:00" />
+
+<meta itemprop="name" content="为 eBPF 程序注入黑魔法 【正确姿势】">
+<meta itemprop="description" content="为 eBPF 程序注入黑魔法 【错误姿势】 中提出的在加载阶段中动态变更常量值的办法并不可靠，毕竟在 cilium/ebpf 中已提供了重写常量的函数 RewriteConstan"><meta itemprop="datePublished" content="2022-08-24T22:09:42+08:00" />
+<meta itemprop="dateModified" content="2022-08-24T22:09:42+08:00" />
+<meta itemprop="wordCount" content="1263">
+<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="为 eBPF 程序注入黑魔法 【正确姿势】"/>
+<meta name="twitter:description" content="为 eBPF 程序注入黑魔法 【错误姿势】 中提出的在加载阶段中动态变更常量值的办法并不可靠，毕竟在 cilium/ebpf 中已提供了重写常量的函数 RewriteConstan"/>
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">为 eBPF 程序注入黑魔法 【正确姿势】</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-08-24 </span>
+        <div class="post-category">
+            <a href="/categories/ebpf/"> eBPF </a>
+            </div>
+          <span class="more-meta"> 约 1263 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#重写常量的简单例子">重写常量的简单例子</a></li>
+        <li><a href="#重写常量的实用方法">重写常量的实用方法</a></li>
+        <li><a href="#常量被重写的本质">常量被重写的“本质”</a></li>
+        <li><a href="#小结">小结</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p><a href="./ebpf-black-magic/">为 eBPF 程序注入黑魔法 【错误姿势】</a> 中提出的在加载阶段中动态变更常量值的办法并不可靠，毕竟在
+<a href="https://pkg.go.dev/github.com/cilium/ebpf#CollectionSpec.RewriteConstants">cilium/ebpf</a>
+中已提供了重写常量的函数
+<a href="https://pkg.go.dev/github.com/cilium/ebpf#CollectionSpec.RewriteConstants">RewriteConstants</a>。</p>
+<h2 id="重写常量的简单例子">重写常量的简单例子</h2>
+<p><a href="https://github.com/Asphaltt/tc-dump">tc-dump</a> 是一个使用 <code>tc-bpf</code> 获取网络包信息的工具，支持过滤 IP 地址、端口、4 层协议；比如过滤 IP 地址时，eBPF 中使用的是</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">static</span> <span class="k">volatile</span> <span class="k">const</span> <span class="n">__be32</span> <span class="n">FILTER_ADDR</span><span class="p">;</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>Go 中使用如下写法去支持动态的 IP 地址过滤：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="kd">var</span> <span class="nx">filterAddr</span> <span class="kt">string</span>
+	<span class="nx">flag</span><span class="p">.</span><span class="nf">StringVar</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">filterAddr</span><span class="p">,</span> <span class="s">&#34;filter-addr&#34;</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="s">&#34;filter IP address&#34;</span><span class="p">)</span>
+	<span class="nx">flag</span><span class="p">.</span><span class="nf">Parse</span><span class="p">()</span>
+
+	<span class="nx">ip</span> <span class="o">:=</span> <span class="nx">netip</span><span class="p">.</span><span class="nf">MustParseAddr</span><span class="p">(</span><span class="nx">filterAddr</span><span class="p">)</span>
+	<span class="c1">// if !ip.Is4() { ... }
+</span><span class="c1"></span>
+	<span class="nx">spec</span><span class="p">.</span><span class="nf">RewriteConstants</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}</span> <span class="p">{</span>
+		<span class="s">&#34;FILTER_ADDR&#34;</span><span class="p">:</span> <span class="nx">ip</span><span class="p">.</span><span class="nf">As4</span><span class="p">(),</span>
+	<span class="p">})</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="重写常量的实用方法">重写常量的实用方法</h2>
+<p>但在 <code>tc-dump</code> 中，并没有使用 N 个常量去支持过滤 IP 地址、端口、4 层协议等，而是使用了一个 <code>struct</code> 去封装了所有需要过滤的字段。这样一来，相关代码就变得比较简洁、易于理解了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">config_t</span> <span class="p">{</span>
+	<span class="n">__be16</span> <span class="n">vlan_id</span><span class="p">;</span>
+	<span class="n">__be32</span> <span class="n">vxlan_vni</span><span class="p">;</span>
+
+	<span class="n">u32</span> <span class="n">mark</span><span class="p">;</span>
+
+	<span class="n">__be32</span> <span class="n">saddr</span><span class="p">;</span>
+	<span class="n">__be32</span> <span class="n">daddr</span><span class="p">;</span>
+	<span class="n">__be32</span> <span class="n">addr</span><span class="p">;</span>
+	<span class="n">__be16</span> <span class="n">sport</span><span class="p">;</span>
+	<span class="n">__be16</span> <span class="n">dport</span><span class="p">;</span>
+	<span class="n">__be16</span> <span class="n">port</span><span class="p">;</span>
+
+	<span class="n">u8</span> <span class="n">l4_proto</span><span class="p">;</span>
+	<span class="n">u8</span> <span class="n">pad1</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
+<span class="p">}</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">))</span> <span class="n">config_t</span><span class="p">;</span>
+
+<span class="k">static</span> <span class="k">volatile</span> <span class="k">const</span> <span class="n">config_t</span> <span class="n">__cfg</span> <span class="o">=</span> <span class="p">{};</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>而在 Go 中，也使用一个 <code>struct</code> 去提供“常量”内容。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="kd">type</span> <span class="nx">config</span> <span class="kd">struct</span> <span class="p">{</span>
+	<span class="nx">VlanID</span>   <span class="kt">uint16</span>
+	<span class="nx">VxlanVNI</span> <span class="kt">uint32</span>
+
+	<span class="nx">Mark</span> <span class="kt">uint32</span>
+
+	<span class="nx">Saddr</span> <span class="kt">uint32</span>
+	<span class="nx">Daddr</span> <span class="kt">uint32</span>
+	<span class="nx">Addr</span>  <span class="kt">uint32</span>
+	<span class="nx">Sport</span> <span class="kt">uint16</span>
+	<span class="nx">Dport</span> <span class="kt">uint16</span>
+	<span class="nx">Port</span>  <span class="kt">uint16</span>
+
+	<span class="nx">L4Proto</span> <span class="kt">uint8</span>
+	<span class="nx">Pad</span>     <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="kt">uint8</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="c1">// ...
+</span><span class="c1"></span>
+	<span class="nx">flags</span> <span class="o">:=</span> <span class="nf">parseFlags</span><span class="p">()</span>
+	<span class="nx">cfg</span> <span class="o">:=</span> <span class="nf">newConfig</span><span class="p">(</span><span class="nx">flags</span><span class="p">)</span>
+
+	<span class="nx">rewriteConst</span> <span class="o">:=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}{</span>
+		<span class="s">&#34;__cfg&#34;</span><span class="p">:</span> <span class="o">*</span><span class="nx">cfg</span><span class="p">,</span>
+	<span class="p">}</span>
+
+	<span class="c1">// ...
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="常量被重写的本质">常量被重写的“本质”</h2>
+<p>其本质是内存替换，即替换需要被重写的常量对应的那一段内存。</p>
+<p>以下为
+<a href="https://pkg.go.dev/github.com/cilium/ebpf#CollectionSpec.RewriteConstants">RewriteConstants</a>
+函数的源代码剖析。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="kd">func</span> <span class="p">(</span><span class="nx">cs</span> <span class="o">*</span><span class="nx">CollectionSpec</span><span class="p">)</span> <span class="nf">RewriteConstants</span><span class="p">(</span><span class="nx">consts</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
+	<span class="nx">rodata</span> <span class="o">:=</span> <span class="nx">cs</span><span class="p">.</span><span class="nx">Maps</span><span class="p">[</span><span class="s">&#34;.rodata&#34;</span><span class="p">]</span> <span class="c1">// 常量是保存在 ELF .rodata secion 中
+</span><span class="c1"></span>	<span class="c1">// ...
+</span><span class="c1"></span>
+	<span class="nx">kv</span> <span class="o">:=</span> <span class="nx">rodata</span><span class="p">.</span><span class="nx">Contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+	<span class="nx">value</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">kv</span><span class="p">.</span><span class="nx">Value</span><span class="p">.([]</span><span class="kt">byte</span><span class="p">)</span>
+	<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;first value in .rodata is %T not []byte&#34;</span><span class="p">,</span> <span class="nx">kv</span><span class="p">.</span><span class="nx">Value</span><span class="p">)</span>
+	<span class="p">}</span>
+
+	<span class="nx">buf</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span> <span class="c1">// 准备一段新的 buffer
+</span><span class="c1"></span>	<span class="nb">copy</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">value</span><span class="p">)</span> <span class="c1">// 复制原有的内容，毕竟不确定是否 patch 所有常量
+</span><span class="c1"></span>
+	<span class="nx">err</span> <span class="o">:=</span> <span class="nf">patchValue</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">rodata</span><span class="p">.</span><span class="nx">Value</span><span class="p">,</span> <span class="nx">consts</span><span class="p">)</span> <span class="c1">// 使用提供的常量进行替换
+</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+		<span class="k">return</span> <span class="nx">err</span>
+	<span class="p">}</span>
+
+	<span class="nx">rodata</span><span class="p">.</span><span class="nx">Contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">=</span> <span class="nx">MapKV</span><span class="p">{</span><span class="nx">kv</span><span class="p">.</span><span class="nx">Key</span><span class="p">,</span> <span class="nx">buf</span><span class="p">}</span> <span class="c1">// 使用替换后的 buffer
+</span><span class="c1"></span>	<span class="k">return</span> <span class="kc">nil</span>
+<span class="p">}</span>
+
+<span class="kd">func</span> <span class="nf">patchValue</span><span class="p">(</span><span class="nx">value</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span> <span class="nx">typ</span> <span class="nx">btf</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span> <span class="nx">replacements</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
+	<span class="nx">replaced</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">bool</span><span class="p">)</span>
+	<span class="nx">replace</span> <span class="o">:=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">offset</span><span class="p">,</span> <span class="nx">size</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">replacement</span> <span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="nx">offset</span><span class="o">+</span><span class="nx">size</span> <span class="p">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;%s: offset %d(+%d) is out of bounds&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">offset</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span>
+		<span class="p">}</span>
+
+		<span class="nx">buf</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">marshalBytes</span><span class="p">(</span><span class="nx">replacement</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span> <span class="c1">// 将提供的常量 marshal 成 buffer
+</span><span class="c1"></span>		<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+			<span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;marshal %s: %w&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+		<span class="p">}</span>
+
+		<span class="nb">copy</span><span class="p">(</span><span class="nx">value</span><span class="p">[</span><span class="nx">offset</span><span class="p">:</span><span class="nx">offset</span><span class="o">+</span><span class="nx">size</span><span class="p">],</span> <span class="nx">buf</span><span class="p">)</span> <span class="c1">// 替换对应的 buffer 内容
+</span><span class="c1"></span>		<span class="nx">replaced</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="p">=</span> <span class="kc">true</span>
+		<span class="k">return</span> <span class="kc">nil</span>
+	<span class="p">}</span>
+
+	<span class="c1">// ...
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>由上代码分析可知，eBPF 的 C 代码中常量定义的类型跟 Go 代码中对应的用于替换的
+“常量” 的类型可以是不一致的，
+只要保证它们的大小是一致的即可。在项目实践中，就遇到过这种情况；
+在 eBPF 的 C 代码中，<code>struct prog_name { __u8 name[16]; }; static volatile const struct prog_name pname;</code> 一直不成功，而使用 <code>struct prog_name { __u64 a, b; };</code> 就没问题；而 Go 代码里只需要提供 <code>[16]byte</code> 即可。</p>
+<h2 id="小结">小结</h2>
+<p>本文从简单例子到复杂例子，再讲解了常量被重写的“本质”，至此能够清晰地知道基于 ELF
+是怎么做到常量重写的。</p>
+<p>然而，eBPF CO-RE 具体是怎么做到重写常量的特性的，我并没去深入理解，因为这里涉及到
+eBPF verifier（内核中的校验器）。而我现在还没有计划去深入理解 eBPF verifier
+的工作原理。等未来深入理解 eBPF verifier 后，再来讲解重写常量这一特性背后的工作原理吧。</p>
+<h2 id="总结">总结</h2>
+<p>在我编写 C、Go 代码的经验中，有一条经验有助于理解 eBPF 重写常量特性：类型的本质是一段内存。
+比如 Go 中 <code>uint64</code> 类型，占据 8 个字节，使用
+<a href="https://pkg.go.dev/unsafe"><code>unsafe</code></a> 包能将这 8 个字节转换成其他类型：
+<a href="https://go.dev/play/p/5P3RWkMSwJ7">https://go.dev/play/p/5P3RWkMSwJ7</a>。而在 C
+语言中，类型转换就更加直接了，强转即可：<code>u64 n = (u64)0xFEDCBA9865432101ul; u32 *n2 = (u32*)(&amp;n);</code>，毕竟 C 中指针是万能的。</p>
+<p>而对于在加载阶段重写常量，只是将某常量对应的那一段内存做一次替换，之后再装载进内核中。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2022-08-24
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/WeChat%20Pay.png">
+        <span>微信打赏</span>
+      </label>
+    
+  </div>
+</div><div class="post-reward">
+    <h1 align="left">微信公众号</h1>
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/ebpf/">eBPF</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/ebpf-black-magic/">
+            <span class="next-text nav-default">为 eBPF 程序注入黑魔法 【错误姿势】</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'G-X2X9EP3K14', 'auto');
+	ga('set', 'anonymizeIp', true);
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
