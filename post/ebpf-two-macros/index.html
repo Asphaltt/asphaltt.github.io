@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 宏的两种写法 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF 的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。 写法一" /><meta name="keywords"
+  content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-two-macros/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/%20manifest.json">
+<link rel="mask-icon" href="/%20safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 宏的两种写法" />
+<meta property="og:description" content="宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF 的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。 写法一" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-two-macros/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2022-10-30T15:45:41+08:00" />
+<meta property="article:modified_time" content="2022-10-30T15:45:41+08:00" />
+
+<meta itemprop="name" content="eBPF Talk: 宏的两种写法">
+<meta itemprop="description" content="宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF 的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。 写法一"><meta itemprop="datePublished" content="2022-10-30T15:45:41+08:00" />
+<meta itemprop="dateModified" content="2022-10-30T15:45:41+08:00" />
+<meta itemprop="wordCount" content="564">
+<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="eBPF Talk: 宏的两种写法"/>
+<meta name="twitter:description" content="宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF 的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。 写法一"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">eBPF Talk: 宏的两种写法</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-10-30 </span>
+        <div class="post-category">
+            <a href="/categories/ebpf/"> eBPF </a>
+            <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+            </div>
+          <span class="more-meta"> 约 564 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#写法一带有返回值的多行宏">写法一：带有返回值的多行宏</a></li>
+        <li><a href="#写法二多行宏的推荐写法">写法二：多行宏的推荐写法</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF  的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。</p>
+<h2 id="写法一带有返回值的多行宏">写法一：带有返回值的多行宏</h2>
+<p>常见的宏定义是常量定义，如 <code>#define VXLAN_PORT 4789</code>。可是如果在宏定义中包含有 <code>if</code> 条件判断，该如何编写该宏定义呢？不使用函数来实现，是因为函数需要带上类型，而宏定义则不需要参数的类型。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define GET_TOS(sip, pod)                  \
+</span><span class="cp">    ({                                     \
+</span><span class="cp">        __u8 tos;                          \
+</span><span class="cp">        if (USE_TOS)                       \
+</span><span class="cp">            tos = POD_TOS;                 \
+</span><span class="cp">        else                               \
+</span><span class="cp">            tos = __get_pod_tos(sip, pod); \
+</span><span class="cp">                                           \
+</span><span class="cp">        tos;                               \
+</span><span class="cp">    })
+</span></code></pre></td></tr></table>
+</div>
+</div><p>如上代码片段，使用 <code>({})</code> 包裹多行代码，且在第一行声明返回值、在最后一行提供返回值。</p>
+<p>参考 <code>BPF_CORE_READ</code> 的宏定义：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define BPF_CORE_READ(src, a, ...) ({                  \
+</span><span class="cp">    ___type((src), a, ##__VA_ARGS__) __r;              \
+</span><span class="cp">    BPF_CORE_READ_INTO(&amp;__r, (src), a, ##__VA_ARGS__); \
+</span><span class="cp">    __r;                                               \
+</span><span class="cp">})
+</span></code></pre></td></tr></table>
+</div>
+</div><h2 id="写法二多行宏的推荐写法">写法二：多行宏的推荐写法</h2>
+<p>对于多行宏，常见写法如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define __load_bytes(dst, size)                                                             \
+</span><span class="cp">    bpf_skb_load_bytes_relative(skb, var_off, ev-&gt;buff + cpy_off, size, BPF_HDR_START_MAC); \
+</span><span class="cp">    cpy_off += size;                                                                        \
+</span><span class="cp">    ev-&gt;total_len = cpy_off;                                                                \
+</span><span class="cp">    var_off += size;
+</span></code></pre></td></tr></table>
+</div>
+</div><p>直接写成多行。可是如果需要在宏里定义一个临时变量，这种写法就行不通了。此时，可以采取下面这种写法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define print_ip_version(iph)                  \
+</span><span class="cp">    do {                                       \
+</span><span class="cp">        __u8 b;                                \
+</span><span class="cp">        bpf_probe_read(&amp;b, 1, iph);            \
+</span><span class="cp">        b &gt;&gt;= 4;                               \
+</span><span class="cp">        if (b == 4)                            \
+</span><span class="cp">            bpf_printk(&#34;IPv4\n&#34;);              \
+</span><span class="cp">        else if (b == 6)                       \
+</span><span class="cp">            bpf_printk(&#34;IPv6\n&#34;);              \
+</span><span class="cp">        else                                   \
+</span><span class="cp">            bpf_printk(&#34;Unkown IP version\n&#34;); \
+</span><span class="cp">    } while (0)
+</span></code></pre></td></tr></table>
+</div>
+</div><p>使用 <code>do {} while(0)</code> 包裹着多行代码。此时，<code>do-while</code> 里的代码块只会执行一遍。而在使用的时候，像函数调用一样直接使用就可以了，<code>print_ip_version(iph);</code>。</p>
+<h2 id="小结">小结</h2>
+<p>在 Linux 内核的源代码中，写法二更加常见。而写法一，则是从其它 eBPF 项目中学习到的。</p>
+<p>多看源代码，多从源代码中学习。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2022-10-30
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/WeChat%20Pay.png">
+        <span>微信打赏</span>
+      </label>
+    
+  </div>
+</div><div class="post-reward">
+    <h1 align="left">微信公众号</h1>
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/ebpf/">eBPF</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/ebpf-variables-declaration-location/">
+            <span class="next-text nav-default">eBPF Talk: 变量声明的位置</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+  
+
+  
+
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

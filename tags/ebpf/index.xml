@@ -6,7 +6,16 @@
     <description>Recent content in eBPF on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 29 Oct 2022 15:03:41 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 30 Oct 2022 15:45:41 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 宏的两种写法</title>
+      <link>https://asphaltt.github.io/post/ebpf-two-macros/</link>
+      <pubDate>Sun, 30 Oct 2022 15:45:41 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-two-macros/</guid>
+      <description>宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF 的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。 写法一</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: 变量声明的位置</title>
       <link>https://asphaltt.github.io/post/ebpf-variables-declaration-location/</link>
