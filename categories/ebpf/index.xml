@@ -6,7 +6,16 @@
     <description>Recent content in eBPF on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Mon, 31 Oct 2022 19:16:57 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 31 Oct 2022 19:26:29 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: CPU and NUMA</title>
+      <link>https://asphaltt.github.io/post/ebpf-cpu-and-numa/</link>
+      <pubDate>Mon, 31 Oct 2022 19:26:29 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-cpu-and-numa/</guid>
+      <description>在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一</description>
+    </item>
+    
     <item>
       <title>eBPF CO-RE 的终极一步</title>
       <link>https://asphaltt.github.io/post/ebpf-final-step-to-co-re/</link>

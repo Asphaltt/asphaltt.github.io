@@ -3,21 +3,56 @@
   
   <url>
     <loc>https://asphaltt.github.io/categories/</loc>
-    <lastmod>2022-10-31T19:16:57+08:00</lastmod>
+    <lastmod>2022-10-31T19:26:29+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/ebpf/</loc>
-    <lastmod>2022-10-31T19:16:57+08:00</lastmod>
+    <lastmod>2022-10-31T19:26:29+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf/</loc>
-    <lastmod>2022-10-31T19:16:57+08:00</lastmod>
+    <lastmod>2022-10-31T19:26:29+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/categories/ebpf-talk/</loc>
+    <lastmod>2022-10-31T19:26:29+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/ebpf-cpu-and-numa/</loc>
+    <lastmod>2022-10-31T19:26:29+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/</loc>
+    <lastmod>2022-10-31T19:26:29+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/</loc>
+    <lastmod>2022-10-31T19:26:29+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/</loc>
+    <lastmod>2022-10-31T19:26:29+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -32,34 +67,6 @@
   <url>
     <loc>https://asphaltt.github.io/post/ebpf-final-step-to-co-re/</loc>
     <lastmod>2022-10-31T19:16:57+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/</loc>
-    <lastmod>2022-10-31T19:16:57+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/post/</loc>
-    <lastmod>2022-10-31T19:16:57+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/</loc>
-    <lastmod>2022-10-31T19:16:57+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/categories/ebpf-talk/</loc>
-    <lastmod>2022-10-30T15:45:41+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: CPU and NUMA - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一" /><meta name="keywords"
+  content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-cpu-and-numa/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/%20manifest.json">
+<link rel="mask-icon" href="/%20safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: CPU and NUMA" />
+<meta property="og:description" content="在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-cpu-and-numa/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2022-10-31T19:26:29+08:00" />
+<meta property="article:modified_time" content="2022-10-31T19:26:29+08:00" />
+
+<meta itemprop="name" content="eBPF Talk: CPU and NUMA">
+<meta itemprop="description" content="在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一"><meta itemprop="datePublished" content="2022-10-31T19:26:29+08:00" />
+<meta itemprop="dateModified" content="2022-10-31T19:26:29+08:00" />
+<meta itemprop="wordCount" content="955">
+<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="eBPF Talk: CPU and NUMA"/>
+<meta name="twitter:description" content="在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">eBPF Talk: CPU and NUMA</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-10-31 </span>
+        <div class="post-category">
+            <a href="/categories/ebpf/"> eBPF </a>
+            <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+            </div>
+          <span class="more-meta"> 约 955 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#cpu-bpf_get_smp_processor_id">CPU: bpf_get_smp_processor_id</a></li>
+        <li><a href="#numa-bpf_get_numa_node_id">NUMA: bpf_get_numa_node_id</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一个 CPU 上，因为这样的性能最好（没有内存 cache miss 的性能损耗）。</p>
+<p>在 eBPF 中，有两个帮助函数能够获取 CPU ID 和 NUMA Node ID。</p>
+<p><a href="https://man7.org/linux/man-pages/man7/bpf-helpers.7.html">bpf-helpers</a> 中能找到它们。</p>
+<h2 id="cpu-bpf_get_smp_processor_id">CPU: bpf_get_smp_processor_id</h2>
+<p>获取当前的处理器 ID，即 <code>/proc/cpuinfo</code> 里 <code>process</code> number。不过，只有在内核线程调度的抢占功能被关闭的情况下，该函数才能够获取到稳定的 CPU ID；因为线程会被调度，eBPF 程序所在的线程会被调度到其它 CPU 上。</p>
+<p>该函数的文档说明：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt">       u32 bpf_get_smp_processor_id(void)
+
+              Description
+                     Get the SMP (symmetric multiprocessing) processor
+                     id. Note that all programs run with preemption
+                     disabled, which means that the SMP processor id is
+                     stable during all the execution of the program.
+
+              Return The SMP id of the processor running the program.
+</code></pre></td></tr></table>
+</div>
+</div><p>查看该函数的源代码，能够发现更多细节（更多有意思的地方）。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// kernel/bpf/helpers.c
+</span><span class="c1"></span>
+<span class="n">BPF_CALL_0</span><span class="p">(</span><span class="n">bpf_get_smp_processor_id</span><span class="p">)</span>
+<span class="p">{</span>
+       <span class="k">return</span> <span class="n">smp_processor_id</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="c1">// include/linux/smp.h
+</span><span class="c1"></span>
+<span class="cm">/**
+</span><span class="cm"> * raw_processor_id() - get the current (unstable) CPU id
+</span><span class="cm"> *
+</span><span class="cm"> * For then you know what you are doing and need an unstable
+</span><span class="cm"> * CPU id.
+</span><span class="cm"> */</span>
+
+<span class="cm">/**
+</span><span class="cm"> * smp_processor_id() - get the current (stable) CPU id
+</span><span class="cm"> *
+</span><span class="cm"> * This is the normal accessor to the CPU id and should be used
+</span><span class="cm"> * whenever possible.
+</span><span class="cm"> *
+</span><span class="cm"> * The CPU id is stable when:
+</span><span class="cm"> *
+</span><span class="cm"> *  - IRQs are disabled;
+</span><span class="cm"> *  - preemption is disabled;
+</span><span class="cm"> *  - the task is CPU affine.
+</span><span class="cm"> *
+</span><span class="cm"> * When CONFIG_DEBUG_PREEMPT; we verify these assumption and WARN
+</span><span class="cm"> * when smp_processor_id() is used when the CPU id is not stable.
+</span><span class="cm"> */</span>
+
+<span class="cm">/*
+</span><span class="cm"> * Allow the architecture to differentiate between a stable and unstable read.
+</span><span class="cm"> * For example, x86 uses an IRQ-safe asm-volatile read for the unstable but a
+</span><span class="cm"> * regular asm read for the stable.
+</span><span class="cm"> */</span>
+<span class="cp">#ifndef __smp_processor_id
+</span><span class="cp">#define __smp_processor_id(x) raw_smp_processor_id(x)
+</span><span class="cp">#endif
+</span><span class="cp"></span>
+<span class="cp">#ifdef CONFIG_DEBUG_PREEMPT
+</span><span class="cp"></span>  <span class="k">extern</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">debug_smp_processor_id</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+<span class="cp"># define smp_processor_id() debug_smp_processor_id()
+</span><span class="cp">#else
+</span><span class="cp"># define smp_processor_id() __smp_processor_id()
+</span><span class="cp">#endif
+</span></code></pre></td></tr></table>
+</div>
+</div><p>由源代码可见，<code>bpf_get_smp_processor_id()</code> 并不保证获取到稳定的 CPU ID。</p>
+<h2 id="numa-bpf_get_numa_node_id">NUMA: bpf_get_numa_node_id</h2>
+<p>获取当前的 NUMA Node ID。</p>
+<p>该函数的文档说明：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt">       long bpf_get_numa_node_id(void)
+
+              Description
+                     Return the id of the current NUMA node. The primary
+                     use case for this helper is the selection of
+                     sockets for the local NUMA node, when the program
+                     is attached to sockets using the
+                     SO_ATTACH_REUSEPORT_EBPF option (see also
+                     socket(7)), but the helper is also available to
+                     other eBPF program types, similarly to
+                     bpf_get_smp_processor_id().
+
+              Return The id of current NUMA node.
+</code></pre></td></tr></table>
+</div>
+</div><p>该函数的源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// kernel/bpf/helpers.c
+</span><span class="c1"></span>
+<span class="n">BPF_CALL_0</span><span class="p">(</span><span class="n">bpf_get_numa_node_id</span><span class="p">)</span>
+<span class="p">{</span>
+       <span class="k">return</span> <span class="n">numa_node_id</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="c1">// include/linux/topology.h
+</span><span class="c1"></span>
+<span class="cp">#ifdef CONFIG_USE_PERCPU_NUMA_NODE_ID
+</span><span class="cp"></span><span class="n">DECLARE_PER_CPU</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span> <span class="n">numa_node</span><span class="p">);</span>
+
+<span class="cp">#ifndef numa_node_id
+</span><span class="cp"></span><span class="cm">/* Returns the number of the current Node. */</span>
+<span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">numa_node_id</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+       <span class="k">return</span> <span class="n">raw_cpu_read</span><span class="p">(</span><span class="n">numa_node</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="cp">#endif
+</span><span class="cp"></span>
+<span class="cp">#else  </span><span class="cm">/* !CONFIG_USE_PERCPU_NUMA_NODE_ID */</span><span class="cp">
+</span><span class="cp"></span>
+<span class="cm">/* Returns the number of the current Node. */</span>
+<span class="cp">#ifndef numa_node_id
+</span><span class="cp"></span><span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">numa_node_id</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+<span class="p">{</span>
+       <span class="k">return</span> <span class="n">cpu_to_node</span><span class="p">(</span><span class="n">raw_smp_processor_id</span><span class="p">());</span>
+<span class="p">}</span>
+<span class="cp">#endif
+</span><span class="cp"></span>
+<span class="cp">#endif </span><span class="cm">/* [!]CONFIG_USE_PERCPU_NUMA_NODE_ID */</span><span class="cp">
+</span></code></pre></td></tr></table>
+</div>
+</div><p>查看文件 <code>cat /boot/config-$(uname -r) | grep CONFIG_USE_PERCPU_NUMA_NODE_ID</code> 可以知道当前内核是否在编译的时候使用了 <code>CONFIG_USE_PERCPU_NUMA_NODE_ID</code> 选项。</p>
+<p>如果使用了该选项，则直接读取 <code>numa_node</code> 变量；否则，获取当前的 CPU ID，并查询 CPU ID 到 Node ID 之间的映射关系。</p>
+<h2 id="小结">小结</h2>
+<p>在写本文之前，还不知道有 <code>bpf_get_numa_node_id()</code> 这个帮助函数，以为在拿到
+<code>bpf_get_smp_processor_id()</code> 后在用户态应用程序中去查询 CPU 跟 NUMA Node 的映射关系。有个 <code>bpf_get_numa_node_id()</code>，就不需要在用户态应用程序中去解析那一堆
+<code>/proc/xxx</code> 文件了。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2022-10-31
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/WeChat%20Pay.png">
+        <span>微信打赏</span>
+      </label>
+    
+  </div>
+</div><div class="post-reward">
+    <h1 align="left">微信公众号</h1>
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/ebpf/">eBPF</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/ebpf-final-step-to-co-re/">
+            <span class="next-text nav-default">eBPF CO-RE 的终极一步</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
