@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>eBPF · LeonHwang&#39;s Blogs</title>
+  <title>eBPF CO-RE 的终极一步 - LeonHwang&#39;s Blogs</title>
   <meta name="renderer" content="webkit" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="Leon Hwang" /><meta name="description" content="Run eBPF with Go, run eBPF in kernel space" /><meta name="keywords"
+  content="Leon Hwang" /><meta name="description" content="请移步：eBPF CO-RE 的终极一步。" /><meta name="keywords"
   content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -28,9 +28,7 @@
 <meta name="generator" content="Hugo 0.88.1 with theme even" />
 
 
-<link rel="canonical" href="https://asphaltt.github.io/tags/ebpf/" />
-<link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="alternate" type="application/rss+xml" title="LeonHwang&#39;s Blogs" />
-<link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="feed" type="application/rss+xml" title="LeonHwang&#39;s Blogs" />
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-final-step-to-co-re/" />
 <link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
@@ -43,15 +41,20 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
-<meta property="og:title" content="eBPF" />
-<meta property="og:description" content="Run eBPF with Go, run eBPF in kernel space" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://asphaltt.github.io/tags/ebpf/" />
+<meta property="og:title" content="eBPF CO-RE 的终极一步" />
+<meta property="og:description" content="请移步：eBPF CO-RE 的终极一步。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-final-step-to-co-re/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2022-10-31T19:16:57+08:00" />
+<meta property="article:modified_time" content="2022-10-31T19:16:57+08:00" />
 
-<meta itemprop="name" content="eBPF">
-<meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space"><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="eBPF"/>
-<meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
+<meta itemprop="name" content="eBPF CO-RE 的终极一步">
+<meta itemprop="description" content="请移步：eBPF CO-RE 的终极一步。"><meta itemprop="datePublished" content="2022-10-31T19:16:57+08:00" />
+<meta itemprop="dateModified" content="2022-10-31T19:16:57+08:00" />
+<meta itemprop="wordCount" content="15">
+<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="eBPF CO-RE 的终极一步"/>
+<meta name="twitter:description" content="请移步：eBPF CO-RE 的终极一步。"/>
 
 
 <!--[if lte IE 9]>
@@ -135,110 +138,91 @@
     <main id="main" class="main">
       <div class="content-wrapper">
         <div id="content" class="content">
-          <section id="archive" class="archive">
-  <div class="archive-title tag">
-        <h2 class="archive-name">eBPF</h2>
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">eBPF CO-RE 的终极一步</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-10-31 </span>
+        <div class="post-category">
+            <a href="/categories/ebpf/"> eBPF </a>
+            <a href="/categories/ebpf-co-re/"> eBPF CO-RE </a>
+            </div>
+          <span class="more-meta"> 约 15 字 </span>
+          <span class="more-meta"> 预计阅读 1 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
       </div>
+    </header>
 
-  <div class="archive-post">
-      <span class="archive-post-time">
-        2022-10-31
-      </span>
-      <span class="archive-post-title">
-        <a href="/post/ebpf-final-step-to-co-re/" class="archive-post-link">
-          eBPF CO-RE 的终极一步
-        </a>
-      </span>
-    </div><div class="archive-post">
-      <span class="archive-post-time">
-        2022-10-30
-      </span>
-      <span class="archive-post-title">
-        <a href="/post/ebpf-two-macros/" class="archive-post-link">
-          eBPF Talk: 宏的两种写法
-        </a>
-      </span>
-    </div><div class="archive-post">
-      <span class="archive-post-time">
-        2022-10-29
-      </span>
-      <span class="archive-post-title">
-        <a href="/post/ebpf-variables-declaration-location/" class="archive-post-link">
-          eBPF Talk: 变量声明的位置
-        </a>
-      </span>
-    </div><div class="archive-post">
-      <span class="archive-post-time">
-        2022-08-24
-      </span>
-      <span class="archive-post-title">
-        <a href="/post/ebpf-black-magic-correct/" class="archive-post-link">
-          为 eBPF 程序注入黑魔法 【正确姿势】
-        </a>
-      </span>
-    </div><div class="archive-post">
-      <span class="archive-post-time">
-        2022-06-11
-      </span>
-      <span class="archive-post-title">
-        <a href="/post/ebpf-black-magic/" class="archive-post-link">
-          为 eBPF 程序注入黑魔法 【错误姿势】
-        </a>
-      </span>
-    </div><div class="archive-post">
-      <span class="archive-post-time">
-        2022-04-01
-      </span>
-      <span class="archive-post-title">
-        <a href="/post/iptables-bpf-acl/" class="archive-post-link">
-          demo for 「eBPF 技术实践：高性能 ACL」
-        </a>
-      </span>
-    </div><div class="archive-post">
-      <span class="archive-post-time">
-        2021-12-19
-      </span>
-      <span class="archive-post-title">
-        <a href="/post/kernel-module-with-bpf/" class="archive-post-link">
-          在内核模块里运行 bpf 程序
-        </a>
-      </span>
-    </div><div class="archive-post">
-      <span class="archive-post-time">
-        2021-12-19
-      </span>
-      <span class="archive-post-title">
-        <a href="/post/iptables-bpf-source-code-reading/" class="archive-post-link">
-          iptables-bpf 的实现原理分析
-        </a>
-      </span>
-    </div><div class="archive-post">
-      <span class="archive-post-time">
-        2021-12-16
-      </span>
-      <span class="archive-post-title">
-        <a href="/post/iptables-bpf/" class="archive-post-link">
-          该如此玩转 iptables-bpf
-        </a>
-      </span>
-    </div><div class="archive-post">
-      <span class="archive-post-time">
-        2021-11-02
-      </span>
-      <span class="archive-post-title">
-        <a href="/post/skbtracer/" class="archive-post-link">
-          skbtracer: Linux 内核网络包路径追踪利器
-        </a>
-      </span>
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents"></nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>请移步：<a href="https://github.com/Asphaltt/bpf-zh/blob/main/eBPF%20CO-RE%20%E7%BB%88%E6%9E%81%E4%B8%80%E6%AD%A5.md">eBPF CO-RE 的终极一步</a>。</p>
+
     </div>
-</section>
 
-<nav class="pagination">
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2022-10-31
+        
+    </span>
+  </p>
   
   
-</nav>
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/WeChat%20Pay.png">
+        <span>微信打赏</span>
+      </label>
+    
+  </div>
+</div><div class="post-reward">
+    <h1 align="left">微信公众号</h1>
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/ebpf/">eBPF</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/ebpf-two-macros/">
+            <span class="next-text nav-default">eBPF Talk: 宏的两种写法</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
         </div>
         
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
       </div>
     </main>
 
