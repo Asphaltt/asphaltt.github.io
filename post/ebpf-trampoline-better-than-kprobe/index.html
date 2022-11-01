@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 比 kprobe 更好的 trampoline - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功" /><meta name="keywords"
+  content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-trampoline-better-than-kprobe/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/%20manifest.json">
+<link rel="mask-icon" href="/%20safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 比 kprobe 更好的 trampoline" />
+<meta property="og:description" content="eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-trampoline-better-than-kprobe/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2022-11-01T23:31:04+08:00" />
+<meta property="article:modified_time" content="2022-11-01T23:31:04+08:00" />
+
+<meta itemprop="name" content="eBPF Talk: 比 kprobe 更好的 trampoline">
+<meta itemprop="description" content="eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功"><meta itemprop="datePublished" content="2022-11-01T23:31:04+08:00" />
+<meta itemprop="dateModified" content="2022-11-01T23:31:04+08:00" />
+<meta itemprop="wordCount" content="1016">
+<meta itemprop="keywords" content="eBPF,kprobe,trampoline," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="eBPF Talk: 比 kprobe 更好的 trampoline"/>
+<meta name="twitter:description" content="eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">eBPF Talk: 比 kprobe 更好的 trampoline</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-11-01 </span>
+        <div class="post-category">
+            <a href="/categories/ebpf/"> eBPF </a>
+            </div>
+          <span class="more-meta"> 约 1016 字 </span>
+          <span class="more-meta"> 预计阅读 3 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#ebpf-trampoline-一例">eBPF trampoline 一例</a>
+          <ul>
+            <li><a href="#get_rps_cpu"><code>get_rps_cpu()</code></a></li>
+            <li><a href="#用-trampoline-trace-get_rps_cpu">用 trampoline trace <code>get_rps_cpu()</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p><a href="https://lwn.net/Articles/803803/">eBPF trampoline</a>（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 <code>register_ftrace_direct()</code> 实现。它实现了 <code>kprobe/kretprobe</code> 的功能。相比于 <code>kprobe/kretprobe</code>，trampoline 的性能更好。特别是对比 <code>kretprobe</code>，trampoline 的 <code>fexit</code> 在实现了同样功能的同时，能够支持去获取目标函数的参数（这是 <code>kretprobe</code> 不支持的）（参考：<a href="https://github.com/torvalds/linux/commit/fec56f5890d93fc2ed74166c397dc186b1c25951">bpf: Introduce BPF trampoline</a>）。</p>
+<p>不过并不是所有内核版本都支持 trampoline，eBPF trampoline 特性要求 &gt;= 5.5 内核版本，参考 <a href="https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md">BPF Features by Linux Kernel Version</a>。</p>
+<h2 id="ebpf-trampoline-一例">eBPF trampoline 一例</h2>
+<p>Go 的 eBPF 库 <a href="https://github.com/cilium/ebpf">cilium/ebpf</a> 已支持 trampoline（<code>fenter/fexit</code>），参考其中的例子来写一个自己的 demo。</p>
+<h3 id="get_rps_cpu"><code>get_rps_cpu()</code></h3>
+<p>在 Linux 网络协议栈的底层，有个软件实现的 RSS 叫做 RPS，参考 <a href="https://www.kernel.org/doc/Documentation/networking/scaling.txt">Scaling in the Linux Networking Stack</a>。此处 RPS 的功能是将网络包 <code>skb</code> 投递到另一个 CPU 上去处理。RPS 发生在网卡驱动下半场中，如下内核源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// net/core/dev.c
+</span><span class="c1"></span>
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">netif_rx_internal</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
+
+    <span class="c1">//...
+</span><span class="c1"></span>
+<span class="cp">#ifdef CONFIG_RPS
+</span><span class="cp"></span>    <span class="k">if</span> <span class="p">(</span><span class="n">static_branch_unlikely</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rps_needed</span><span class="p">))</span> <span class="p">{</span>
+        <span class="k">struct</span> <span class="n">rps_dev_flow</span> <span class="n">voidflow</span><span class="p">,</span> <span class="o">*</span><span class="n">rflow</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">voidflow</span><span class="p">;</span>
+        <span class="kt">int</span> <span class="n">cpu</span><span class="p">;</span>
+
+        <span class="c1">//...
+</span><span class="c1"></span>
+        <span class="n">cpu</span> <span class="o">=</span> <span class="n">get_rps_cpu</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">rflow</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">cpu</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">cpu</span> <span class="o">=</span> <span class="n">smp_processor_id</span><span class="p">();</span>
+
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">enqueue_to_backlog</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">cpu</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">rflow</span><span class="o">-&gt;</span><span class="n">last_qtail</span><span class="p">);</span>
+
+        <span class="c1">//...
+</span><span class="c1"></span>    <span class="p">}</span> <span class="k">else</span>
+<span class="cp">#endif
+</span><span class="cp"></span>    <span class="p">{</span>
+        <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">qtail</span><span class="p">;</span>
+
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">enqueue_to_backlog</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">get_cpu</span><span class="p">(),</span> <span class="o">&amp;</span><span class="n">qtail</span><span class="p">);</span>
+        <span class="n">put_cpu</span><span class="p">();</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>这段代码的意思是，通过 <code>get_rps_cpu()</code> 计算当前网络包 <code>skb</code> 应该投递到哪个 CPU 去处理。</p>
+<h3 id="用-trampoline-trace-get_rps_cpu">用 trampoline trace <code>get_rps_cpu()</code></h3>
+<p>相关 C 代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">rps_key</span> <span class="p">{</span>
+    <span class="n">__u32</span> <span class="n">ifindex</span><span class="p">;</span>
+    <span class="n">__u32</span> <span class="n">curr_node_id</span><span class="p">;</span>
+    <span class="n">__u32</span> <span class="n">curr_cpu</span><span class="p">;</span>
+    <span class="n">__u32</span> <span class="n">targ_cpu</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">));</span>
+
+<span class="k">struct</span> <span class="p">{</span>
+    <span class="n">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_HASH</span><span class="p">);</span>
+    <span class="n">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">rps_key</span><span class="p">));</span>
+    <span class="n">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u64</span><span class="p">));</span>
+    <span class="n">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">65536</span><span class="p">);</span>
+<span class="p">}</span> <span class="n">rps_record</span> <span class="n">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+
+<span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">void</span>
+<span class="nf">handle_rps</span><span class="p">(</span><span class="n">__u32</span> <span class="n">ifindex</span><span class="p">,</span> <span class="kt">int</span> <span class="n">targ_cpu</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">rps_key</span> <span class="n">key</span> <span class="o">=</span> <span class="p">{};</span>
+    <span class="n">key</span><span class="p">.</span><span class="n">curr_node_id</span> <span class="o">=</span> <span class="n">bpf_get_numa_node_id</span><span class="p">();</span>
+    <span class="n">key</span><span class="p">.</span><span class="n">curr_cpu</span> <span class="o">=</span> <span class="n">bpf_get_smp_processor_id</span><span class="p">();</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">targ_cpu</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="n">targ_cpu</span> <span class="o">==</span> <span class="n">key</span><span class="p">.</span><span class="n">curr_cpu</span><span class="p">)</span>
+        <span class="k">return</span><span class="p">;</span>
+
+    <span class="n">key</span><span class="p">.</span><span class="n">ifindex</span> <span class="o">=</span> <span class="n">ifindex</span><span class="p">;</span>
+    <span class="n">key</span><span class="p">.</span><span class="n">targ_cpu</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="n">targ_cpu</span><span class="p">;</span>
+
+    <span class="n">__u64</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rps_record</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="n">__sync_fetch_and_add</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+    <span class="k">else</span> <span class="p">{</span>
+        <span class="n">__u64</span> <span class="n">init_val</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+        <span class="n">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rps_record</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">init_val</span><span class="p">,</span> <span class="n">BPF_NOEXIST</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;fexit/get_rps_cpu&#34;</span><span class="p">)</span>
+<span class="kt">int</span> <span class="n">BPF_PROG</span><span class="p">(</span><span class="n">get_rps_cpu</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">rps_dev_flow</span> <span class="o">**</span><span class="n">rflowp</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cpu</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">filter_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+
+    <span class="n">__u32</span> <span class="n">ifindex</span> <span class="o">=</span> <span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">ifindex</span><span class="p">);</span>
+
+    <span class="n">handle_rps</span><span class="p">(</span><span class="n">ifindex</span><span class="p">,</span> <span class="n">cpu</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>如果使用 <code>kprobe/kretprobe</code>，对应的 C 代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// handle_rps()
+</span><span class="c1"></span>
+<span class="k">struct</span> <span class="p">{</span>
+    <span class="n">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_HASH</span><span class="p">);</span>
+    <span class="n">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
+    <span class="n">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
+    <span class="n">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">4096</span><span class="p">);</span>
+<span class="p">}</span> <span class="n">kprobes</span> <span class="n">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+
+<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/get_rps_cpu&#34;</span><span class="p">)</span>
+<span class="kt">int</span> <span class="n">k_get_rps_cpu</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="p">)</span><span class="n">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">filter_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+
+    <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="p">)</span><span class="n">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+    <span class="n">__u32</span> <span class="n">ifindex</span> <span class="o">=</span> <span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">ifindex</span><span class="p">);</span>
+    <span class="n">__u32</span> <span class="n">pid</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="n">bpf_get_current_pid_tgid</span><span class="p">();</span>
+
+    <span class="n">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">kprobes</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pid</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ifindex</span><span class="p">,</span> <span class="n">BPF_ANY</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;kretprobe/get_rps_cpu&#34;</span><span class="p">)</span>
+<span class="kt">int</span> <span class="n">kr_get_rps_cpu</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">int</span> <span class="n">cpu</span> <span class="o">=</span> <span class="n">PT_REGS_RET</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+    <span class="n">__u32</span> <span class="n">pid</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="n">bpf_get_current_pid_tgid</span><span class="p">();</span>
+
+    <span class="n">__u32</span> <span class="o">*</span><span class="n">ifindex</span> <span class="o">=</span> <span class="p">(</span><span class="n">typeof</span><span class="p">(</span><span class="n">ifindex</span><span class="p">))</span><span class="n">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">kprobes</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pid</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">ifindex</span><span class="p">)</span>
+        <span class="n">handle_rps</span><span class="p">(</span><span class="o">*</span><span class="n">ifindex</span><span class="p">,</span> <span class="n">cpu</span><span class="p">);</span>
+
+    <span class="n">bpf_map_delete_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">kprobes</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pid</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>对比这两段代码可知，trampoline 的写法更加简短优雅（且性能更好）。</p>
+<p>而对应的主要 Go 代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="c1">//go:generate bpf2go -cc clang rps ./ebpf/rps.c -- -I./ebpf/headers -Wall -D__TARGET_ARCH_x86
+</span><span class="c1"></span>
+    <span class="kd">var</span> <span class="nx">obj</span> <span class="nx">rpsForHighVersionObjects</span>
+    <span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">spec</span><span class="p">.</span><span class="nf">LoadAndAssign</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">obj</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">ebpf</span><span class="p">.</span><span class="nx">CollectionOptions</span><span class="p">{</span>
+        <span class="nx">Programs</span><span class="p">:</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nx">ProgramOptions</span><span class="p">{</span>
+            <span class="nx">KernelTypes</span><span class="p">:</span> <span class="nx">btfSpec</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">});</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to load bpf obj and bpf map: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+    <span class="p">}</span>
+    <span class="k">defer</span> <span class="nx">obj</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+
+    <span class="c1">// fentry/fexit 对应的是 link.AttachTracing
+</span><span class="c1"></span>    <span class="c1">// kprobe/kretprobe 对应的是 link.Kprobe/link.Kretprobe
+</span><span class="c1"></span>    <span class="k">if</span> <span class="nx">fexit</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">link</span><span class="p">.</span><span class="nf">AttachTracing</span><span class="p">(</span><span class="nx">link</span><span class="p">.</span><span class="nx">TracingOptions</span><span class="p">{</span>
+        <span class="nx">Program</span><span class="p">:</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">GetRpsCpu</span><span class="p">,</span>
+    <span class="p">});</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to attach fexit(get_rps_cpu)&#34;</span><span class="p">)</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Attached fexit(get_rps_cpu)&#34;</span><span class="p">)</span>
+        <span class="k">defer</span> <span class="nx">fexit</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+    <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><h2 id="小结">小结</h2>
+<p>参考 <a href="https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md">BPF Features by Linux Kernel
+Version</a>，一步一步地探索 eBPF 的特性。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2022-11-01
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/WeChat%20Pay.png">
+        <span>微信打赏</span>
+      </label>
+    
+  </div>
+</div><div class="post-reward">
+    <h1 align="left">微信公众号</h1>
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/ebpf/">eBPF</a>
+          <a href="/tags/kprobe/">kprobe</a>
+          <a href="/tags/trampoline/">trampoline</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/ebpf-cpu-and-numa/">
+            <span class="next-text nav-default">eBPF Talk: CPU and NUMA</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
