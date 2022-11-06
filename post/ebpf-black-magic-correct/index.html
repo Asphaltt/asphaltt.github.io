@@ -205,16 +205,16 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
-	<span class="kd">var</span> <span class="nx">filterAddr</span> <span class="kt">string</span>
-	<span class="nx">flag</span><span class="p">.</span><span class="nf">StringVar</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">filterAddr</span><span class="p">,</span> <span class="s">&#34;filter-addr&#34;</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="s">&#34;filter IP address&#34;</span><span class="p">)</span>
-	<span class="nx">flag</span><span class="p">.</span><span class="nf">Parse</span><span class="p">()</span>
+    <span class="kd">var</span> <span class="nx">filterAddr</span> <span class="kt">string</span>
+    <span class="nx">flag</span><span class="p">.</span><span class="nf">StringVar</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">filterAddr</span><span class="p">,</span> <span class="s">&#34;filter-addr&#34;</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="s">&#34;filter IP address&#34;</span><span class="p">)</span>
+    <span class="nx">flag</span><span class="p">.</span><span class="nf">Parse</span><span class="p">()</span>
 
-	<span class="nx">ip</span> <span class="o">:=</span> <span class="nx">netip</span><span class="p">.</span><span class="nf">MustParseAddr</span><span class="p">(</span><span class="nx">filterAddr</span><span class="p">)</span>
-	<span class="c1">// if !ip.Is4() { ... }
+    <span class="nx">ip</span> <span class="o">:=</span> <span class="nx">netip</span><span class="p">.</span><span class="nf">MustParseAddr</span><span class="p">(</span><span class="nx">filterAddr</span><span class="p">)</span>
+    <span class="c1">// if !ip.Is4() { ... }
 </span><span class="c1"></span>
-	<span class="nx">spec</span><span class="p">.</span><span class="nf">RewriteConstants</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}</span> <span class="p">{</span>
-		<span class="s">&#34;FILTER_ADDR&#34;</span><span class="p">:</span> <span class="nx">ip</span><span class="p">.</span><span class="nf">As4</span><span class="p">(),</span>
-	<span class="p">})</span>
+    <span class="nx">spec</span><span class="p">.</span><span class="nf">RewriteConstants</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}</span> <span class="p">{</span>
+        <span class="s">&#34;FILTER_ADDR&#34;</span><span class="p">:</span> <span class="nx">ip</span><span class="p">.</span><span class="nf">As4</span><span class="p">(),</span>
+    <span class="p">})</span>
 <span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
@@ -243,20 +243,20 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">config_t</span> <span class="p">{</span>
-	<span class="n">__be16</span> <span class="n">vlan_id</span><span class="p">;</span>
-	<span class="n">__be32</span> <span class="n">vxlan_vni</span><span class="p">;</span>
+    <span class="n">__be16</span> <span class="n">vlan_id</span><span class="p">;</span>
+    <span class="n">__be32</span> <span class="n">vxlan_vni</span><span class="p">;</span>
 
-	<span class="n">u32</span> <span class="n">mark</span><span class="p">;</span>
+    <span class="n">u32</span> <span class="n">mark</span><span class="p">;</span>
 
-	<span class="n">__be32</span> <span class="n">saddr</span><span class="p">;</span>
-	<span class="n">__be32</span> <span class="n">daddr</span><span class="p">;</span>
-	<span class="n">__be32</span> <span class="n">addr</span><span class="p">;</span>
-	<span class="n">__be16</span> <span class="n">sport</span><span class="p">;</span>
-	<span class="n">__be16</span> <span class="n">dport</span><span class="p">;</span>
-	<span class="n">__be16</span> <span class="n">port</span><span class="p">;</span>
+    <span class="n">__be32</span> <span class="n">saddr</span><span class="p">;</span>
+    <span class="n">__be32</span> <span class="n">daddr</span><span class="p">;</span>
+    <span class="n">__be32</span> <span class="n">addr</span><span class="p">;</span>
+    <span class="n">__be16</span> <span class="n">sport</span><span class="p">;</span>
+    <span class="n">__be16</span> <span class="n">dport</span><span class="p">;</span>
+    <span class="n">__be16</span> <span class="n">port</span><span class="p">;</span>
 
-	<span class="n">u8</span> <span class="n">l4_proto</span><span class="p">;</span>
-	<span class="n">u8</span> <span class="n">pad1</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
+    <span class="n">u8</span> <span class="n">l4_proto</span><span class="p">;</span>
+    <span class="n">u8</span> <span class="n">pad1</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
 <span class="p">}</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">))</span> <span class="n">config_t</span><span class="p">;</span>
 
 <span class="k">static</span> <span class="k">volatile</span> <span class="k">const</span> <span class="n">config_t</span> <span class="n">__cfg</span> <span class="o">=</span> <span class="p">{};</span>
@@ -297,33 +297,33 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="kd">type</span> <span class="nx">config</span> <span class="kd">struct</span> <span class="p">{</span>
-	<span class="nx">VlanID</span>   <span class="kt">uint16</span>
-	<span class="nx">VxlanVNI</span> <span class="kt">uint32</span>
+    <span class="nx">VlanID</span>   <span class="kt">uint16</span>
+    <span class="nx">VxlanVNI</span> <span class="kt">uint32</span>
 
-	<span class="nx">Mark</span> <span class="kt">uint32</span>
+    <span class="nx">Mark</span> <span class="kt">uint32</span>
 
-	<span class="nx">Saddr</span> <span class="kt">uint32</span>
-	<span class="nx">Daddr</span> <span class="kt">uint32</span>
-	<span class="nx">Addr</span>  <span class="kt">uint32</span>
-	<span class="nx">Sport</span> <span class="kt">uint16</span>
-	<span class="nx">Dport</span> <span class="kt">uint16</span>
-	<span class="nx">Port</span>  <span class="kt">uint16</span>
+    <span class="nx">Saddr</span> <span class="kt">uint32</span>
+    <span class="nx">Daddr</span> <span class="kt">uint32</span>
+    <span class="nx">Addr</span>  <span class="kt">uint32</span>
+    <span class="nx">Sport</span> <span class="kt">uint16</span>
+    <span class="nx">Dport</span> <span class="kt">uint16</span>
+    <span class="nx">Port</span>  <span class="kt">uint16</span>
 
-	<span class="nx">L4Proto</span> <span class="kt">uint8</span>
-	<span class="nx">Pad</span>     <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="kt">uint8</span>
+    <span class="nx">L4Proto</span> <span class="kt">uint8</span>
+    <span class="nx">Pad</span>     <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="kt">uint8</span>
 <span class="p">}</span>
 
 <span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
-	<span class="c1">// ...
+    <span class="c1">// ...
 </span><span class="c1"></span>
-	<span class="nx">flags</span> <span class="o">:=</span> <span class="nf">parseFlags</span><span class="p">()</span>
-	<span class="nx">cfg</span> <span class="o">:=</span> <span class="nf">newConfig</span><span class="p">(</span><span class="nx">flags</span><span class="p">)</span>
+    <span class="nx">flags</span> <span class="o">:=</span> <span class="nf">parseFlags</span><span class="p">()</span>
+    <span class="nx">cfg</span> <span class="o">:=</span> <span class="nf">newConfig</span><span class="p">(</span><span class="nx">flags</span><span class="p">)</span>
 
-	<span class="nx">rewriteConst</span> <span class="o">:=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}{</span>
-		<span class="s">&#34;__cfg&#34;</span><span class="p">:</span> <span class="o">*</span><span class="nx">cfg</span><span class="p">,</span>
-	<span class="p">}</span>
+    <span class="nx">rewriteConst</span> <span class="o">:=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}{</span>
+        <span class="s">&#34;__cfg&#34;</span><span class="p">:</span> <span class="o">*</span><span class="nx">cfg</span><span class="p">,</span>
+    <span class="p">}</span>
 
-	<span class="c1">// ...
+    <span class="c1">// ...
 </span><span class="c1"></span><span class="p">}</span>
 </code></pre></td></tr></table>
 </div>
@@ -378,45 +378,45 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="kd">func</span> <span class="p">(</span><span class="nx">cs</span> <span class="o">*</span><span class="nx">CollectionSpec</span><span class="p">)</span> <span class="nf">RewriteConstants</span><span class="p">(</span><span class="nx">consts</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
-	<span class="nx">rodata</span> <span class="o">:=</span> <span class="nx">cs</span><span class="p">.</span><span class="nx">Maps</span><span class="p">[</span><span class="s">&#34;.rodata&#34;</span><span class="p">]</span> <span class="c1">// 常量是保存在 ELF .rodata secion 中
-</span><span class="c1"></span>	<span class="c1">// ...
+    <span class="nx">rodata</span> <span class="o">:=</span> <span class="nx">cs</span><span class="p">.</span><span class="nx">Maps</span><span class="p">[</span><span class="s">&#34;.rodata&#34;</span><span class="p">]</span> <span class="c1">// 常量是保存在 ELF .rodata secion 中
+</span><span class="c1"></span>    <span class="c1">// ...
 </span><span class="c1"></span>
-	<span class="nx">kv</span> <span class="o">:=</span> <span class="nx">rodata</span><span class="p">.</span><span class="nx">Contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-	<span class="nx">value</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">kv</span><span class="p">.</span><span class="nx">Value</span><span class="p">.([]</span><span class="kt">byte</span><span class="p">)</span>
-	<span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
-		<span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;first value in .rodata is %T not []byte&#34;</span><span class="p">,</span> <span class="nx">kv</span><span class="p">.</span><span class="nx">Value</span><span class="p">)</span>
-	<span class="p">}</span>
+    <span class="nx">kv</span> <span class="o">:=</span> <span class="nx">rodata</span><span class="p">.</span><span class="nx">Contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="nx">value</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">kv</span><span class="p">.</span><span class="nx">Value</span><span class="p">.([]</span><span class="kt">byte</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;first value in .rodata is %T not []byte&#34;</span><span class="p">,</span> <span class="nx">kv</span><span class="p">.</span><span class="nx">Value</span><span class="p">)</span>
+    <span class="p">}</span>
 
-	<span class="nx">buf</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span> <span class="c1">// 准备一段新的 buffer
-</span><span class="c1"></span>	<span class="nb">copy</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">value</span><span class="p">)</span> <span class="c1">// 复制原有的内容，毕竟不确定是否 patch 所有常量
+    <span class="nx">buf</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span> <span class="c1">// 准备一段新的 buffer
+</span><span class="c1"></span>    <span class="nb">copy</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">value</span><span class="p">)</span> <span class="c1">// 复制原有的内容，毕竟不确定是否 patch 所有常量
 </span><span class="c1"></span>
-	<span class="nx">err</span> <span class="o">:=</span> <span class="nf">patchValue</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">rodata</span><span class="p">.</span><span class="nx">Value</span><span class="p">,</span> <span class="nx">consts</span><span class="p">)</span> <span class="c1">// 使用提供的常量进行替换
-</span><span class="c1"></span>	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
-		<span class="k">return</span> <span class="nx">err</span>
-	<span class="p">}</span>
+    <span class="nx">err</span> <span class="o">:=</span> <span class="nf">patchValue</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">rodata</span><span class="p">.</span><span class="nx">Value</span><span class="p">,</span> <span class="nx">consts</span><span class="p">)</span> <span class="c1">// 使用提供的常量进行替换
+</span><span class="c1"></span>    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nx">err</span>
+    <span class="p">}</span>
 
-	<span class="nx">rodata</span><span class="p">.</span><span class="nx">Contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">=</span> <span class="nx">MapKV</span><span class="p">{</span><span class="nx">kv</span><span class="p">.</span><span class="nx">Key</span><span class="p">,</span> <span class="nx">buf</span><span class="p">}</span> <span class="c1">// 使用替换后的 buffer
-</span><span class="c1"></span>	<span class="k">return</span> <span class="kc">nil</span>
+    <span class="nx">rodata</span><span class="p">.</span><span class="nx">Contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">=</span> <span class="nx">MapKV</span><span class="p">{</span><span class="nx">kv</span><span class="p">.</span><span class="nx">Key</span><span class="p">,</span> <span class="nx">buf</span><span class="p">}</span> <span class="c1">// 使用替换后的 buffer
+</span><span class="c1"></span>    <span class="k">return</span> <span class="kc">nil</span>
 <span class="p">}</span>
 
 <span class="kd">func</span> <span class="nf">patchValue</span><span class="p">(</span><span class="nx">value</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span> <span class="nx">typ</span> <span class="nx">btf</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span> <span class="nx">replacements</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
-	<span class="nx">replaced</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">bool</span><span class="p">)</span>
-	<span class="nx">replace</span> <span class="o">:=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">offset</span><span class="p">,</span> <span class="nx">size</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">replacement</span> <span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
-		<span class="k">if</span> <span class="nx">offset</span><span class="o">+</span><span class="nx">size</span> <span class="p">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
-			<span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;%s: offset %d(+%d) is out of bounds&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">offset</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span>
-		<span class="p">}</span>
+    <span class="nx">replaced</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">bool</span><span class="p">)</span>
+    <span class="nx">replace</span> <span class="o">:=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">offset</span><span class="p">,</span> <span class="nx">size</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">replacement</span> <span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="nx">offset</span><span class="o">+</span><span class="nx">size</span> <span class="p">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;%s: offset %d(+%d) is out of bounds&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">offset</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span>
+        <span class="p">}</span>
 
-		<span class="nx">buf</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">marshalBytes</span><span class="p">(</span><span class="nx">replacement</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span> <span class="c1">// 将提供的常量 marshal 成 buffer
-</span><span class="c1"></span>		<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
-			<span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;marshal %s: %w&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
-		<span class="p">}</span>
+        <span class="nx">buf</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">marshalBytes</span><span class="p">(</span><span class="nx">replacement</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span> <span class="c1">// 将提供的常量 marshal 成 buffer
+</span><span class="c1"></span>        <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;marshal %s: %w&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+        <span class="p">}</span>
 
-		<span class="nb">copy</span><span class="p">(</span><span class="nx">value</span><span class="p">[</span><span class="nx">offset</span><span class="p">:</span><span class="nx">offset</span><span class="o">+</span><span class="nx">size</span><span class="p">],</span> <span class="nx">buf</span><span class="p">)</span> <span class="c1">// 替换对应的 buffer 内容
-</span><span class="c1"></span>		<span class="nx">replaced</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="p">=</span> <span class="kc">true</span>
-		<span class="k">return</span> <span class="kc">nil</span>
-	<span class="p">}</span>
+        <span class="nb">copy</span><span class="p">(</span><span class="nx">value</span><span class="p">[</span><span class="nx">offset</span><span class="p">:</span><span class="nx">offset</span><span class="o">+</span><span class="nx">size</span><span class="p">],</span> <span class="nx">buf</span><span class="p">)</span> <span class="c1">// 替换对应的 buffer 内容
+</span><span class="c1"></span>        <span class="nx">replaced</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="p">=</span> <span class="kc">true</span>
+        <span class="k">return</span> <span class="kc">nil</span>
+    <span class="p">}</span>
 
-	<span class="c1">// ...
+    <span class="c1">// ...
 </span><span class="c1"></span><span class="p">}</span>
 </code></pre></td></tr></table>
 </div>

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 为当前内核提供外部 BTF 文件 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="最近系统地学习了 eBPF CO-RE（Compile Once, Run Everywhere，一次编译，到处运行），其中包括了 BTF。 BTF，BPF Type Format，" /><meta name="keywords"
+  content="Go, eBPF, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-external-btf/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/%20manifest.json">
+<link rel="mask-icon" href="/%20safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 为当前内核提供外部 BTF 文件" />
+<meta property="og:description" content="最近系统地学习了 eBPF CO-RE（Compile Once, Run Everywhere，一次编译，到处运行），其中包括了 BTF。 BTF，BPF Type Format，" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-external-btf/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2022-11-06T21:42:05+08:00" />
+<meta property="article:modified_time" content="2022-11-06T21:42:05+08:00" />
+
+<meta itemprop="name" content="eBPF Talk: 为当前内核提供外部 BTF 文件">
+<meta itemprop="description" content="最近系统地学习了 eBPF CO-RE（Compile Once, Run Everywhere，一次编译，到处运行），其中包括了 BTF。 BTF，BPF Type Format，"><meta itemprop="datePublished" content="2022-11-06T21:42:05+08:00" />
+<meta itemprop="dateModified" content="2022-11-06T21:42:05+08:00" />
+<meta itemprop="wordCount" content="547">
+<meta itemprop="keywords" content="eBPF,BTF," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="eBPF Talk: 为当前内核提供外部 BTF 文件"/>
+<meta name="twitter:description" content="最近系统地学习了 eBPF CO-RE（Compile Once, Run Everywhere，一次编译，到处运行），其中包括了 BTF。 BTF，BPF Type Format，"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+    
+    <header class="post-header">
+      <h1 class="post-title">eBPF Talk: 为当前内核提供外部 BTF 文件</h1>
+
+      <div class="post-meta">
+        <span class="post-time"> 2022-11-06 </span>
+        <div class="post-category">
+            <a href="/categories/ebpf/"> eBPF </a>
+            <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+            </div>
+          <span class="more-meta"> 约 547 字 </span>
+          <span class="more-meta"> 预计阅读 2 分钟 </span>
+        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
+      </div>
+    </header>
+
+    <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+    <div class="post-content">
+      <p>最近系统地学习了 eBPF CO-RE（Compile Once, Run Everywhere，一次编译，到处运行），其中包括了 BTF。</p>
+<p>BTF，BPF Type Format，是 eBPF 中专门用来存储调试信息的格式，是一种二进制格式。详细的格式介绍，请查看内核文档 <a href="https://www.kernel.org/doc/html/latest/bpf/btf.html">BPF Type Format (BTF)</a>。</p>
+<p>业界里的大牛人士为了真正地实现 CO-RE 做出了不懈的努力，特别是 <a href="https://lore.kernel.org/bpf/164503621150.2935.6634904664671748900.git-patchwork-notify@kernel.org/T/#mdd100ccbc95947c8fe6be74db66002e273a29abd">bpftool gen min_core_btf</a> 的开创者们。<code>bpftool gen min_core_btf</code> 是用来给多个 eBPF 程序生成一份最小的 BTF 文件，以便将该份最小的 BTF 文件内嵌到用户应用程序中。</p>
+<p>在使用 BTF 文件的时候，有个神奇的地方是，如果当前内核在编译的时候没有开启 <code>CONFIG_DEBUG_INFO_BTF</code> 选项，即内核不自带对应的 BTF 文件 <code>/sys/kernel/btf/vmlinux</code>，则用户应用程序需要为此专门提供外部的 BTF 文件，譬如 <a href="https://github.com/aquasecurity/btfhub">BTFHub</a> 中收集的多个没开启 <code>CONFIG_DEBUG_INFO_BTF</code> 的 Linux 发行版内核对应的 BTF 文件。</p>
+<p>而在用户应用程序为内核提供外部 BTF 文件的时候，有两种方式。</p>
+<ol>
+<li>使用 <code>bpftool gen min_core_btf</code> 生成一份最小的 BTF 文件，并内嵌在应用程序中。</li>
+<li>针对命令行工具，可以提供 <code>--kernel-btf</code> 这样的选项来指定需要使用的 BTF 文件。</li>
+</ol>
+<p>对于方式 2，可以参考 <a href="https://github.com/cilium/pwru/pull/71/files">pwru / Run with specified kernel BTF file</a> 这个 PR 中的源代码。其中使用函数 <code>btf.LoadSpec(btfFile)</code> 来加载提供的外部 BTF 文件，使用 <code>btf.LoadKernelSpec()</code> 来加载当前内核中的 BTF 文件。</p>
+<h2 id="小结">小结</h2>
+<p>对 eBPF 了解得越多，越是想投身于 eBPF 的潮流中。可惜受限于工作内容，我接触到更多
+的是 Linux 网络方向上 eBPF 的应用。只能通过业余时间去深挖 eBPF 这个大坑了。</p>
+
+    </div>
+
+    <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2022-11-06
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/WeChat%20Pay.png">
+        <span>微信打赏</span>
+      </label>
+    
+  </div>
+</div><div class="post-reward">
+    <h1 align="left">微信公众号</h1>
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+</div><footer class="post-footer">
+      <div class="post-tags">
+          <a href="/tags/ebpf/">eBPF</a>
+          <a href="/tags/btf/">BTF</a>
+          </div>
+      <nav class="post-nav">
+        
+        <a class="next" href="/post/ebpf-trampoline-better-than-kprobe/">
+            <span class="next-text nav-default">eBPF Talk: 比 kprobe 更好的 trampoline</span>
+            <span class="next-text nav-mobile">下一篇</span>
+            <i class="iconfont icon-right"></i>
+          </a>
+      </nav>
+    </footer>
+  </article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:leonhuayra@163.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+      <a href="https://www.zhihu.com/people/leonhuayra" class="iconfont icon-zhihu" title="zhihu"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
