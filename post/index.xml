@@ -6,7 +6,16 @@
     <description>Recent content in Posts on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 13 Nov 2022 21:06:38 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 16 Nov 2022 22:32:06 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: bpf2bpf 特性简介</title>
+      <link>https://asphaltt.github.io/post/ebpf-bpf2bpf-functions-call/</link>
+      <pubDate>Wed, 16 Nov 2022 22:32:06 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-bpf2bpf-functions-call/</guid>
+      <description>最近才了解到 eBPF 里有 bpf2bpf 这个特性，故特意学习了一番。 bpf2bpf 简介 bpf2bpf 特性要求 4.16 内核版本，参考 BPF Features by Linux Kernel Version。 在 bpf2bpf 特性出现之前，eBPF 程序都要</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: BPF map 趣事一则</title>
       <link>https://asphaltt.github.io/post/ebpf-a-bpf-map-story/</link>
