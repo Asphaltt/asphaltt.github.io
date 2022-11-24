@@ -6,7 +6,16 @@
     <description>Recent content in eBPF Talk on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 16 Nov 2022 22:32:06 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf-talk/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Thu, 24 Nov 2022 22:11:05 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf-talk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: eBPF 尾调用简介</title>
+      <link>https://asphaltt.github.io/post/ebpf-tailcall-intro/</link>
+      <pubDate>Thu, 24 Nov 2022 22:11:05 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-tailcall-intro/</guid>
+      <description>在 bpf2bpf 特性简介 中提及到 bpf_tail_call()，我们就认真学习一下它吧。 bpf_tail_call 从 4.2 内核版本开始，eBPF 支持了尾调用特性。 该特性的主要特点是</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: bpf2bpf 特性简介</title>
       <link>https://asphaltt.github.io/post/ebpf-bpf2bpf-functions-call/</link>
