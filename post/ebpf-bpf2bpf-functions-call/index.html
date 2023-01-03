@@ -139,23 +139,23 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <article class="post">
-    
-    <header class="post-header">
-      <h1 class="post-title">eBPF Talk: bpf2bpf 特性简介</h1>
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: bpf2bpf 特性简介</h1>
 
-      <div class="post-meta">
-        <span class="post-time"> 2022-11-16 </span>
-        <div class="post-category">
-            <a href="/categories/ebpf/"> eBPF </a>
-            <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-            </div>
-          <span class="more-meta"> 约 1156 字 </span>
-          <span class="more-meta"> 预计阅读 3 分钟 </span>
-        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
-      </div>
-    </header>
+    <div class="post-meta">
+      <span class="post-time"> 2022-11-16 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1156 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
 
-    <div class="post-toc" id="post-toc">
+  <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content always-active">
     <nav id="TableOfContents">
@@ -173,8 +173,8 @@
 </nav>
   </div>
 </div>
-    <div class="post-content">
-      <p>最近才了解到 eBPF 里有 bpf2bpf 这个特性，故特意学习了一番。</p>
+  <div class="post-content">
+    <p>最近才了解到 eBPF 里有 bpf2bpf 这个特性，故特意学习了一番。</p>
 <h2 id="bpf2bpf-简介">bpf2bpf 简介</h2>
 <p>bpf2bpf 特性要求 4.16 内核版本，参考 <a href="https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md">BPF Features by Linux Kernel Version</a>。</p>
 <p>在 bpf2bpf 特性出现之前，eBPF 程序都要求是由单独的一个函数构成，而在 C 代码中强制使用 <code>always_inline</code> 去内联其它函数。这就带来两个问题：</p>
@@ -320,9 +320,9 @@
 <h2 id="小结">小结</h2>
 <p>在 5.2+ 内核的 Linux 系统中，可以使用命令 <code>bpftool prog dump xlated id ${progID}</code> 来查看已经挂载的 eBPF 程序的汇编指令，带有 C 源代码哟。<code>${prodID}</code> 可通过 <code>bpftool prog list</code> 来查询得到。</p>
 
-    </div>
+  </div>
 
-    <div class="post-copyright">
+  <div class="post-copyright">
   <p class="copyright-item">
     <span class="item-title">文章作者</span>
     <span class="item-content">Leon Hwang</span>
@@ -349,27 +349,32 @@
     
   </div>
 </div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <img align="center" src="/BPF%20zhishixingqiu%20-%20blog.jpg" alt="
+    知识星球" style="height: 200px;">
+</div><div class="post-reward">
     <h1 align="left">微信公众号</h1>
-    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="
+    微信公众号" style="height: 200px;">
 </div><footer class="post-footer">
-      <div class="post-tags">
-          <a href="/tags/ebpf/">eBPF</a>
-          <a href="/tags/bpf2bpf/">bpf2bpf</a>
-          </div>
-      <nav class="post-nav">
-        <a class="prev" href="/post/ebpf-tailcall-intro/">
-            <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">eBPF Talk: eBPF 尾调用简介</span>
-            <span class="prev-text nav-mobile">上一篇</span>
-          </a>
-        <a class="next" href="/post/ebpf-a-bpf-map-story/">
-            <span class="next-text nav-default">eBPF Talk: BPF map 趣事一则</span>
-            <span class="next-text nav-mobile">下一篇</span>
-            <i class="iconfont icon-right"></i>
-          </a>
-      </nav>
-    </footer>
-  </article>
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/bpf2bpf/">bpf2bpf</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-tailcall-intro/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: eBPF 尾调用简介</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-a-bpf-map-story/">
+        <span class="next-text nav-default">eBPF Talk: BPF map 趣事一则</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
         </div>
         
 
@@ -413,7 +418,7 @@
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
   </span>
 </div>
 

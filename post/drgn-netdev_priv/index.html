@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>使用 drgn 查看网络设备的私有数据 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 &amp;gt;&amp;gt;&amp;gt; veth_dev = netdev_get_by_name(prog, &amp;#34;veth_xxx0&amp;#34;) &amp;gt;&amp;gt;&amp;gt; veth_priv" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/drgn-netdev_priv/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/%20manifest.json">
+<link rel="mask-icon" href="/%20safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="使用 drgn 查看网络设备的私有数据" />
+<meta property="og:description" content="这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 &gt;&gt;&gt; veth_dev = netdev_get_by_name(prog, &#34;veth_xxx0&#34;) &gt;&gt;&gt; veth_priv" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/drgn-netdev_priv/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-01-01T22:52:56+08:00" />
+<meta property="article:modified_time" content="2023-01-01T22:52:56+08:00" />
+
+<meta itemprop="name" content="使用 drgn 查看网络设备的私有数据">
+<meta itemprop="description" content="这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 &gt;&gt;&gt; veth_dev = netdev_get_by_name(prog, &#34;veth_xxx0&#34;) &gt;&gt;&gt; veth_priv"><meta itemprop="datePublished" content="2023-01-01T22:52:56+08:00" />
+<meta itemprop="dateModified" content="2023-01-01T22:52:56+08:00" />
+<meta itemprop="wordCount" content="493">
+<meta itemprop="keywords" content="drgn,kernel,bpftrace,veth," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="使用 drgn 查看网络设备的私有数据"/>
+<meta name="twitter:description" content="这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 &gt;&gt;&gt; veth_dev = netdev_get_by_name(prog, &#34;veth_xxx0&#34;) &gt;&gt;&gt; veth_priv"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">使用 drgn 查看网络设备的私有数据</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2023-01-01 </span>
+      <div class="post-category">
+        <a href="/%20categories/drgn/"> drgn </a>
+        </div>
+      <span class="more-meta"> 约 493 字 </span>
+      <span class="more-meta"> 预计阅读 1 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents"></nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>这是 <a href="https://github.com/osandov/drgn"><code>drgn</code></a> 的一个使用例子。</p>
+<p>最近在追踪一个 <code>veth</code> 网络设备的问题的时候，发现需要查看 <code>veth</code> 网络设备的
+<code>netdev_priv()</code> 获取的私有数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Python" data-lang="Python"><span class="o">&gt;&gt;&gt;</span> <span class="n">veth_dev</span> <span class="o">=</span> <span class="n">netdev_get_by_name</span><span class="p">(</span><span class="n">prog</span><span class="p">,</span> <span class="s2">&#34;veth_xxx0&#34;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">veth_priv</span> <span class="o">=</span> <span class="n">Object</span><span class="p">(</span><span class="n">prog</span><span class="p">,</span> <span class="n">prog</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="s2">&#34;struct veth_priv *&#34;</span><span class="p">),</span> <span class="n">address</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">veth_dev</span><span class="p">)</span><span class="o">+</span><span class="n">prog</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="s2">&#34;struct net_device&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">veth_priv</span>
+<span class="o">*</span><span class="p">(</span><span class="n">struct</span> <span class="n">veth_priv</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff8bb05704a000</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">.</span><span class="n">peer</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x6c65645f68746576</span><span class="p">,</span>
+    <span class="o">.</span><span class="n">dropped</span> <span class="o">=</span> <span class="p">(</span><span class="n">atomic64_t</span><span class="p">){</span>
+        <span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="p">(</span><span class="n">s64</span><span class="p">)</span><span class="mi">53250772400481</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="o">.</span><span class="n">_xdp_prog</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff8bc342621740</span><span class="p">,</span>
+    <span class="o">.</span><span class="n">rq</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">veth_rq</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x0</span><span class="p">,</span>
+    <span class="o">.</span><span class="n">requested_headroom</span> <span class="o">=</span> <span class="p">(</span><span class="n">unsigned</span> <span class="nb">int</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>而在学会使用 <code>drgn</code> 之前，使用了如下 bpftrace 脚本来查看 <code>veth</code> 网络设备的私有数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback">#!/usr/bin/env bpftrace
+#include &lt;linux/netdevice.h&gt;
+
+struct veth_rq {
+    struct napi_struct  xdp_napi;
+    struct napi_struct  *napi; /* points to xdp_napi when the latter is initialized */
+    struct net_device   *dev;
+    void                *xdp_prog;
+};
+
+struct veth_priv {
+    struct net_device   *peer;
+    void                *dropped;
+    void                *xdp_prog;
+    struct veth_rq      *rq;
+    unsigned int        requested_headroom;
+};
+
+kprobe:veth_ndo_xdp_xmit
+{
+    $dev = (struct net_device *)arg0;
+    $flags = arg3;
+
+    printf(&#34;sizeof netdev: %d\n&#34;, sizeof(struct net_device));
+    printf(&#34;veth xdp xmit on %d:%s flags:%d\n&#34;, $dev-&gt;ifindex, $dev-&gt;name, $flags);
+
+    $priv = (struct veth_priv *)((uint8 *)$dev + sizeof(struct net_device));
+    $rcv = (struct net_device *)$priv-&gt;peer;
+    if ($rcv != 0) {
+        printf(&#34;veth rcv netdev is %d:%s\n&#34;, $rcv-&gt;ifindex, $rcv-&gt;name);
+
+        $rcv_priv = (struct veth_priv *)((uint8 *)$rcv + sizeof(struct net_device));
+        $rq = (struct veth_rq *)$rcv_priv-&gt;rq;
+        if ($rq != 0) {
+            printf(&#34;veth rcv netdev is %d:%s with rq\n&#34;, $rcv-&gt;ifindex, $rcv-&gt;name);
+
+            $napi = (struct napi_struct *)$rq-&gt;napi;
+            if ($napi != 0) {
+                printf(&#34;veth rcv netdev is %d:%s with rq with napi\n&#34;, $rcv-&gt;ifindex, $rcv-&gt;name);
+            } else {
+                printf(&#34;veth rcv netdev is %d:%s with rq without napi\n&#34;, $rcv-&gt;ifindex, $rcv-&gt;name);
+            }
+        } else {
+            printf(&#34;veth rcv netdev is %d:%s without rq\n&#34;, $rcv-&gt;ifindex, $rcv-&gt;name);
+        }
+    }
+
+    @xdpxmit[tid] = $dev-&gt;ifindex;
+}
+
+kretprobe:veth_ndo_xdp_xmit
+/@xdpxmit[tid]/
+{
+    $ifindex = @xdpxmit[tid];
+    delete(@xdpxmit[tid]);
+
+    printf(&#34;veth xdp xmit on %d return %d\n&#34;, $ifindex, retval);
+}
+
+END
+{
+    clear(@xdpxmit);
+}
+</code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Bash" data-lang="Bash"><span class="c1"># bpftrace veth_ndo_dp_xmit.bt</span>
+Attaching <span class="m">3</span> probes...
+sizeof netdev: <span class="m">2432</span>
+veth xdp xmit on 84:veth_xxx0 flags:1
+veth rcv netdev is 85:veth_yyy0
+veth rcv netdev is 85:veth_yyy0 with rq
+veth rcv netdev is 85:veth_yyy0 with rq without napi
+veth xdp xmit on <span class="m">84</span> <span class="k">return</span> -6
+^C
+</code></pre></td></tr></table>
+</div>
+</div><p>对比 drgn，bpftrace 脚本复杂又啰嗦、还无法输出 <code>veth_priv</code> 的所有内容。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2023-01-01
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+  <input type="checkbox" name="reward" id="reward" hidden />
+  <label class="reward-button" for="reward">赞赏支持</label>
+  <div class="qr-code">
+    
+    <label class="qr-code-image" for="reward">
+        <img class="image" src="/WeChat%20Pay.png">
+        <span>微信打赏</span>
+      </label>
+    
+  </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <img align="center" src="/BPF%20zhishixingqiu%20-%20blog.jpg" alt="
+    知识星球" style="height: 200px;">
+</div><div class="post-reward">
+    <h1 align="left">微信公众号</h1>
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="
+    微信公众号" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/drgn/">drgn</a>
+      <a href="/%20tags/kernel/">kernel</a>
+      <a href="/%20tags/bpftrace/">bpftrace</a>
+      <a href="/%20tags/veth/">veth</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-syscalldist/">
+        <span class="next-text nav-default">eBPF Talk: syscalldist: raw tracepoint 实战</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@proton.me" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

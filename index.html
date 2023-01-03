@@ -138,6 +138,29 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/drgn-netdev_priv/">使用 drgn 查看网络设备的私有数据</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-01-01 </span>
+      <div class="post-category">
+          <a href="/categories/drgn/"> drgn </a>
+          </div>
+        <span class="more-meta"> 约 493 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 &gt;&gt;&gt; veth_dev = netdev_get_by_name(prog, &#34;veth_xxx0&#34;) &gt;&gt;&gt; veth_priv
+    </div>
+    <div class="read-more">
+      <a href="/post/drgn-netdev_priv/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-syscalldist/">eBPF Talk: syscalldist: raw tracepoint 实战</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2022-12-22 </span>
@@ -352,30 +375,6 @@
   </div>
 </article>
 
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-final-step-to-co-re/">eBPF CO-RE 的终极一步</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-10-31 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-co-re/"> eBPF CO-RE </a>
-          </div>
-        <span class="more-meta"> 约 15 字 </span>
-        <span class="more-meta"> 预计阅读 1 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      请移步：eBPF CO-RE 的终极一步。
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-final-step-to-co-re/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
     </section>
   
   <nav class="pagination">
@@ -416,7 +415,7 @@
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
   </span>
 </div>
 

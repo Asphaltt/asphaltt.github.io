@@ -139,23 +139,23 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <article class="post">
-    
-    <header class="post-header">
-      <h1 class="post-title">eBPF Talk: 比 kprobe 更好的 trampoline</h1>
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 比 kprobe 更好的 trampoline</h1>
 
-      <div class="post-meta">
-        <span class="post-time"> 2022-11-01 </span>
-        <div class="post-category">
-            <a href="/categories/ebpf/"> eBPF </a>
-            <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-            </div>
-          <span class="more-meta"> 约 1016 字 </span>
-          <span class="more-meta"> 预计阅读 3 分钟 </span>
-        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
-      </div>
-    </header>
+    <div class="post-meta">
+      <span class="post-time"> 2022-11-01 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1016 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
 
-    <div class="post-toc" id="post-toc">
+  <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content always-active">
     <nav id="TableOfContents">
@@ -175,8 +175,8 @@
 </nav>
   </div>
 </div>
-    <div class="post-content">
-      <p><a href="https://lwn.net/Articles/803803/">eBPF trampoline</a>（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 <code>register_ftrace_direct()</code> 实现。它实现了 <code>kprobe/kretprobe</code> 的功能。相比于 <code>kprobe/kretprobe</code>，trampoline 的性能更好。特别是对比 <code>kretprobe</code>，trampoline 的 <code>fexit</code> 在实现了同样功能的同时，能够支持去获取目标函数的参数（这是 <code>kretprobe</code> 不支持的）（参考：<a href="https://github.com/torvalds/linux/commit/fec56f5890d93fc2ed74166c397dc186b1c25951">bpf: Introduce BPF trampoline</a>）。</p>
+  <div class="post-content">
+    <p><a href="https://lwn.net/Articles/803803/">eBPF trampoline</a>（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 <code>register_ftrace_direct()</code> 实现。它实现了 <code>kprobe/kretprobe</code> 的功能。相比于 <code>kprobe/kretprobe</code>，trampoline 的性能更好。特别是对比 <code>kretprobe</code>，trampoline 的 <code>fexit</code> 在实现了同样功能的同时，能够支持去获取目标函数的参数（这是 <code>kretprobe</code> 不支持的）（参考：<a href="https://github.com/torvalds/linux/commit/fec56f5890d93fc2ed74166c397dc186b1c25951">bpf: Introduce BPF trampoline</a>）。</p>
 <p>不过并不是所有内核版本都支持 trampoline，eBPF trampoline 特性要求 &gt;= 5.5 内核版本，参考 <a href="https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md">BPF Features by Linux Kernel Version</a>。</p>
 <h2 id="ebpf-trampoline-一例">eBPF trampoline 一例</h2>
 <p>Go 的 eBPF 库 <a href="https://github.com/cilium/ebpf">cilium/ebpf</a> 已支持 trampoline（<code>fenter/fexit</code>），参考其中的例子来写一个自己的 demo。</p>
@@ -498,9 +498,9 @@
 <p>参考 <a href="https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md">BPF Features by Linux Kernel
 Version</a>，一步一步地探索 eBPF 的特性。</p>
 
-    </div>
+  </div>
 
-    <div class="post-copyright">
+  <div class="post-copyright">
   <p class="copyright-item">
     <span class="item-title">文章作者</span>
     <span class="item-content">Leon Hwang</span>
@@ -527,28 +527,33 @@ Version</a>，一步一步地探索 eBPF 的特性。</p>
     
   </div>
 </div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <img align="center" src="/BPF%20zhishixingqiu%20-%20blog.jpg" alt="
+    知识星球" style="height: 200px;">
+</div><div class="post-reward">
     <h1 align="left">微信公众号</h1>
-    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="
+    微信公众号" style="height: 200px;">
 </div><footer class="post-footer">
-      <div class="post-tags">
-          <a href="/tags/ebpf/">eBPF</a>
-          <a href="/tags/kprobe/">kprobe</a>
-          <a href="/tags/trampoline/">trampoline</a>
-          </div>
-      <nav class="post-nav">
-        <a class="prev" href="/post/ebpf-external-btf/">
-            <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">eBPF Talk: 为当前内核提供外部 BTF 文件</span>
-            <span class="prev-text nav-mobile">上一篇</span>
-          </a>
-        <a class="next" href="/post/ebpf-cpu-and-numa/">
-            <span class="next-text nav-default">eBPF Talk: CPU and NUMA</span>
-            <span class="next-text nav-mobile">下一篇</span>
-            <i class="iconfont icon-right"></i>
-          </a>
-      </nav>
-    </footer>
-  </article>
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/kprobe/">kprobe</a>
+      <a href="/%20tags/trampoline/">trampoline</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-external-btf/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 为当前内核提供外部 BTF 文件</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-cpu-and-numa/">
+        <span class="next-text nav-default">eBPF Talk: CPU and NUMA</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
         </div>
         
 
@@ -592,7 +597,7 @@ Version</a>，一步一步地探索 eBPF 的特性。</p>
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
   </span>
 </div>
 

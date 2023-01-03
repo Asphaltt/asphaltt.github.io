@@ -139,22 +139,22 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <article class="post">
-    
-    <header class="post-header">
-      <h1 class="post-title">netlink 是 Go 和内核模块之间优秀的通信兵</h1>
+  
+  <header class="post-header">
+    <h1 class="post-title">netlink 是 Go 和内核模块之间优秀的通信兵</h1>
 
-      <div class="post-meta">
-        <span class="post-time"> 2021-11-03 </span>
-        <div class="post-category">
-            <a href="/categories/linux/"> Linux </a>
-            </div>
-          <span class="more-meta"> 约 1069 字 </span>
-          <span class="more-meta"> 预计阅读 3 分钟 </span>
-        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
-      </div>
-    </header>
+    <div class="post-meta">
+      <span class="post-time"> 2021-11-03 </span>
+      <div class="post-category">
+        <a href="/%20categories/linux/"> Linux </a>
+        </div>
+      <span class="more-meta"> 约 1069 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
 
-    <div class="post-toc" id="post-toc">
+  <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content always-active">
     <nav id="TableOfContents">
@@ -171,8 +171,8 @@
 </nav>
   </div>
 </div>
-    <div class="post-content">
-      <p><strong>netlink</strong> 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 <strong>ip</strong> 命令，就是使用 <strong>netlink</strong> 去跟内核进行通信的。</p>
+  <div class="post-content">
+    <p><strong>netlink</strong> 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 <strong>ip</strong> 命令，就是使用 <strong>netlink</strong> 去跟内核进行通信的。</p>
 <p>TL,DR  使用 Go 通过 <strong>netlink</strong> 向内核模块发送消息，内核模块响应一条消息，源代码：<a href="https://github.com/Asphaltt/kernel-module-fun/blob/master/custom-netlink.c">内核模块</a>，<a href="https://github.com/Asphaltt/kernel-module-fun/blob/master/custom-netlink/main.go">Go 程序</a>。</p>
 <h2 id="内核模块">内核模块</h2>
 <blockquote>
@@ -534,9 +534,9 @@ Echo from kernel: Hello from Go
 <p>使用 <strong>netlink</strong> 动态传配置的功能，可以取代 <code>insmod</code> 传参这一笨拙的传配置方式。</p>
 <p>P.S. <a href="https://github.com/Asphaltt/go-iproute2">go-iproute</a>：使用 Go 基于 <strong>netlink</strong> 实现的 <strong>iproute2</strong> 工具库</p>
 
-    </div>
+  </div>
 
-    <div class="post-copyright">
+  <div class="post-copyright">
   <p class="copyright-item">
     <span class="item-title">文章作者</span>
     <span class="item-content">Leon Hwang</span>
@@ -563,29 +563,34 @@ Echo from kernel: Hello from Go
     
   </div>
 </div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <img align="center" src="/BPF%20zhishixingqiu%20-%20blog.jpg" alt="
+    知识星球" style="height: 200px;">
+</div><div class="post-reward">
     <h1 align="left">微信公众号</h1>
-    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="
+    微信公众号" style="height: 200px;">
 </div><footer class="post-footer">
-      <div class="post-tags">
-          <a href="/tags/netlink/">netlink</a>
-          <a href="/tags/go/">Go</a>
-          <a href="/tags/linux/">Linux</a>
-          <a href="/tags/linux-kernel/">Linux kernel</a>
-          </div>
-      <nav class="post-nav">
-        <a class="prev" href="/post/go-nfnetlink-example/">
-            <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">使用 Go 对接 iptables NFQUEUE 的例子</span>
-            <span class="prev-text nav-mobile">上一篇</span>
-          </a>
-        <a class="next" href="/post/skbtracer/">
-            <span class="next-text nav-default">skbtracer: Linux 内核网络包路径追踪利器</span>
-            <span class="next-text nav-mobile">下一篇</span>
-            <i class="iconfont icon-right"></i>
-          </a>
-      </nav>
-    </footer>
-  </article>
+    <div class="post-tags">
+      <a href="/%20tags/netlink/">netlink</a>
+      <a href="/%20tags/go/">Go</a>
+      <a href="/%20tags/linux/">Linux</a>
+      <a href="/%20tags/linux-kernel/">Linux kernel</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/go-nfnetlink-example/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">使用 Go 对接 iptables NFQUEUE 的例子</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/skbtracer/">
+        <span class="next-text nav-default">skbtracer: Linux 内核网络包路径追踪利器</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
         </div>
         
 
@@ -629,7 +634,7 @@ Echo from kernel: Hello from Go
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
   </span>
 </div>
 

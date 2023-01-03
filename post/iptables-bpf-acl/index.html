@@ -139,23 +139,23 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <article class="post">
-    
-    <header class="post-header">
-      <h1 class="post-title">demo for 「eBPF 技术实践：高性能 ACL」</h1>
+  
+  <header class="post-header">
+    <h1 class="post-title">demo for 「eBPF 技术实践：高性能 ACL」</h1>
 
-      <div class="post-meta">
-        <span class="post-time"> 2022-04-01 </span>
-        <div class="post-category">
-            <a href="/categories/iptables/"> iptables </a>
-            <a href="/categories/ebpf/"> eBPF </a>
-            </div>
-          <span class="more-meta"> 约 1231 字 </span>
-          <span class="more-meta"> 预计阅读 3 分钟 </span>
-        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
-      </div>
-    </header>
+    <div class="post-meta">
+      <span class="post-time"> 2022-04-01 </span>
+      <div class="post-category">
+        <a href="/%20categories/iptables/"> iptables </a>
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        </div>
+      <span class="more-meta"> 约 1231 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
 
-    <div class="post-toc" id="post-toc">
+  <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content always-active">
     <nav id="TableOfContents">
@@ -177,8 +177,8 @@
 </nav>
   </div>
 </div>
-    <div class="post-content">
-      <p>在阅读了字节跳动发出的公众号文章 <a href="https://mp.weixin.qq.com/s/25mhUrNhF3HW8H6-ES7waA">eBPF 技术实践：高性能 ACL</a> 后，对其中提出的 <strong>O(1)</strong> 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，迫不及待地写了这个小 demo 来验证该算法。</p>
+  <div class="post-content">
+    <p>在阅读了字节跳动发出的公众号文章 <a href="https://mp.weixin.qq.com/s/25mhUrNhF3HW8H6-ES7waA">eBPF 技术实践：高性能 ACL</a> 后，对其中提出的 <strong>O(1)</strong> 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，迫不及待地写了这个小 demo 来验证该算法。</p>
 <blockquote>
 <p>源代码：<a href="https://github.com/Asphaltt/learn-by-example/tree/main/ebpf-acl">github.com/Asphaltt/learn-by-example/ebpf-acl</a></p>
 </blockquote>
@@ -357,9 +357,9 @@ Linux vultr 5.13.0-28-generic <span class="c1">#31-Ubuntu SMP Thu Jan 13 17:41:0
 <p>诚如该公众号文章所说，该匹配算法并不局限于 iptables xt_bpf，而能够适用于任何使用 eBPF 匹配网络包的场景，譬如 XDP、TC，甚至是 Open vSwitch 中基于 eBPF 的扩展。</p>
 <p>看似完美的 <strong>O(1)</strong> 匹配算法，却有一个<em>致命</em>的缺陷：保存规则的 bitmap 有长度限制，在使用的时候就需要预估好 bitmap 的大小且无法动态扩容。比如，保存 1024 条规则需要使用 128 字节大小的 bitmap。然而，看似<em>致命</em>，但大部分场景使用的规则数量都不会超过 100 条。</p>
 
-    </div>
+  </div>
 
-    <div class="post-copyright">
+  <div class="post-copyright">
   <p class="copyright-item">
     <span class="item-title">文章作者</span>
     <span class="item-content">Leon Hwang</span>
@@ -386,28 +386,33 @@ Linux vultr 5.13.0-28-generic <span class="c1">#31-Ubuntu SMP Thu Jan 13 17:41:0
     
   </div>
 </div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <img align="center" src="/BPF%20zhishixingqiu%20-%20blog.jpg" alt="
+    知识星球" style="height: 200px;">
+</div><div class="post-reward">
     <h1 align="left">微信公众号</h1>
-    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="
+    微信公众号" style="height: 200px;">
 </div><footer class="post-footer">
-      <div class="post-tags">
-          <a href="/tags/iptables/">iptables</a>
-          <a href="/tags/iptables-bpf/">iptables-bpf</a>
-          <a href="/tags/ebpf/">eBPF</a>
-          </div>
-      <nav class="post-nav">
-        <a class="prev" href="/post/ebpf-black-magic/">
-            <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">为 eBPF 程序注入黑魔法 【错误姿势】</span>
-            <span class="prev-text nav-mobile">上一篇</span>
-          </a>
-        <a class="next" href="/post/linux-how-nsenter-works/">
-            <span class="next-text nav-default">一文吃透 Linux nsenter</span>
-            <span class="next-text nav-mobile">下一篇</span>
-            <i class="iconfont icon-right"></i>
-          </a>
-      </nav>
-    </footer>
-  </article>
+    <div class="post-tags">
+      <a href="/%20tags/iptables/">iptables</a>
+      <a href="/%20tags/iptables-bpf/">iptables-bpf</a>
+      <a href="/%20tags/ebpf/">eBPF</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-black-magic/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">为 eBPF 程序注入黑魔法 【错误姿势】</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/linux-how-nsenter-works/">
+        <span class="next-text nav-default">一文吃透 Linux nsenter</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
         </div>
         
 
@@ -451,7 +456,7 @@ Linux vultr 5.13.0-28-generic <span class="c1">#31-Ubuntu SMP Thu Jan 13 17:41:0
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
   </span>
 </div>
 

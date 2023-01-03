@@ -139,23 +139,23 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <article class="post">
-    
-    <header class="post-header">
-      <h1 class="post-title">eBPF Talk: 为当前内核提供外部 BTF 文件</h1>
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 为当前内核提供外部 BTF 文件</h1>
 
-      <div class="post-meta">
-        <span class="post-time"> 2022-11-06 </span>
-        <div class="post-category">
-            <a href="/categories/ebpf/"> eBPF </a>
-            <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-            </div>
-          <span class="more-meta"> 约 547 字 </span>
-          <span class="more-meta"> 预计阅读 2 分钟 </span>
-        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
-      </div>
-    </header>
+    <div class="post-meta">
+      <span class="post-time"> 2022-11-06 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 547 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
 
-    <div class="post-toc" id="post-toc">
+  <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content always-active">
     <nav id="TableOfContents">
@@ -169,8 +169,8 @@
 </nav>
   </div>
 </div>
-    <div class="post-content">
-      <p>最近系统地学习了 eBPF CO-RE（Compile Once, Run Everywhere，一次编译，到处运行），其中包括了 BTF。</p>
+  <div class="post-content">
+    <p>最近系统地学习了 eBPF CO-RE（Compile Once, Run Everywhere，一次编译，到处运行），其中包括了 BTF。</p>
 <p>BTF，BPF Type Format，是 eBPF 中专门用来存储调试信息的格式，是一种二进制格式。详细的格式介绍，请查看内核文档 <a href="https://www.kernel.org/doc/html/latest/bpf/btf.html">BPF Type Format (BTF)</a>。</p>
 <p>业界里的大牛人士为了真正地实现 CO-RE 做出了不懈的努力，特别是 <a href="https://lore.kernel.org/bpf/164503621150.2935.6634904664671748900.git-patchwork-notify@kernel.org/T/#mdd100ccbc95947c8fe6be74db66002e273a29abd">bpftool gen min_core_btf</a> 的开创者们。<code>bpftool gen min_core_btf</code> 是用来给多个 eBPF 程序生成一份最小的 BTF 文件，以便将该份最小的 BTF 文件内嵌到用户应用程序中。</p>
 <p>在使用 BTF 文件的时候，有个神奇的地方是，如果当前内核在编译的时候没有开启 <code>CONFIG_DEBUG_INFO_BTF</code> 选项，即内核不自带对应的 BTF 文件 <code>/sys/kernel/btf/vmlinux</code>，则用户应用程序需要为此专门提供外部的 BTF 文件，譬如 <a href="https://github.com/aquasecurity/btfhub">BTFHub</a> 中收集的多个没开启 <code>CONFIG_DEBUG_INFO_BTF</code> 的 Linux 发行版内核对应的 BTF 文件。</p>
@@ -184,9 +184,9 @@
 <p>对 eBPF 了解得越多，越是想投身于 eBPF 的潮流中。可惜受限于工作内容，我接触到更多
 的是 Linux 网络方向上 eBPF 的应用。只能通过业余时间去深挖 eBPF 这个大坑了。</p>
 
-    </div>
+  </div>
 
-    <div class="post-copyright">
+  <div class="post-copyright">
   <p class="copyright-item">
     <span class="item-title">文章作者</span>
     <span class="item-content">Leon Hwang</span>
@@ -213,27 +213,32 @@
     
   </div>
 </div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <img align="center" src="/BPF%20zhishixingqiu%20-%20blog.jpg" alt="
+    知识星球" style="height: 200px;">
+</div><div class="post-reward">
     <h1 align="left">微信公众号</h1>
-    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="
+    微信公众号" style="height: 200px;">
 </div><footer class="post-footer">
-      <div class="post-tags">
-          <a href="/tags/ebpf/">eBPF</a>
-          <a href="/tags/btf/">BTF</a>
-          </div>
-      <nav class="post-nav">
-        <a class="prev" href="/post/ebpf-a-bpf-map-story/">
-            <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">eBPF Talk: BPF map 趣事一则</span>
-            <span class="prev-text nav-mobile">上一篇</span>
-          </a>
-        <a class="next" href="/post/ebpf-trampoline-better-than-kprobe/">
-            <span class="next-text nav-default">eBPF Talk: 比 kprobe 更好的 trampoline</span>
-            <span class="next-text nav-mobile">下一篇</span>
-            <i class="iconfont icon-right"></i>
-          </a>
-      </nav>
-    </footer>
-  </article>
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/btf/">BTF</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-a-bpf-map-story/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: BPF map 趣事一则</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-trampoline-better-than-kprobe/">
+        <span class="next-text nav-default">eBPF Talk: 比 kprobe 更好的 trampoline</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
         </div>
         
 
@@ -277,7 +282,7 @@
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
   </span>
 </div>
 

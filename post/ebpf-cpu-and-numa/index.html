@@ -139,23 +139,23 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <article class="post">
-    
-    <header class="post-header">
-      <h1 class="post-title">eBPF Talk: CPU and NUMA</h1>
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: CPU and NUMA</h1>
 
-      <div class="post-meta">
-        <span class="post-time"> 2022-10-31 </span>
-        <div class="post-category">
-            <a href="/categories/ebpf/"> eBPF </a>
-            <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-            </div>
-          <span class="more-meta"> 约 955 字 </span>
-          <span class="more-meta"> 预计阅读 2 分钟 </span>
-        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
-      </div>
-    </header>
+    <div class="post-meta">
+      <span class="post-time"> 2022-10-31 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 955 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
 
-    <div class="post-toc" id="post-toc">
+  <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content always-active">
     <nav id="TableOfContents">
@@ -171,8 +171,8 @@
 </nav>
   </div>
 </div>
-    <div class="post-content">
-      <p>在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一个 CPU 上，因为这样的性能最好（没有内存 cache miss 的性能损耗）。</p>
+  <div class="post-content">
+    <p>在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一个 CPU 上，因为这样的性能最好（没有内存 cache miss 的性能损耗）。</p>
 <p>在 eBPF 中，有两个帮助函数能够获取 CPU ID 和 NUMA Node ID。</p>
 <p><a href="https://man7.org/linux/man-pages/man7/bpf-helpers.7.html">bpf-helpers</a> 中能找到它们。</p>
 <h2 id="cpu-bpf_get_smp_processor_id">CPU: bpf_get_smp_processor_id</h2>
@@ -415,9 +415,9 @@
 <code>bpf_get_smp_processor_id()</code> 后在用户态应用程序中去查询 CPU 跟 NUMA Node 的映射关系。有个 <code>bpf_get_numa_node_id()</code>，就不需要在用户态应用程序中去解析那一堆
 <code>/proc/xxx</code> 文件了。</p>
 
-    </div>
+  </div>
 
-    <div class="post-copyright">
+  <div class="post-copyright">
   <p class="copyright-item">
     <span class="item-title">文章作者</span>
     <span class="item-content">Leon Hwang</span>
@@ -444,26 +444,31 @@
     
   </div>
 </div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <img align="center" src="/BPF%20zhishixingqiu%20-%20blog.jpg" alt="
+    知识星球" style="height: 200px;">
+</div><div class="post-reward">
     <h1 align="left">微信公众号</h1>
-    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="
+    微信公众号" style="height: 200px;">
 </div><footer class="post-footer">
-      <div class="post-tags">
-          <a href="/tags/ebpf/">eBPF</a>
-          </div>
-      <nav class="post-nav">
-        <a class="prev" href="/post/ebpf-trampoline-better-than-kprobe/">
-            <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">eBPF Talk: 比 kprobe 更好的 trampoline</span>
-            <span class="prev-text nav-mobile">上一篇</span>
-          </a>
-        <a class="next" href="/post/ebpf-final-step-to-co-re/">
-            <span class="next-text nav-default">eBPF CO-RE 的终极一步</span>
-            <span class="next-text nav-mobile">下一篇</span>
-            <i class="iconfont icon-right"></i>
-          </a>
-      </nav>
-    </footer>
-  </article>
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-trampoline-better-than-kprobe/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 比 kprobe 更好的 trampoline</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-final-step-to-co-re/">
+        <span class="next-text nav-default">eBPF CO-RE 的终极一步</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
         </div>
         
 
@@ -507,7 +512,7 @@
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
   </span>
 </div>
 

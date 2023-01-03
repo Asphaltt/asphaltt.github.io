@@ -139,23 +139,23 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <article class="post">
-    
-    <header class="post-header">
-      <h1 class="post-title">eBPF Talk: syscalldist: raw tracepoint 实战</h1>
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: syscalldist: raw tracepoint 实战</h1>
 
-      <div class="post-meta">
-        <span class="post-time"> 2022-12-22 </span>
-        <div class="post-category">
-            <a href="/categories/ebpf/"> eBPF </a>
-            <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-            </div>
-          <span class="more-meta"> 约 796 字 </span>
-          <span class="more-meta"> 预计阅读 2 分钟 </span>
-        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
-      </div>
-    </header>
+    <div class="post-meta">
+      <span class="post-time"> 2022-12-22 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 796 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
 
-    <div class="post-toc" id="post-toc">
+  <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content always-active">
     <nav id="TableOfContents">
@@ -176,8 +176,8 @@
 </nav>
   </div>
 </div>
-    <div class="post-content">
-      <p><a href="https://github.com/iovisor/bcc/tree/master/libbpf-tools">bcc/libbpf-tools</a> 里有许多使用 <code>bcc</code> 实现的小工具。</p>
+  <div class="post-content">
+    <p><a href="https://github.com/iovisor/bcc/tree/master/libbpf-tools">bcc/libbpf-tools</a> 里有许多使用 <code>bcc</code> 实现的小工具。</p>
 <p>咱们也来实现一个类似的工具吧。</p>
 <h2 id="raw-tracepoint">raw tracepoint</h2>
 <p>不同于 <a href="https://docs.kernel.org/trace/tracepoints.html">tracepoint</a>，raw tracepoint 的资料较少。</p>
@@ -374,9 +374,9 @@ Histogram <span class="k">for</span> syscall<span class="o">(</span>7<span class
 <p><code>syscalldist</code> 的核心代码如上，Go 代码就比较简单了。</p>
 <p>完整代码：<a href="https://github.com/Asphaltt/syscalldist">syscalldist</a>。</p>
 
-    </div>
+  </div>
 
-    <div class="post-copyright">
+  <div class="post-copyright">
   <p class="copyright-item">
     <span class="item-title">文章作者</span>
     <span class="item-content">Leon Hwang</span>
@@ -403,23 +403,32 @@ Histogram <span class="k">for</span> syscall<span class="o">(</span>7<span class
     
   </div>
 </div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <img align="center" src="/BPF%20zhishixingqiu%20-%20blog.jpg" alt="
+    知识星球" style="height: 200px;">
+</div><div class="post-reward">
     <h1 align="left">微信公众号</h1>
-    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="
+    微信公众号" style="height: 200px;">
 </div><footer class="post-footer">
-      <div class="post-tags">
-          <a href="/tags/ebpf/">eBPF</a>
-          <a href="/tags/syscalldist/">syscalldist</a>
-          </div>
-      <nav class="post-nav">
-        
-        <a class="next" href="/post/ebpf-two-map-helpers/">
-            <span class="next-text nav-default">eBPF Talk: 两个简单好用的 map 处理函数</span>
-            <span class="next-text nav-mobile">下一篇</span>
-            <i class="iconfont icon-right"></i>
-          </a>
-      </nav>
-    </footer>
-  </article>
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/syscalldist/">syscalldist</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/drgn-netdev_priv/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">使用 drgn 查看网络设备的私有数据</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-two-map-helpers/">
+        <span class="next-text nav-default">eBPF Talk: 两个简单好用的 map 处理函数</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
         </div>
         
 
@@ -463,7 +472,7 @@ Histogram <span class="k">for</span> syscall<span class="o">(</span>7<span class
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
   </span>
 </div>
 

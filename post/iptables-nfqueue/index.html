@@ -139,22 +139,22 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <article class="post">
-    
-    <header class="post-header">
-      <h1 class="post-title">一文吃透 iptables-nfqueue</h1>
+  
+  <header class="post-header">
+    <h1 class="post-title">一文吃透 iptables-nfqueue</h1>
 
-      <div class="post-meta">
-        <span class="post-time"> 2021-12-09 </span>
-        <div class="post-category">
-            <a href="/categories/iptables/"> iptables </a>
-            </div>
-          <span class="more-meta"> 约 3152 字 </span>
-          <span class="more-meta"> 预计阅读 7 分钟 </span>
-        <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次阅读 </span>
-      </div>
-    </header>
+    <div class="post-meta">
+      <span class="post-time"> 2021-12-09 </span>
+      <div class="post-category">
+        <a href="/%20categories/iptables/"> iptables </a>
+        </div>
+      <span class="more-meta"> 约 3152 字 </span>
+      <span class="more-meta"> 预计阅读 7 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
 
-    <div class="post-toc" id="post-toc">
+  <div class="post-toc" id="post-toc">
   <h2 class="post-toc-title">文章目录</h2>
   <div class="post-toc-content always-active">
     <nav id="TableOfContents">
@@ -186,8 +186,8 @@
 </nav>
   </div>
 </div>
-    <div class="post-content">
-      <p><code>iptables</code> 常用，<code>iptables-nfqueue</code> 少用。因需要深度理解 <code>iptables-nfqueue</code>，所以顺手撸了一遍 <code>iptables-nfqueue</code> 的源代码。</p>
+  <div class="post-content">
+    <p><code>iptables</code> 常用，<code>iptables-nfqueue</code> 少用。因需要深度理解 <code>iptables-nfqueue</code>，所以顺手撸了一遍 <code>iptables-nfqueue</code> 的源代码。</p>
 <p><code>iptables-nfqueue</code> ，aka NFQUEUE，是将网络包发送到用户程序去做接收/丢弃决定的 <code>iptables</code> 特性。NFQUEUE 需要用户程序监听 NFQUEUE 队列，并对接收到的网络包响应对应的判决结果。</p>
 <h2 id="nfqueue-的使用">NFQUEUE 的使用</h2>
 <p>例子参考：<a href="https://asphaltt.github.io/post/go-nfnetlink-example/">使用 Go 对接 iptables NFQUEUE 的例子</a></p>
@@ -1010,9 +1010,9 @@
 <h2 id="总结">总结</h2>
 <p>NFQUEUE 因为需要将网络包发送给用户程序，所以它的性能并不高；但相比于堆叠 iptables 规则，NFQUEUE 的处理方式更加灵活。而对于 <code>XDP</code>、<code>xt_bpf</code> 等拥有同等灵活性的新技术而言，NFQUEUE 的适用范围更广、能够适配很多老旧系统。</p>
 
-    </div>
+  </div>
 
-    <div class="post-copyright">
+  <div class="post-copyright">
   <p class="copyright-item">
     <span class="item-title">文章作者</span>
     <span class="item-content">Leon Hwang</span>
@@ -1039,27 +1039,32 @@
     
   </div>
 </div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <img align="center" src="/BPF%20zhishixingqiu%20-%20blog.jpg" alt="
+    知识星球" style="height: 200px;">
+</div><div class="post-reward">
     <h1 align="left">微信公众号</h1>
-    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="微信公众号">
+    <img align="center" src="/WeChat%20Gongzhonghao.png" alt="
+    微信公众号" style="height: 200px;">
 </div><footer class="post-footer">
-      <div class="post-tags">
-          <a href="/tags/iptables/">iptables</a>
-          <a href="/tags/iptables-nfqueue/">iptables-nfqueue</a>
-          </div>
-      <nav class="post-nav">
-        <a class="prev" href="/post/iptables-nfqueue-usage/">
-            <i class="iconfont icon-left"></i>
-            <span class="prev-text nav-default">iptables-nfqueue 的使用</span>
-            <span class="prev-text nav-mobile">上一篇</span>
-          </a>
-        <a class="next" href="/post/go-nfnetlink-example/">
-            <span class="next-text nav-default">使用 Go 对接 iptables NFQUEUE 的例子</span>
-            <span class="next-text nav-mobile">下一篇</span>
-            <i class="iconfont icon-right"></i>
-          </a>
-      </nav>
-    </footer>
-  </article>
+    <div class="post-tags">
+      <a href="/%20tags/iptables/">iptables</a>
+      <a href="/%20tags/iptables-nfqueue/">iptables-nfqueue</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/iptables-nfqueue-usage/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">iptables-nfqueue 的使用</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/go-nfnetlink-example/">
+        <span class="next-text nav-default">使用 Go 对接 iptables NFQUEUE 的例子</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
         </div>
         
 
@@ -1103,7 +1108,7 @@
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2022<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
   </span>
 </div>
 
