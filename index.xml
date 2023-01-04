@@ -6,7 +6,16 @@
     <description>Recent content on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 01 Jan 2023 22:52:56 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 04 Jan 2023 22:34:51 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: bpf map 源码导读</title>
+      <link>https://asphaltt.github.io/post/ebpf-map-source-code-reading-guide/</link>
+      <pubDate>Wed, 04 Jan 2023 22:34:51 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-map-source-code-reading-guide/</guid>
+      <description>eBPF map 有诸多类型。如果想要理解它们的实现，该如何去阅读它们的源代码呢？ 类型接口 在内核的源代码海洋中，接口的定义一般是：结构体的字段都是函数指针</description>
+    </item>
+    
     <item>
       <title>使用 drgn 查看网络设备的私有数据</title>
       <link>https://asphaltt.github.io/post/drgn-netdev_priv/</link>
