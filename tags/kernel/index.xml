@@ -13,7 +13,7 @@
       <pubDate>Sun, 01 Jan 2023 22:52:56 +0800</pubDate>
       
       <guid>https://asphaltt.github.io/post/drgn-netdev_priv/</guid>
-      <description>这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 &amp;gt;&amp;gt;&amp;gt; veth_dev = netdev_get_by_name(prog, &amp;#34;veth_xxx0&amp;#34;) &amp;gt;&amp;gt;&amp;gt; veth_priv</description>
+      <description>这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19</description>
     </item>
     
   </channel>
