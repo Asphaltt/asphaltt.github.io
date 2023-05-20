@@ -6,7 +6,16 @@
     <description>Recent content in Posts on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 20 May 2023 17:26:45 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 20 May 2023 17:32:59 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 好用的 histogram</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-15-useful-histogram/</link>
+      <pubDate>Sat, 20 May 2023 17:32:59 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-15-useful-histogram/</guid>
+      <description>最近 eBPF 轮子造的多了后，发现需要用 histogram 的时候，要写的代码就一个模板，如下。 以下内容以 syscalldist 为例。 用于 histogram 的 C 代码 参考（抄袭） libbpf-tools 里 histogram 的实现，用于 histogram 的 C 代</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: bpf2bpf 特性揭秘</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-14-bpf2bpf-functions-call/</link>
