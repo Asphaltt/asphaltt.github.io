@@ -6,14 +6,23 @@
     <description>Recent content in eBPF on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 20 May 2023 17:17:39 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 20 May 2023 17:26:45 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: bpf2bpf 特性揭秘</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-14-bpf2bpf-functions-call/</link>
+      <pubDate>Sat, 20 May 2023 17:26:45 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-14-bpf2bpf-functions-call/</guid>
+      <description>在 eBPF Talk: bpf2bpf 特性简介 中已介绍了 bpf2bpf 特性，同时有 demo 介绍该怎么使用该特性。 在该特性神秘面纱的背后，到底是怎样的呢？让我娓娓道来。 编译阶段 不懂编译器 clang 中</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: cilium/ebpf 中 bpf map 的诞生</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/</link>
       <pubDate>Sat, 20 May 2023 17:17:39 +0800</pubDate>
       
       <guid>https://asphaltt.github.io/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/</guid>
-      <description>在博客 揭秘 BPF map 前生今世，已讲解了 bpf map 从定义到创建的整个过程。 不过博客中讲解的加载器是 C 语言的 libbpf。 在此，就讲解一下纯 Go 语言的加载器 cilium/ebpf</description>
+      <description>在博客 eBPF Talk: 揭秘 BPF map 前生今世，已讲解了 bpf map 从定义到创建的整个过程。 不过博客中讲解的加载器是 C 语言的 libbpf。 在此，就讲解一下纯 Go 语言的加载</description>
     </item>
     
     <item>
