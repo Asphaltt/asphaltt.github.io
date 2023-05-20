@@ -241,7 +241,7 @@
                     <span class="p">|</span><span class="o">--</span><span class="p">&gt;</span><span class="nx">r1</span><span class="p">,</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">errNo</span> <span class="o">:=</span> <span class="nx">unix</span><span class="p">.</span><span class="nf">Syscall</span><span class="p">(</span><span class="nx">unix</span><span class="p">.</span><span class="nx">SYS_BPF</span><span class="p">,</span> <span class="nb">uintptr</span><span class="p">(</span><span class="nx">cmd</span><span class="p">),</span> <span class="nb">uintptr</span><span class="p">(</span><span class="nx">attr</span><span class="p">),</span> <span class="nx">size</span><span class="p">)</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>由 <a href="./ebpf-map-source-code-reading-guide/">bpf map 源码导读</a> 可知，BPF 系统调用中创建 bpf map 的时候，系统调用的返回值是一个 <code>int</code>；该 <code>int</code> 小于 0 时则是一个 errno，否则即是一个 map fd。</p>
+</div><p>由 <a href="../ebpf-map-source-code-reading-guide/">bpf map 源码导读</a> 可知，BPF 系统调用中创建 bpf map 的时候，系统调用的返回值是一个 <code>int</code>；该 <code>int</code> 小于 0 时则是一个 errno，否则即是一个 map fd。</p>
 <h2 id="绑定-map-fd">绑定 map fd</h2>
 <p>在创建了 map 之后，加载器中就知道了该 map 对应的 fd。
 之后，在处理 bpf prog 的时候，将 map fd 赋值给指令的 <code>imm</code> 即可。</p>
