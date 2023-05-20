@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>cilium/ebpf on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/cilium/ebpf/</link>
+    <description>Recent content in cilium/ebpf on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language><atom:link href="https://asphaltt.github.io/tags/cilium/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: cilium/ebpf 中 bpf map 的诞生</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/</link>
+      <pubDate>Sat, 20 May 2023 17:17:39 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/</guid>
+      <description>在博客 揭秘 BPF map 前生今世，已讲解了 bpf map 从定义到创建的整个过程。 不过博客中讲解的加载器是 C 语言的 libbpf。 在此，就讲解一下纯 Go 语言的加载器 cilium/ebpf</description>
+    </item>
+    
+  </channel>
+</rss>

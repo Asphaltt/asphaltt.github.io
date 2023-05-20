@@ -6,7 +6,16 @@
     <description>Recent content in eBPF on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 04 Jan 2023 22:34:51 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 20 May 2023 17:17:39 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: cilium/ebpf 中 bpf map 的诞生</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/</link>
+      <pubDate>Sat, 20 May 2023 17:17:39 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/</guid>
+      <description>在博客 揭秘 BPF map 前生今世，已讲解了 bpf map 从定义到创建的整个过程。 不过博客中讲解的加载器是 C 语言的 libbpf。 在此，就讲解一下纯 Go 语言的加载器 cilium/ebpf</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: bpf map 源码导读</title>
       <link>https://asphaltt.github.io/post/ebpf-map-source-code-reading-guide/</link>
