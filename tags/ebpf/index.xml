@@ -6,7 +6,16 @@
     <description>Recent content in eBPF on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 20 May 2023 17:32:59 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 20 May 2023 17:37:39 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 解密 XDP generic 模式</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-16-xdp-generic-mode/</link>
+      <pubDate>Sat, 20 May 2023 17:37:39 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-16-xdp-generic-mode/</guid>
+      <description>近期又得搞 XDP 了，就顺手研究了下 XDP generic 模式的源代码。 XDP generic 模式的函数位置 已知，内核协议栈会对每个 skb 都执行一次 XDP generic 模式处理，当然是启用了 XDP generic 模式的情</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: 好用的 histogram</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-15-useful-histogram/</link>
