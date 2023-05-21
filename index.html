@@ -138,6 +138,30 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-21-xdp-acl-optimisation/">eBPF Talk: 优化 XDP ACL</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1476 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      书接上回 ，本文讲解对高性能 XDP ACL 的开源项目 xdp_acl 的优化内容： 按需开启 eBPF 中的 debug 日志 动态调整 bitmap 大小 使用 PERCPU ARRAY 优化规则 bpf map 动态增删 ACL 规则的处理 以下代码片段
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-21-xdp-acl-optimisation/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-20-xdp-acl-again/">eBPF Talk: 再论高性能 eBPF ACL</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-21 </span>
@@ -348,29 +372,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-map-source-code-reading-guide/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/drgn-netdev_priv/">使用 drgn 查看网络设备的私有数据</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-01-01 </span>
-      <div class="post-category">
-          <a href="/categories/drgn/"> drgn </a>
-          </div>
-        <span class="more-meta"> 约 540 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
-    </div>
-    <div class="read-more">
-      <a href="/post/drgn-netdev_priv/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

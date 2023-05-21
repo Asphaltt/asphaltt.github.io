@@ -6,7 +6,16 @@
     <description>Recent content in XDP ACL on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 21 May 2023 16:03:32 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/xdp-acl/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 21 May 2023 16:08:36 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/xdp-acl/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 优化 XDP ACL</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</link>
+      <pubDate>Sun, 21 May 2023 16:08:36 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</guid>
+      <description>书接上回 ，本文讲解对高性能 XDP ACL 的开源项目 xdp_acl 的优化内容： 按需开启 eBPF 中的 debug 日志 动态调整 bitmap 大小 使用 PERCPU ARRAY 优化规则 bpf map 动态增删 ACL 规则的处理 以下代码片段</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: 再论高性能 eBPF ACL</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-20-xdp-acl-again/</link>
