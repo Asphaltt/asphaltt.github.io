@@ -3,28 +3,77 @@
   
   <url>
     <loc>https://asphaltt.github.io/categories/</loc>
-    <lastmod>2023-05-21T16:24:22+08:00</lastmod>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/ebpf/</loc>
-    <lastmod>2023-05-21T16:24:22+08:00</lastmod>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf/</loc>
-    <lastmod>2023-05-21T16:24:22+08:00</lastmod>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf-talk/</loc>
-    <lastmod>2023-05-21T16:24:22+08:00</lastmod>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/ebpf-talk-27-xdp-metadata-in-action/</loc>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/</loc>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/metadata/</loc>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/</loc>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/</loc>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/tc-bpf/</loc>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/xdp/</loc>
+    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -37,21 +86,7 @@
   </url>
   
   <url>
-    <loc>https://asphaltt.github.io/</loc>
-    <lastmod>2023-05-21T16:24:22+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/post/</loc>
-    <lastmod>2023-05-21T16:24:22+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/</loc>
+    <loc>https://asphaltt.github.io/tags/iptables/</loc>
     <lastmod>2023-05-21T16:24:22+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -66,13 +101,6 @@
   
   <url>
     <loc>https://asphaltt.github.io/post/ebpf-talk-25-xdp-redirect-packet/</loc>
-    <lastmod>2023-05-21T16:22:07+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/xdp/</loc>
     <lastmod>2023-05-21T16:22:07+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -402,13 +430,6 @@
   
   <url>
     <loc>https://asphaltt.github.io/post/iptables-bpf-acl/</loc>
-    <lastmod>2022-04-01T21:14:32+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/iptables/</loc>
     <lastmod>2022-04-01T21:14:32+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
