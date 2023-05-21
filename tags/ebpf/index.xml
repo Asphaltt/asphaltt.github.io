@@ -6,7 +6,16 @@
     <description>Recent content in eBPF on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 21 May 2023 16:22:07 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 21 May 2023 16:24:22 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 低性能 eBPF ACL</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-26-iptables-in-bpf/</link>
+      <pubDate>Sun, 21 May 2023 16:24:22 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-26-iptables-in-bpf/</guid>
+      <description>eBPF Talk: 再论高性能 eBPF ACL 中的 ACL 规则匹配算法比较复杂，晦涩难懂；相对于 iptables 而言，该实现就比较难维护了。这就是为了性能而牺牲了可维护性。 所以，有没有类似</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: 揭秘 XDP 转发网络包【续】</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-25-xdp-redirect-packet/</link>
