@@ -6,7 +6,16 @@
     <description>Recent content in eBPF on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 21 May 2023 16:41:37 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 21 May 2023 23:29:32 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: XDP 转发失败了</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-29-failed-to-xdp-redirect/</link>
+      <pubDate>Sun, 21 May 2023 23:29:32 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-29-failed-to-xdp-redirect/</guid>
+      <description>奇葩场景遇到个奇葩问题。 为了更好的性能，就将 XDP 程序挂载到网卡驱动里。但有个业务需求，在 XDP 程序里将需要延迟的流量转发到 veth 设备。所以，就直接在 XDP</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: 在 veth 上运行 XDP</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-28-xdp-on-veth/</link>
