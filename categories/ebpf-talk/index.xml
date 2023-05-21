@@ -6,7 +6,16 @@
     <description>Recent content in eBPF Talk on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 21 May 2023 16:19:32 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf-talk/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 21 May 2023 16:22:07 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/categories/ebpf-talk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 揭秘 XDP 转发网络包【续】</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-25-xdp-redirect-packet/</link>
+      <pubDate>Sun, 21 May 2023 16:22:07 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-25-xdp-redirect-packet/</guid>
+      <description>书接 eBPF Talk: 揭秘 XDP 转发网络包 未竟的内容，看看最后 generic_xdp_tx() 函数中的发包详情。 1 2 3 4 5 6 // ${KERNEL}/net/core/dev.c generic_xdp_tx() |--&amp;gt;netdev_start_xmit() |--&amp;gt;__netdev_start_xmit() |--&amp;gt;ops-&amp;gt;ndo_start_xmit(skb, dev); 由以上函数调用栈可知，XDP_REDIRECT 和 XDP_TX</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: bpf verifier 报告 ENOSPC</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-24-bpf-verifier-enospc/</link>

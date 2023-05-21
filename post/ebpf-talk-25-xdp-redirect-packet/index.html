@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title>eBPF Talk: bpf verifier 报告 ENOSPC - LeonHwang&#39;s Blogs</title>
+  <title>eBPF Talk: 揭秘 XDP 转发网络包【续】 - LeonHwang&#39;s Blogs</title>
   <meta name="renderer" content="webkit" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
 
@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="Leon Hwang" /><meta name="description" content="今天遇到个不常见的问题：在往内核装载 bpf 程序时，bpf verifier 报告错误： 1 failed to load bpf with bitmap size 8: failed to load bpf obj and bpf maps: field Acl: program acl: load program: no space left on device: 578: R0=map_value(id=0,off=0,ks=8,vs=64,imm=0) R1_w=map_ptr(id=0,off=0,ks=4,vs=4,imm=0) R2_w=fp-4 R3_w=invP1 R4=invP(id=69 (3524 line(s) omitted) 觉" /><meta name="keywords"
+  content="Leon Hwang" /><meta name="description" content="书接 eBPF Talk: 揭秘 XDP 转发网络包 未竟的内容，看看最后 generic_xdp_tx() 函数中的发包详情。 1 2 3 4 5 6 // ${KERNEL}/net/core/dev.c generic_xdp_tx() |--&amp;gt;netdev_start_xmit() |--&amp;gt;__netdev_start_xmit() |--&amp;gt;ops-&amp;gt;ndo_start_xmit(skb, dev); 由以上函数调用栈可知，XDP_REDIRECT 和 XDP_TX" /><meta name="keywords"
   content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -28,7 +28,7 @@
 <meta name="generator" content="Hugo 0.88.1 with theme even" />
 
 
-<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-24-bpf-verifier-enospc/" />
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-25-xdp-redirect-packet/" />
 <link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
@@ -41,20 +41,20 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
-<meta property="og:title" content="eBPF Talk: bpf verifier 报告 ENOSPC" />
-<meta property="og:description" content="今天遇到个不常见的问题：在往内核装载 bpf 程序时，bpf verifier 报告错误： 1 failed to load bpf with bitmap size 8: failed to load bpf obj and bpf maps: field Acl: program acl: load program: no space left on device: 578: R0=map_value(id=0,off=0,ks=8,vs=64,imm=0) R1_w=map_ptr(id=0,off=0,ks=4,vs=4,imm=0) R2_w=fp-4 R3_w=invP1 R4=invP(id=69 (3524 line(s) omitted) 觉" />
+<meta property="og:title" content="eBPF Talk: 揭秘 XDP 转发网络包【续】" />
+<meta property="og:description" content="书接 eBPF Talk: 揭秘 XDP 转发网络包 未竟的内容，看看最后 generic_xdp_tx() 函数中的发包详情。 1 2 3 4 5 6 // ${KERNEL}/net/core/dev.c generic_xdp_tx() |--&gt;netdev_start_xmit() |--&gt;__netdev_start_xmit() |--&gt;ops-&gt;ndo_start_xmit(skb, dev); 由以上函数调用栈可知，XDP_REDIRECT 和 XDP_TX" />
 <meta property="og:type" content="article" />
-<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-24-bpf-verifier-enospc/" /><meta property="article:section" content="post" />
-<meta property="article:published_time" content="2023-05-21T16:19:32+08:00" />
-<meta property="article:modified_time" content="2023-05-21T16:19:32+08:00" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-25-xdp-redirect-packet/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-05-21T16:22:07+08:00" />
+<meta property="article:modified_time" content="2023-05-21T16:22:07+08:00" />
 
-<meta itemprop="name" content="eBPF Talk: bpf verifier 报告 ENOSPC">
-<meta itemprop="description" content="今天遇到个不常见的问题：在往内核装载 bpf 程序时，bpf verifier 报告错误： 1 failed to load bpf with bitmap size 8: failed to load bpf obj and bpf maps: field Acl: program acl: load program: no space left on device: 578: R0=map_value(id=0,off=0,ks=8,vs=64,imm=0) R1_w=map_ptr(id=0,off=0,ks=4,vs=4,imm=0) R2_w=fp-4 R3_w=invP1 R4=invP(id=69 (3524 line(s) omitted) 觉"><meta itemprop="datePublished" content="2023-05-21T16:19:32+08:00" />
-<meta itemprop="dateModified" content="2023-05-21T16:19:32+08:00" />
-<meta itemprop="wordCount" content="313">
-<meta itemprop="keywords" content="eBPF,bpf verifier,cilium/ebpf," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="eBPF Talk: bpf verifier 报告 ENOSPC"/>
-<meta name="twitter:description" content="今天遇到个不常见的问题：在往内核装载 bpf 程序时，bpf verifier 报告错误： 1 failed to load bpf with bitmap size 8: failed to load bpf obj and bpf maps: field Acl: program acl: load program: no space left on device: 578: R0=map_value(id=0,off=0,ks=8,vs=64,imm=0) R1_w=map_ptr(id=0,off=0,ks=4,vs=4,imm=0) R2_w=fp-4 R3_w=invP1 R4=invP(id=69 (3524 line(s) omitted) 觉"/>
+<meta itemprop="name" content="eBPF Talk: 揭秘 XDP 转发网络包【续】">
+<meta itemprop="description" content="书接 eBPF Talk: 揭秘 XDP 转发网络包 未竟的内容，看看最后 generic_xdp_tx() 函数中的发包详情。 1 2 3 4 5 6 // ${KERNEL}/net/core/dev.c generic_xdp_tx() |--&gt;netdev_start_xmit() |--&gt;__netdev_start_xmit() |--&gt;ops-&gt;ndo_start_xmit(skb, dev); 由以上函数调用栈可知，XDP_REDIRECT 和 XDP_TX"><meta itemprop="datePublished" content="2023-05-21T16:22:07+08:00" />
+<meta itemprop="dateModified" content="2023-05-21T16:22:07+08:00" />
+<meta itemprop="wordCount" content="237">
+<meta itemprop="keywords" content="eBPF,XDP," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="eBPF Talk: 揭秘 XDP 转发网络包【续】"/>
+<meta name="twitter:description" content="书接 eBPF Talk: 揭秘 XDP 转发网络包 未竟的内容，看看最后 generic_xdp_tx() 函数中的发包详情。 1 2 3 4 5 6 // ${KERNEL}/net/core/dev.c generic_xdp_tx() |--&gt;netdev_start_xmit() |--&gt;__netdev_start_xmit() |--&gt;ops-&gt;ndo_start_xmit(skb, dev); 由以上函数调用栈可知，XDP_REDIRECT 和 XDP_TX"/>
 
 
 <!--[if lte IE 9]>
@@ -141,7 +141,7 @@
           <article class="post">
   
   <header class="post-header">
-    <h1 class="post-title">eBPF Talk: bpf verifier 报告 ENOSPC</h1>
+    <h1 class="post-title">eBPF Talk: 揭秘 XDP 转发网络包【续】</h1>
 
     <div class="post-meta">
       <span class="post-time"> 2023-05-21 </span>
@@ -149,7 +149,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 313 字 </span>
+      <span class="more-meta"> 约 237 字 </span>
       <span class="more-meta"> 预计阅读 1 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -162,8 +162,7 @@
   <ul>
     <li>
       <ul>
-        <li><a href="#bpf-verifier">bpf verifier</a></li>
-        <li><a href="#解决办法">解决办法</a></li>
+        <li><a href="#小结">小结</a></li>
       </ul>
     </li>
   </ul>
@@ -171,19 +170,7 @@
   </div>
 </div>
   <div class="post-content">
-    <p>今天遇到个不常见的问题：在往内核装载 bpf 程序时，bpf verifier 报告错误：</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt">1
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt">failed to load bpf with bitmap size 8: failed to load bpf obj and bpf maps: field Acl: program acl: load program: no space left on device: 578: R0=map_value(id=0,off=0,ks=8,vs=64,imm=0) R1_w=map_ptr(id=0,off=0,ks=4,vs=4,imm=0) R2_w=fp-4 R3_w=invP1 R4=invP(id=69 (3524 line(s) omitted)
-</code></pre></td></tr></table>
-</div>
-</div><p>觉得奇怪的地方是，bpf verifier 怎么会报告空间不足的错误呢？</p>
-<h2 id="bpf-verifier">bpf verifier</h2>
-<p>好吧，直接搜索 <code>verifier.c</code> 源代码，看看有哪些地方会返回 <code>-ENOSPC</code>。</p>
-<p>Emm，有且仅有一个地方：</p>
+    <p>书接 <a href="post/ebpf-talk-17-xdp-redirect-packet/">eBPF Talk: 揭秘 XDP 转发网络包</a> 未竟的内容，看看最后 <code>generic_xdp_tx()</code> 函数中的发包详情。</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
@@ -192,50 +179,22 @@
 </span><span class="lnt">4
 </span><span class="lnt">5
 </span><span class="lnt">6
-</span><span class="lnt">7
-</span><span class="lnt">8
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// $KERNEL/kernel/bpf/verifier.c
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// ${KERNEL}/net/core/dev.c
 </span><span class="c1"></span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">log</span><span class="o">-&gt;</span><span class="n">level</span> <span class="o">&amp;&amp;</span> <span class="n">bpf_verifier_log_full</span><span class="p">(</span><span class="n">log</span><span class="p">))</span>
-        <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="n">ENOSPC</span><span class="p">;</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">log</span><span class="o">-&gt;</span><span class="n">level</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">log</span><span class="o">-&gt;</span><span class="n">ubuf</span><span class="p">)</span> <span class="p">{</span>
-        <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="n">EFAULT</span><span class="p">;</span>
-        <span class="k">goto</span> <span class="n">err_release_maps</span><span class="p">;</span>
-    <span class="p">}</span>
+<span class="n">generic_xdp_tx</span><span class="p">()</span>
+<span class="o">|--&gt;</span><span class="n">netdev_start_xmit</span><span class="p">()</span>
+    <span class="o">|--&gt;</span><span class="n">__netdev_start_xmit</span><span class="p">()</span>
+        <span class="o">|--&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="n">ndo_start_xmit</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">dev</span><span class="p">);</span>
 </code></pre></td></tr></table>
 </div>
-</div><p>这段代码的意思是，用于保存 bpf verifier 日志的地方满了，无法保存更多的 bpf
-verifier 日志了。</p>
-<h2 id="解决办法">解决办法</h2>
-<p>解决办法有 2 个：</p>
-<ol>
-<li>提供更大的 bpf verifier 日志空间。</li>
-<li>不去获取 bpf verifier 日志。</li>
-</ol>
-<p>使用 <a href="https://pkg.go.dev/github.com/cilium/ebpf">cilium/ebpf</a> 的时候，通过以下选项来控制 bpf verifier 日志。</p>
-<div class="highlight"><div class="chroma">
-<table class="lntable"><tr><td class="lntd">
-<pre tabindex="0" class="chroma"><code><span class="lnt">1
-</span><span class="lnt">2
-</span><span class="lnt">3
-</span><span class="lnt">4
-</span><span class="lnt">5
-</span><span class="lnt">6
-</span><span class="lnt">7
-</span></code></pre></td>
-<td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go">    <span class="nx">opts</span> <span class="o">:=</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nx">CollectionOptions</span><span class="p">{</span>
-        <span class="nx">Programs</span><span class="p">:</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nx">ProgramOptions</span><span class="p">{</span>
-            <span class="nx">LogLevel</span><span class="p">:</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nx">LogLevelBranch</span><span class="p">|</span><span class="nx">ebpf</span><span class="p">.</span><span class="nx">LogLevelInstruction</span><span class="p">,</span>
-            <span class="nx">LogSize</span><span class="p">:</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nx">DefaultVerifierLogSize</span><span class="o">*</span><span class="mi">10</span><span class="p">,</span>
-            <span class="nx">LogDisabled</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
-        <span class="p">},</span>
-    <span class="p">}</span>
-</code></pre></td></tr></table>
-</div>
-</div><p>解决办法 1 就是调大 <code>LogSize</code>，解决办法 2 就是将 <code>LogDisabled</code> 设置为 <code>true</code>。</p>
+</div><p>由以上函数调用栈可知，<code>XDP_REDIRECT</code> 和 <code>XDP_TX</code> 的处理办法是直接调用目标网络设备的 <code>ndo_start_xmit()</code> 发包函数直接将网络包发送出去。</p>
+<p>因为不是调用 <code>dev_queue_xmit()</code> 设备层的发包函数进行发包，所以该网络包不会经过目标设备在内核协议栈设备层的 egress 处理阶段。</p>
+<p>意即，经过 XDP 重定向的网络包无法在目标网络设备的 <code>tc egress</code> 中再处理一遍。</p>
+<h2 id="小结">小结</h2>
+<p>这么一分析，就觉得 <code>XDP_REDIRECT</code> + <code>tc egress</code> 搭配工作的想法特别不靠谱。</p>
+<p>但如果没这么分析一下，又怎么知道这想法不可行呢？</p>
 
   </div>
 
@@ -257,17 +216,12 @@ verifier 日志了。</p>
 <footer class="post-footer">
     <div class="post-tags">
       <a href="/%20tags/ebpf/">eBPF</a>
-      <a href="/%20tags/bpf-verifier/">bpf verifier</a>
-      <a href="/%20tags/cilium/ebpf/">cilium/ebpf</a>
+      <a href="/%20tags/xdp/">XDP</a>
       </div>
     <nav class="post-nav">
-      <a class="prev" href="/post/ebpf-talk-25-xdp-redirect-packet/">
-        <i class="iconfont icon-left"></i>
-        <span class="prev-text nav-default">eBPF Talk: 揭秘 XDP 转发网络包【续】</span>
-        <span class="prev-text nav-mobile">上一篇</span>
-      </a>
-      <a class="next" href="/post/ebpf-talk-23-a-concrete-usage-of-array-map/">
-        <span class="next-text nav-default">eBPF Talk: 一个 ARRAY bpf map 的使用细节</span>
+      
+      <a class="next" href="/post/ebpf-talk-24-bpf-verifier-enospc/">
+        <span class="next-text nav-default">eBPF Talk: bpf verifier 报告 ENOSPC</span>
         <span class="next-text nav-mobile">下一篇</span>
         <i class="iconfont icon-right"></i>
       </a>
