@@ -2,6 +2,69 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://asphaltt.github.io/tags/bpf-verifier/</loc>
+    <lastmod>2023-05-21T16:19:32+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/categories/</loc>
+    <lastmod>2023-05-21T16:19:32+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/ebpf/</loc>
+    <lastmod>2023-05-21T16:19:32+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/categories/ebpf/</loc>
+    <lastmod>2023-05-21T16:19:32+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/categories/ebpf-talk/</loc>
+    <lastmod>2023-05-21T16:19:32+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/ebpf-talk-24-bpf-verifier-enospc/</loc>
+    <lastmod>2023-05-21T16:19:32+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/</loc>
+    <lastmod>2023-05-21T16:19:32+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/</loc>
+    <lastmod>2023-05-21T16:19:32+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/</loc>
+    <lastmod>2023-05-21T16:19:32+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
     <loc>https://asphaltt.github.io/tags/bpf-map/</loc>
     <lastmod>2023-05-21T16:17:25+08:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -9,56 +72,7 @@
   </url>
   
   <url>
-    <loc>https://asphaltt.github.io/categories/</loc>
-    <lastmod>2023-05-21T16:17:25+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/ebpf/</loc>
-    <lastmod>2023-05-21T16:17:25+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/categories/ebpf/</loc>
-    <lastmod>2023-05-21T16:17:25+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/categories/ebpf-talk/</loc>
-    <lastmod>2023-05-21T16:17:25+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
     <loc>https://asphaltt.github.io/post/ebpf-talk-23-a-concrete-usage-of-array-map/</loc>
-    <lastmod>2023-05-21T16:17:25+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/</loc>
-    <lastmod>2023-05-21T16:17:25+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/post/</loc>
-    <lastmod>2023-05-21T16:17:25+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/</loc>
     <lastmod>2023-05-21T16:17:25+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
