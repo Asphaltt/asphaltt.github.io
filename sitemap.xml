@@ -3,28 +3,70 @@
   
   <url>
     <loc>https://asphaltt.github.io/categories/</loc>
-    <lastmod>2023-05-23T22:22:24+08:00</lastmod>
+    <lastmod>2023-05-23T22:25:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/ebpf/</loc>
-    <lastmod>2023-05-23T22:22:24+08:00</lastmod>
+    <lastmod>2023-05-23T22:25:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf/</loc>
-    <lastmod>2023-05-23T22:22:24+08:00</lastmod>
+    <lastmod>2023-05-23T22:25:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf-talk/</loc>
-    <lastmod>2023-05-23T22:22:24+08:00</lastmod>
+    <lastmod>2023-05-23T22:25:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/ebpf-talk-40-perilogue-on-x86/</loc>
+    <lastmod>2023-05-23T22:25:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/</loc>
+    <lastmod>2023-05-23T22:25:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/perilogue/</loc>
+    <lastmod>2023-05-23T22:25:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/</loc>
+    <lastmod>2023-05-23T22:25:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/</loc>
+    <lastmod>2023-05-23T22:25:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/x86/</loc>
+    <lastmod>2023-05-23T22:25:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -37,35 +79,7 @@
   </url>
   
   <url>
-    <loc>https://asphaltt.github.io/</loc>
-    <lastmod>2023-05-23T22:22:24+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
     <loc>https://asphaltt.github.io/tags/poke/</loc>
-    <lastmod>2023-05-23T22:22:24+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/post/</loc>
-    <lastmod>2023-05-23T22:22:24+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/</loc>
-    <lastmod>2023-05-23T22:22:24+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/x86/</loc>
     <lastmod>2023-05-23T22:22:24+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>

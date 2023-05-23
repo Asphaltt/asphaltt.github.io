@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: perilogue on x86【汇编慎入】 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="perilogue 是个缝合单词，由 prologue 和 epilogue 缝合组成。 而 prologue 和 epilogue 是 函数调用规约 中的术语。 prologue: 函数整体指令中最开始的几条指令。 epilogue: 函数整体指令中最末尾的几条指令。 perilogue: 函数" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-40-perilogue-on-x86/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/%20manifest.json">
+<link rel="mask-icon" href="/%20safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: perilogue on x86【汇编慎入】" />
+<meta property="og:description" content="perilogue 是个缝合单词，由 prologue 和 epilogue 缝合组成。 而 prologue 和 epilogue 是 函数调用规约 中的术语。 prologue: 函数整体指令中最开始的几条指令。 epilogue: 函数整体指令中最末尾的几条指令。 perilogue: 函数" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-40-perilogue-on-x86/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-05-23T22:25:35+08:00" />
+<meta property="article:modified_time" content="2023-05-23T22:25:35+08:00" />
+
+<meta itemprop="name" content="eBPF Talk: perilogue on x86【汇编慎入】">
+<meta itemprop="description" content="perilogue 是个缝合单词，由 prologue 和 epilogue 缝合组成。 而 prologue 和 epilogue 是 函数调用规约 中的术语。 prologue: 函数整体指令中最开始的几条指令。 epilogue: 函数整体指令中最末尾的几条指令。 perilogue: 函数"><meta itemprop="datePublished" content="2023-05-23T22:25:35+08:00" />
+<meta itemprop="dateModified" content="2023-05-23T22:25:35+08:00" />
+<meta itemprop="wordCount" content="631">
+<meta itemprop="keywords" content="eBPF,perilogue,x86," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="eBPF Talk: perilogue on x86【汇编慎入】"/>
+<meta name="twitter:description" content="perilogue 是个缝合单词，由 prologue 和 epilogue 缝合组成。 而 prologue 和 epilogue 是 函数调用规约 中的术语。 prologue: 函数整体指令中最开始的几条指令。 epilogue: 函数整体指令中最末尾的几条指令。 perilogue: 函数"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: perilogue on x86【汇编慎入】</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 631 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#perilogue-of-kernel-function">perilogue of kernel function</a></li>
+        <li><a href="#perilogue-of-bpf2bpf">perilogue of bpf2bpf</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p><code>perilogue</code> 是个缝合单词，由 <code>prologue</code> 和 <code>epilogue</code> 缝合组成。</p>
+<p>而 <code>prologue</code> 和 <code>epilogue</code> 是 <a href="https://en.wikipedia.org/wiki/X86_calling_conventions">函数调用规约</a> 中的术语。</p>
+<ul>
+<li><code>prologue</code>: 函数整体指令中最开始的几条指令。</li>
+<li><code>epilogue</code>: 函数整体指令中最末尾的几条指令。</li>
+<li><code>perilogue</code>: 函数整体指令中最开始、及最末尾的几条指令。</li>
+</ul>
+<p><img src="/eBPF_Talk_40_perilogue_on_x86_1.png" alt=""></p>
+<ul>
+<li><code>leave</code>: 该指令的效果相当于 <code>mov %ebp, %esp</code> + <code>pop %ebp</code>。</li>
+<li><code>ret</code>: 该指令的效果相当于 <code>pop %eip</code>。</li>
+</ul>
+<p>想要深入研究 <code>perilogue</code> 的小司机们，推荐阅读以下两篇博客：</p>
+<ul>
+<li><a href="https://textbook.cs161.org/memory-safety/x86.html">x86 Assembly and Call Stack</a></li>
+<li><a href="http://jdebp.info/FGA/function-perilogues.html">The gen on function perilogues</a></li>
+</ul>
+<h2 id="perilogue-of-kernel-function">perilogue of kernel function</h2>
+<p>使用 <a href="/post/ebpf-talk-33-tailcall-on-x86/">​eBPF Talk: tailcall on x86【汇编慎入】【译】</a> 中查看内核函数汇编的方法，直接看看内核函数的汇编吧。</p>
+<p>以比较简单的内核函数 <code>eth_type_trans()</code> 为例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># cat /proc/kallsyms|grep eth_type_trans</span>
+ffffffff9eda5590 T __pfx_eth_type_trans
+ffffffff9eda55a0 T eth_type_trans
+ffffffff9fab5538 r __ksymtab_eth_type_trans
+<span class="c1"># gdb -q -c /proc/kcore -ex &#39;x/180i 0xffffffff9eda55a0&#39; -ex &#39;quit&#39;</span>
+<span class="o">[</span>New process 1<span class="o">]</span>
+Core was generated by <span class="sb">`</span><span class="nv">BOOT_IMAGE</span><span class="o">=</span>/vmlinuz-6.2.0-060200rc8-generic <span class="nv">root</span><span class="o">=</span>/dev/mapper/ubuntu--vg-ubuntu-<span class="err">&#39;</span>.
+<span class="c1">#0  0x0000000000000000 in ?? ()</span>
+   0xffffffff9eda55a0:  nopl   0x0<span class="o">(</span>%rax,%rax,1<span class="o">)</span>
+   0xffffffff9eda55a5:  push   %rbp
+   0xffffffff9eda55a6:  mov    %rsi,%rax
+   0xffffffff9eda55a9:  mov    %rsp,%rbp
+   0xffffffff9eda55ac:  sub    <span class="nv">$0</span>x10,%rsp
+   <span class="c1"># ...</span>
+   0xffffffff9eda5641:  jne    0xffffffff9eda56fd
+   0xffffffff9eda5647:  leave
+   0xffffffff9eda5648:  xor    %edx,%edx
+   0xffffffff9eda564a:  xor    %ecx,%ecx
+   0xffffffff9eda564c:  xor    %esi,%esi
+   0xffffffff9eda564e:  xor    %edi,%edi
+   0xffffffff9eda5650:  xor    %r8d,%r8d
+   0xffffffff9eda5653:  ret
+</code></pre></td></tr></table>
+</div>
+</div><p><img src="/eBPF_Talk_40_perilogue_on_x86_2.png" alt=""></p>
+<h2 id="perilogue-of-bpf2bpf">perilogue of bpf2bpf</h2>
+<blockquote>
+<p>以 <a href="/post/ebpf-talk-14-bpf2bpf-functions-call/">​eBPF Talk: bpf2bpf 特性揭秘</a> 中的例子为例。</p>
+</blockquote>
+<p><code>bpftool</code> 工具提供了查看 JIT 后的 bpf prog 的程序汇编。在将 bpf prog 运行起来后：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># bpftool p</span>
+// ...
+263: kprobe  name k_tcp_connect  tag d45d3e8749eeb769  gpl
+    loaded_at 2023-02-20T14:07:53+0000  uid <span class="m">0</span>
+    xlated 432B  jited 246B  memlock 4096B  map_ids <span class="m">13</span>
+    btf_id <span class="m">129</span>
+
+<span class="c1"># bpftool p d j i 263 &gt; bpftool.prog.dump.jit.log</span>
+<span class="c1"># cat bpftool.prog.dump.jit.log</span>
+void handle_new_connection<span class="o">(</span>void * ctx, struct sock * sk<span class="o">)</span>:
+bpf_prog_93a5a8fde5afab51_handle_new_connection:
+<span class="p">;</span> handle_new_connection<span class="o">(</span>void *ctx, struct sock *sk<span class="o">)</span>
+   0:   nopl    <span class="o">(</span>%rax,%rax<span class="o">)</span>
+   5:   nop
+   7:   pushq   %rbp
+   8:   movq    %rsp, %rbp
+   b:   subq    <span class="nv">$24</span>, %rsp
+  12:   pushq   %rbx
+  13:   pushq   %r13
+  15:   pushq   %r14
+  17:   movq    %rsi, %r14
+  1a:   movq    %rdi, %rbx
+  1d:   xorl    %edi, %edi
+<span class="p">;</span> ...
+<span class="p">;</span> <span class="o">}</span>
+  d5:   popq    %r14
+  d7:   popq    %r13
+  d9:   popq    %rbx
+  da:   leave
+  db:   retq
+  dc:   int3
+</code></pre></td></tr></table>
+</div>
+</div><p>P.S. 完整的 log 文件请查看 <a href="https://github.com/Asphaltt/learn-by-example/blob/main/ebpf-bpf2bpf/bpftool.prog.dump.jit.log">bpftool.prog.dump.jit.log</a>。</p>
+<p><img src="/eBPF_Talk_40_perilogue_on_x86_3.png" alt=""></p>
+<h2 id="总结">总结</h2>
+<p>简要介绍了 x86 上的 <code>perilogue</code>。</p>
+<p>只需要记住：</p>
+<ul>
+<li><code>prologue</code>: 函数整体指令中最开始的几条指令。</li>
+<li><code>epilogue</code>: 函数整体指令中最末尾的几条指令。</li>
+</ul>
+<p>因为将 <a href="/post/ebpf-talk-39-poke-on-x86/">eBPF Talk: poke on x86</a> 作用在 <code>prologue</code> 的时候，威力无穷。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2023-05-23
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/perilogue/">perilogue</a>
+      <a href="/%20tags/x86/">x86</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-39-poke-on-x86/">
+        <span class="next-text nav-default">eBPF Talk: poke on x86【汇编慎入】</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
