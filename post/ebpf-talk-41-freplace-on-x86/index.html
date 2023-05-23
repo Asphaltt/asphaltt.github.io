@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: freplace on x86【汇编慎入】 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="freplace 技术便是对 prologue 进行 poke 的简单应用。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 TL;DR 究竟有多简单呢？就是将 prologue 里的第一条 nop 指令替换成 jmp 指令；" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-41-freplace-on-x86/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/%20manifest.json">
+<link rel="mask-icon" href="/%20safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: freplace on x86【汇编慎入】" />
+<meta property="og:description" content="freplace 技术便是对 prologue 进行 poke 的简单应用。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 TL;DR 究竟有多简单呢？就是将 prologue 里的第一条 nop 指令替换成 jmp 指令；" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-41-freplace-on-x86/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-05-23T22:31:24+08:00" />
+<meta property="article:modified_time" content="2023-05-23T22:31:24+08:00" />
+
+<meta itemprop="name" content="eBPF Talk: freplace on x86【汇编慎入】">
+<meta itemprop="description" content="freplace 技术便是对 prologue 进行 poke 的简单应用。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 TL;DR 究竟有多简单呢？就是将 prologue 里的第一条 nop 指令替换成 jmp 指令；"><meta itemprop="datePublished" content="2023-05-23T22:31:24+08:00" />
+<meta itemprop="dateModified" content="2023-05-23T22:31:24+08:00" />
+<meta itemprop="wordCount" content="1195">
+<meta itemprop="keywords" content="eBPF,freplace,x86," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="eBPF Talk: freplace on x86【汇编慎入】"/>
+<meta name="twitter:description" content="freplace 技术便是对 prologue 进行 poke 的简单应用。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 TL;DR 究竟有多简单呢？就是将 prologue 里的第一条 nop 指令替换成 jmp 指令；"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: freplace on x86【汇编慎入】</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1195 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#freplace-例子"><code>freplace</code> 例子</a></li>
+        <li><a href="#freplace-实现原理"><code>freplace</code> 实现原理</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p><code>freplace</code> 技术便是对 <code>prologue</code> 进行 <code>poke</code> 的简单应用。</p>
+<ul>
+<li><a href="/post/ebpf-talk-39-poke-on-x86/">eBPF Talk: poke on x86【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-40-perilogue-on-x86/">eBPF Talk: perilogue on x86【汇编慎入】</a></li>
+</ul>
+<p><strong>TL;DR</strong> 究竟有多简单呢？就是将 <code>prologue</code> 里的第一条 <code>nop</code> 指令替换成 <code>jmp</code> 指令；<code>jmp</code> 后不再回来继续执行原来的函数，是谓 <code>freplace</code>。</p>
+<p><img src="/eBPF_Talk_41_freplace_on_x86_1.png" alt=""></p>
+<h2 id="freplace-例子"><code>freplace</code> 例子</h2>
+<p>demo 先行。源代码链接：<a href="https://github.com/Asphaltt/learn-by-example/tree/main/ebpf-freplace">ebpf-freplace</a>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// tcp-connecting.c
+</span><span class="c1"></span>
+<span class="n">__noinline</span> <span class="kt">int</span>
+<span class="nf">stub_handler</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">bpf_printk</span><span class="p">(</span><span class="s">&#34;freplace, stub handler</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="k">typedef</span> <span class="k">struct</span> <span class="n">event</span> <span class="p">{</span>
+    <span class="n">__be32</span> <span class="n">saddr</span><span class="p">,</span> <span class="n">daddr</span><span class="p">;</span>
+    <span class="n">__be16</span> <span class="n">sport</span><span class="p">,</span> <span class="n">dport</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">))</span> <span class="n">event_t</span><span class="p">;</span>
+
+<span class="k">struct</span> <span class="p">{</span>
+    <span class="n">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PERF_EVENT_ARRAY</span><span class="p">);</span>
+<span class="p">}</span> <span class="n">events</span> <span class="n">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+
+<span class="k">static</span> <span class="n">__noinline</span>
+<span class="kt">void</span> <span class="nf">handle_new_connection</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">event_t</span> <span class="n">ev</span> <span class="o">=</span> <span class="p">{};</span>
+
+    <span class="n">ev</span><span class="p">.</span><span class="n">saddr</span> <span class="o">=</span> <span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_rcv_saddr</span><span class="p">);</span>
+    <span class="n">ev</span><span class="p">.</span><span class="n">daddr</span> <span class="o">=</span> <span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_daddr</span><span class="p">);</span>
+    <span class="n">ev</span><span class="p">.</span><span class="n">sport</span> <span class="o">=</span> <span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_num</span><span class="p">);</span>
+    <span class="n">ev</span><span class="p">.</span><span class="n">dport</span> <span class="o">=</span> <span class="n">bpf_ntohs</span><span class="p">(</span><span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_dport</span><span class="p">));</span>
+
+    <span class="n">bpf_perf_event_output</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">events</span><span class="p">,</span> <span class="n">BPF_F_CURRENT_CPU</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ev</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ev</span><span class="p">));</span>
+<span class="p">}</span>
+
+<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/tcp_connect&#34;</span><span class="p">)</span>
+<span class="kt">int</span> <span class="n">k_tcp_connect</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">;</span>
+    <span class="n">sk</span> <span class="o">=</span> <span class="p">(</span><span class="n">typeof</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="n">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+
+    <span class="n">handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="nf">stub_handler</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/inet_csk_complete_hashdance&#34;</span><span class="p">)</span>
+<span class="kt">int</span> <span class="n">k_icsk_complete_hashdance</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">;</span>
+    <span class="n">sk</span> <span class="o">=</span> <span class="p">(</span><span class="n">typeof</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="n">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+
+    <span class="n">handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="nf">stub_handler</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>没有进行 <code>freplace</code> 时：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># cat /sys/kernel/debug/tracing/trace_pipe</span>
+            curl-5875    <span class="o">[</span>002<span class="o">]</span> dN.31  3444.754757: bpf_trace_printk: freplace, stub handler
+</code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// freplace.c
+</span><span class="c1"></span>
+<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;freplace/stub_handler&#34;</span><span class="p">)</span>
+<span class="kt">int</span> <span class="n">freplace_handler</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">bpf_printk</span><span class="p">(</span><span class="s">&#34;freplace, replaced handler</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+
+    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>进行 <code>freplace</code> 后：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># cat /sys/kernel/debug/tracing/trace_pipe</span>
+          &lt;idle&gt;-0       <span class="o">[</span>001<span class="o">]</span> d.s51  2714.385269: bpf_trace_printk: freplace, replaced handler
+</code></pre></td></tr></table>
+</div>
+</div><p><img src="/eBPF_Talk_41_freplace_on_x86_2.png" alt=""></p>
+<h2 id="freplace-实现原理"><code>freplace</code> 实现原理</h2>
+<p>先看看 Go 代码是怎么调用 <code>bpf()</code> 系统调用的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="c1">// ${cilium/ebpf}/link/tracing.go
+</span><span class="c1"></span>
+<span class="kd">func</span> <span class="nf">AttachFreplace</span><span class="p">(</span><span class="nx">targetProg</span> <span class="o">*</span><span class="nx">ebpf</span><span class="p">.</span><span class="nx">Program</span><span class="p">,</span> <span class="nx">name</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">prog</span> <span class="o">*</span><span class="nx">ebpf</span><span class="p">.</span><span class="nx">Program</span><span class="p">)</span> <span class="p">(</span><span class="nx">Link</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// ...
+</span><span class="c1"></span>
+    <span class="nx">link</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">AttachRawLink</span><span class="p">(</span><span class="nx">RawLinkOptions</span><span class="p">{</span>
+        <span class="nx">Target</span><span class="p">:</span>  <span class="nx">target</span><span class="p">,</span>
+        <span class="nx">Program</span><span class="p">:</span> <span class="nx">prog</span><span class="p">,</span>
+        <span class="nx">Attach</span><span class="p">:</span>  <span class="nx">ebpf</span><span class="p">.</span><span class="nx">AttachNone</span><span class="p">,</span>
+        <span class="nx">BTF</span><span class="p">:</span>     <span class="nx">typeID</span><span class="p">,</span>
+    <span class="p">})</span>
+    <span class="c1">// ...
+</span><span class="c1"></span>
+    <span class="k">return</span> <span class="o">&amp;</span><span class="nx">tracing</span><span class="p">{</span><span class="o">*</span><span class="nx">link</span><span class="p">},</span> <span class="kc">nil</span>
+<span class="p">}</span>
+
+<span class="c1">// ${cilium/ebpf}/link/link.go
+</span><span class="c1"></span>
+<span class="kd">func</span> <span class="nf">AttachRawLink</span><span class="p">(</span><span class="nx">opts</span> <span class="nx">RawLinkOptions</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">RawLink</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">haveBPFLink</span><span class="p">();</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">Target</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;invalid target: %s&#34;</span><span class="p">,</span> <span class="nx">sys</span><span class="p">.</span><span class="nx">ErrClosedFd</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="nx">progFd</span> <span class="o">:=</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">Program</span><span class="p">.</span><span class="nf">FD</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nx">progFd</span> <span class="p">&lt;</span> <span class="mi">0</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;invalid program: %s&#34;</span><span class="p">,</span> <span class="nx">sys</span><span class="p">.</span><span class="nx">ErrClosedFd</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="nx">attr</span> <span class="o">:=</span> <span class="nx">sys</span><span class="p">.</span><span class="nx">LinkCreateAttr</span><span class="p">{</span>
+        <span class="nx">TargetFd</span><span class="p">:</span>    <span class="nb">uint32</span><span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">Target</span><span class="p">),</span>
+        <span class="nx">ProgFd</span><span class="p">:</span>      <span class="nb">uint32</span><span class="p">(</span><span class="nx">progFd</span><span class="p">),</span>
+        <span class="nx">AttachType</span><span class="p">:</span>  <span class="nx">sys</span><span class="p">.</span><span class="nf">AttachType</span><span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">Attach</span><span class="p">),</span>
+        <span class="nx">TargetBtfId</span><span class="p">:</span> <span class="nb">uint32</span><span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">BTF</span><span class="p">),</span>
+        <span class="nx">Flags</span><span class="p">:</span>       <span class="nx">opts</span><span class="p">.</span><span class="nx">Flags</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="nx">fd</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">sys</span><span class="p">.</span><span class="nf">LinkCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">attr</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;create link: %w&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="o">&amp;</span><span class="nx">RawLink</span><span class="p">{</span><span class="nx">fd</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">},</span> <span class="kc">nil</span>
+<span class="p">}</span>
+
+<span class="c1">// ${cilium/ebpf}/internal/sys/types.go
+</span><span class="c1"></span>
+<span class="kd">func</span> <span class="nf">LinkCreate</span><span class="p">(</span><span class="nx">attr</span> <span class="o">*</span><span class="nx">LinkCreateAttr</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">FD</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">fd</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">BPF</span><span class="p">(</span><span class="nx">BPF_LINK_CREATE</span><span class="p">,</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">attr</span><span class="p">),</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nf">Sizeof</span><span class="p">(</span><span class="o">*</span><span class="nx">attr</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="nf">NewFD</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nx">fd</span><span class="p">))</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>由上面的代码片段可知，调用的是 <code>bpf()</code> 系统调用中的 <code>BPF_LINK_CREATE</code> 命令。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="n">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">bpf</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="p">,</span> <span class="n">uattr</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>  <span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span><span class="c1"></span><span class="o">|--&gt;</span><span class="n">__sys_bpf</span><span class="p">()</span>
+    <span class="o">|--&gt;</span><span class="n">link_create</span><span class="p">()</span>
+        <span class="o">|--&gt;</span><span class="n">bpf_tracing_prog_attach</span><span class="p">()</span>
+            <span class="o">|--&gt;</span><span class="k">struct</span> <span class="n">bpf_attach_target_info</span> <span class="n">tgt_info</span> <span class="o">=</span> <span class="p">{};</span>
+            <span class="o">|--&gt;</span><span class="n">bpf_check_attach_target</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span> <span class="n">prog</span><span class="p">,</span> <span class="n">tgt_prog</span><span class="p">,</span> <span class="n">btf_id</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">tgt_info</span><span class="p">);</span>   <span class="c1">// ${KERNEL}/kernel/bpf/verifier.c
+</span><span class="c1"></span>            <span class="o">|</span>   <span class="o">|--&gt;</span><span class="n">addr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">long</span><span class="p">)</span> <span class="n">tgt_prog</span><span class="o">-&gt;</span><span class="n">bpf_func</span><span class="p">;</span>
+            <span class="o">|</span>   <span class="o">|--&gt;</span><span class="n">tgt_info</span><span class="o">-&gt;</span><span class="n">tgt_addr</span> <span class="o">=</span> <span class="n">addr</span><span class="p">;</span>
+            <span class="o">|--&gt;</span><span class="n">tr</span> <span class="o">=</span> <span class="n">bpf_trampoline_get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">tgt_info</span><span class="p">);</span> <span class="c1">// lookup old trampoline by key, or create a new one
+</span><span class="c1"></span>            <span class="o">|</span>   <span class="o">|--&gt;</span><span class="n">tr</span><span class="o">-&gt;</span><span class="n">func</span><span class="p">.</span><span class="n">addr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">tgt_info</span><span class="o">-&gt;</span><span class="n">tgt_addr</span><span class="p">;</span>
+            <span class="o">|--&gt;</span><span class="n">bpf_link_init</span><span class="p">()</span>
+            <span class="o">|--&gt;</span><span class="n">bpf_link_prime</span><span class="p">()</span>
+            <span class="o">|--&gt;</span><span class="n">bpf_trampoline_link_prog</span><span class="p">()</span>                                          <span class="c1">// ${KERNEL}/kernel/bpf/trampoline.c
+</span><span class="c1"></span>            <span class="o">|</span>   <span class="o">|--&gt;</span><span class="n">__bpf_trampoline_link_prog</span><span class="p">()</span>
+            <span class="o">|</span>       <span class="o">|--&gt;</span><span class="n">bpf_arch_text_poke</span><span class="p">(</span><span class="n">tr</span><span class="o">-&gt;</span><span class="n">func</span><span class="p">.</span><span class="n">addr</span><span class="p">,</span> <span class="n">BPF_MOD_JUMP</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">link</span><span class="o">-&gt;</span><span class="n">link</span><span class="p">.</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">bpf_func</span><span class="p">);</span>
+            <span class="o">|--&gt;</span><span class="n">bpf_link_settle</span><span class="p">()</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>看到 <code>bpf_arch_text_poke()</code> 函数时，便可知道上面代码片段的主要处理逻辑：</p>
+<ol>
+<li>查询目标 bpf prog 的信息，特别是 bpf prog 的入口地址。</li>
+<li>生成一个 <code>trampoline</code> 对象。</li>
+<li>调用 <code>bpf_arch_text_poke()</code> 将目标 bpf prog 的 <code>prologue</code> 的第一条 <code>nop</code> 指令 live patch 成 <code>jmp</code> 指令，<code>jmp</code> 到当前的 <code>freplace</code> bpf prog 的入口地址。</li>
+</ol>
+<blockquote>
+<p>复习一下 <a href="/post/ebpf-talk-40-perilogue-on-x86/">eBPF Talk: perilogue on x86【汇编慎入】</a> 中的 <code>prologue of bpf2bpf</code>。</p>
+</blockquote>
+<p><img src="/eBPF_Talk_41_freplace_on_x86_3.png" alt=""></p>
+<p><code>bpf2bpf</code> 函数的第一条指令是 5 个字节大小的 <code>nop</code> 指令。</p>
+<blockquote>
+<p>复习一下 <a href="/post/ebpf-talk-39-poke-on-x86/">eBPF Talk: poke on x86【汇编慎入】</a> 中的 <code>JIT on x86</code>。</p>
+</blockquote>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// ${KERNEL}/arch/x86/net/bpf_jit_comp.c
+</span><span class="c1"></span>
+<span class="n">bpf_int_jit_compile</span><span class="p">()</span>
+<span class="o">|--&gt;</span><span class="n">do_jit</span><span class="p">()</span>
+    <span class="o">|--&gt;</span><span class="n">emit_prologue</span><span class="p">()</span>
+        <span class="k">static</span> <span class="kt">void</span> <span class="n">emit_prologue</span><span class="p">(</span><span class="n">u8</span> <span class="o">**</span><span class="n">pprog</span><span class="p">,</span> <span class="n">u32</span> <span class="n">stack_depth</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">ebpf_from_cbpf</span><span class="p">,</span>
+                    <span class="kt">bool</span> <span class="n">tail_call_reachable</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">is_subprog</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">u8</span> <span class="o">*</span><span class="n">prog</span> <span class="o">=</span> <span class="o">*</span><span class="n">pprog</span><span class="p">;</span>
+
+            <span class="cm">/* BPF trampoline can be made to work without these nops,
+</span><span class="cm">            * but let&#39;s waste 5 bytes for now and optimize later
+</span><span class="cm">            */</span>
+            <span class="n">EMIT_ENDBR</span><span class="p">();</span>
+            <span class="n">memcpy</span><span class="p">(</span><span class="n">prog</span><span class="p">,</span> <span class="n">x86_nops</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">X86_PATCH_SIZE</span><span class="p">);</span>  <span class="c1">// NOTE：第一条指令，5 个字节大小的 nop
+</span><span class="c1"></span>            <span class="n">prog</span> <span class="o">+=</span> <span class="n">X86_PATCH_SIZE</span><span class="p">;</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">ebpf_from_cbpf</span><span class="p">)</span> <span class="p">{</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">tail_call_reachable</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">is_subprog</span><span class="p">)</span>
+                    <span class="n">EMIT2</span><span class="p">(</span><span class="mh">0x31</span><span class="p">,</span> <span class="mh">0xC0</span><span class="p">);</span> <span class="cm">/* xor eax, eax */</span>
+                <span class="k">else</span>
+                    <span class="nf">EMIT2</span><span class="p">(</span><span class="mh">0x66</span><span class="p">,</span> <span class="mh">0x90</span><span class="p">);</span> <span class="cm">/* nop2 */</span>       <span class="c1">// NOTE: 因为没有 tailcall，所以第二条指令是 1 个字节大小的 nop
+</span><span class="c1"></span>            <span class="p">}</span>
+            <span class="n">EMIT1</span><span class="p">(</span><span class="mh">0x55</span><span class="p">);</span>             <span class="cm">/* push rbp */</span>
+            <span class="n">EMIT3</span><span class="p">(</span><span class="mh">0x48</span><span class="p">,</span> <span class="mh">0x89</span><span class="p">,</span> <span class="mh">0xE5</span><span class="p">);</span> <span class="cm">/* mov rbp, rsp */</span>
+
+            <span class="cm">/* X86_TAIL_CALL_OFFSET is here */</span>
+            <span class="n">EMIT_ENDBR</span><span class="p">();</span>
+
+            <span class="cm">/* sub rsp, rounded_stack_depth */</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">stack_depth</span><span class="p">)</span>
+                <span class="n">EMIT3_off32</span><span class="p">(</span><span class="mh">0x48</span><span class="p">,</span> <span class="mh">0x81</span><span class="p">,</span> <span class="mh">0xEC</span><span class="p">,</span> <span class="n">round_up</span><span class="p">(</span><span class="n">stack_depth</span><span class="p">,</span> <span class="mi">8</span><span class="p">));</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">tail_call_reachable</span><span class="p">)</span>
+                <span class="n">EMIT1</span><span class="p">(</span><span class="mh">0x50</span><span class="p">);</span>         <span class="cm">/* push rax */</span>
+            <span class="o">*</span><span class="n">pprog</span> <span class="o">=</span> <span class="n">prog</span><span class="p">;</span>
+        <span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>每个 bpf prog 的 <code>prologue</code> 都包含有 5 个字节大小的 <code>nop</code> 指令。据观察，每个可 trace 的内核函数的第一条指令也是如此。</p>
+<h2 id="总结">总结</h2>
+<p><code>freplace</code> 技术便是对 <code>prologue</code> 进行 <code>poke</code> 的简单应用，将 <code>prologue</code> 里的第一条 <code>nop</code> 指令替换成 <code>jmp</code> 指令。</p>
+<p>不过，想要真正掌握 <code>freplace</code>，需要理解一些前置知识：</p>
+<ul>
+<li><a href="/post/ebpf-talk-39-poke-on-x86/">eBPF Talk: poke on x86【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-40-perilogue-on-x86/">eBPF Talk: perilogue on x86【汇编慎入】</a></li>
+<li><a href="/post/ebpf-bpf2bpf-functions-call/">eBPF Talk: bpf2bpf 特性简介</a></li>
+<li><a href="/post/ebpf-talk-14-bpf2bpf-functions-call/">​eBPF Talk: bpf2bpf 特性揭秘</a></li>
+</ul>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2023-05-23
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/freplace/">freplace</a>
+      <a href="/%20tags/x86/">x86</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-40-perilogue-on-x86/">
+        <span class="next-text nav-default">eBPF Talk: perilogue on x86【汇编慎入】</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
