@@ -3,69 +3,76 @@
   
   <url>
     <loc>https://asphaltt.github.io/categories/</loc>
-    <lastmod>2023-05-23T22:55:23+08:00</lastmod>
+    <lastmod>2023-05-23T23:02:47+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/ebpf/</loc>
-    <lastmod>2023-05-23T22:55:23+08:00</lastmod>
+    <lastmod>2023-05-23T23:02:47+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf/</loc>
-    <lastmod>2023-05-23T22:55:23+08:00</lastmod>
+    <lastmod>2023-05-23T23:02:47+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf-talk/</loc>
-    <lastmod>2023-05-23T22:55:23+08:00</lastmod>
+    <lastmod>2023-05-23T23:02:47+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://asphaltt.github.io/post/ebpf-talk-43-trampoline-on-x86/</loc>
-    <lastmod>2023-05-23T22:55:23+08:00</lastmod>
+    <loc>https://asphaltt.github.io/post/ebpf-talk-44-trampoline-stack-on-x86/</loc>
+    <lastmod>2023-05-23T23:02:47+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/</loc>
-    <lastmod>2023-05-23T22:55:23+08:00</lastmod>
+    <lastmod>2023-05-23T23:02:47+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/post/</loc>
-    <lastmod>2023-05-23T22:55:23+08:00</lastmod>
+    <lastmod>2023-05-23T23:02:47+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/</loc>
-    <lastmod>2023-05-23T22:55:23+08:00</lastmod>
+    <lastmod>2023-05-23T23:02:47+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/trampoline/</loc>
-    <lastmod>2023-05-23T22:55:23+08:00</lastmod>
+    <lastmod>2023-05-23T23:02:47+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/x86/</loc>
+    <lastmod>2023-05-23T23:02:47+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/ebpf-talk-43-trampoline-on-x86/</loc>
     <lastmod>2023-05-23T22:55:23+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
