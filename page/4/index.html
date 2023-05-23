@@ -138,6 +138,30 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-cpu-and-numa/">eBPF Talk: CPU and NUMA</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-10-31 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 955 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-cpu-and-numa/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-final-step-to-co-re/">eBPF CO-RE 的终极一步</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2022-10-31 </span>
@@ -346,30 +370,6 @@
     </div>
     <div class="read-more">
       <a href="/post/kernel-module-with-bpf/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/iptables-bpf-source-code-reading/">iptables-bpf 的实现原理分析</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-12-19 </span>
-      <div class="post-category">
-          <a href="/categories/iptables/"> iptables </a>
-          <a href="/categories/ebpf/"> eBPF </a>
-          </div>
-        <span class="more-meta"> 约 554 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一
-    </div>
-    <div class="read-more">
-      <a href="/post/iptables-bpf-source-code-reading/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

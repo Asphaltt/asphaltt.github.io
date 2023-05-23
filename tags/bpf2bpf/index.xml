@@ -6,7 +6,16 @@
     <description>Recent content in bpf2bpf on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 20 May 2023 17:26:45 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/bpf2bpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 23 May 2023 21:44:17 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/bpf2bpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: tailcall 与 bpf2bpf【译】</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-32-tailcall-and-bpf2bpf/</link>
+      <pubDate>Tue, 23 May 2023 21:44:17 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-32-tailcall-and-bpf2bpf/</guid>
+      <description>本文翻译自 Cilium 出品的 BPF and XDP Reference Guide，翻译了其中的 tailcall 和 bpf2bpf 部分。 tailcall：尾调用。 bpf2bpf：BPF 到 BPF 函数调用。 tailcall tailcall 可以看作允许</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: bpf2bpf 特性揭秘</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-14-bpf2bpf-functions-call/</link>
