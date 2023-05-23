@@ -6,7 +6,16 @@
     <description>Recent content in eBPF on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 23 May 2023 22:06:44 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 23 May 2023 22:09:09 +0800</lastBuildDate><atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: XDP redirect to AF_XDP</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</link>
+      <pubDate>Tue, 23 May 2023 22:09:09 +0800</pubDate>
+      
+      <guid>https://asphaltt.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</guid>
+      <description>通过学习 eBPF Talk: AF_XDP，我们掌握了 AF_XDP 的那些基础知识。 提问：对于如下高性能场景，在网卡收到网络包后，该网络包会被哪个 AF_XDP socket 处理呢？ 该网卡独占一</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: bpf2bpf &amp; tailcall 报错分析</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</link>
