@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: poke on x86【汇编慎入】 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。 TL;DR 在 x86 架构平台上的指令插桩&amp;amp;补丁的步骤如下： 在需要的地方预" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.88.1 with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-39-poke-on-x86/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/%20manifest.json">
+<link rel="mask-icon" href="/%20safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: poke on x86【汇编慎入】" />
+<meta property="og:description" content="小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。 TL;DR 在 x86 架构平台上的指令插桩&amp;补丁的步骤如下： 在需要的地方预" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-39-poke-on-x86/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-05-23T22:22:24+08:00" />
+<meta property="article:modified_time" content="2023-05-23T22:22:24+08:00" />
+
+<meta itemprop="name" content="eBPF Talk: poke on x86【汇编慎入】">
+<meta itemprop="description" content="小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。 TL;DR 在 x86 架构平台上的指令插桩&amp;补丁的步骤如下： 在需要的地方预"><meta itemprop="datePublished" content="2023-05-23T22:22:24+08:00" />
+<meta itemprop="dateModified" content="2023-05-23T22:22:24+08:00" />
+<meta itemprop="wordCount" content="1753">
+<meta itemprop="keywords" content="eBPF,poke,x86," /><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="eBPF Talk: poke on x86【汇编慎入】"/>
+<meta name="twitter:description" content="小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。 TL;DR 在 x86 架构平台上的指令插桩&amp;补丁的步骤如下： 在需要的地方预"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: poke on x86【汇编慎入】</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1753 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#jit-on-x86">JIT on x86</a></li>
+        <li><a href="#插桩-on-x86">插桩 on x86</a></li>
+        <li><a href="#补丁-on-x86">补丁 on x86</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。</p>
+<p><strong>TL;DR</strong> 在 x86 架构平台上的指令插桩&amp;补丁的步骤如下：</p>
+<ol>
+<li>在需要的地方预留 PATCH_SIZE 大小的 nop 指令。（插桩，后面的步骤皆为补丁过程）</li>
+<li>将第一个字节替换成 int3 指令。</li>
+<li>同步所有 CPU（sync cores）。</li>
+<li>除了第一个字节，将其它字节替换为目标字节。</li>
+<li>同步所有 CPU（sync cores）。</li>
+<li>将第一个字节替换为目标字节。</li>
+<li>同步所有 CPU（sync cores）。</li>
+</ol>
+<p><img src="/eBPF_Talk_39_poke_on_x86_1.png" alt=""></p>
+<p>作为 eBPF 开发老司机，在 x86 架构平台面前仅是小司机一枚，在此诚惶诚恐地抛砖引玉，开始学习 eBPF 依赖的一些 x86 技术。</p>
+<h2 id="jit-on-x86">JIT on x86</h2>
+<p>x86 支持将 eBPF 汇编即时编译成机器指令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// ${KERNEL}/arch/x86/net/bpf_jit_comp.c
+</span><span class="c1"></span>
+<span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="nf">bpf_int_jit_compile</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="c1">// ...
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><code>bpf_int_jit_compile()</code> 便是 x86 JIT 的入口函数。这也是学习 eBPF on x86 的入口。</p>
+<p>在学习 <a href="https://mp.weixin.qq.com/s/o8TbyNIHodfJpqG1iTrfsA">tailcall and bpf2bpf on x86</a> 的时候，便已了解到 x86 上 <code>tailcall</code> 替换 JMP 指令目标地址的过程。问：x86 上是怎么替换 JMP 指令目标地址的？</p>
+<h2 id="插桩-on-x86">插桩 on x86</h2>
+<p>eBPF 只会依赖 x86 架构平台已有的能力，特别是指令补丁的能力；基于指令补丁能力，eBPF 发展出了 <code>staic tailcall</code>、<code>freplace</code> 等特性。</p>
+<p>所以，只要掌握了 x86 指令补丁技术，就能轻松地理解 eBPF 的 <code>staic tailcall</code>、<code>freplace</code> 等特性的实现。</p>
+<p>x86 指令补丁技术并不神秘，简单而言，就是预留需要补丁的指令位置（用 nop 指令填充）、然后在预留的位置上替换指令。</p>
+<p>因而，在学习 <code>bpf_jit_comp.c</code> 源代码的时候，会看到不少 <code>memcpy(prog, x86_nops[5], X86_PATCH_SIZE);</code> 代码；这就是插桩的真面目了。</p>
+<blockquote>
+<p><strong>X86_PATCH_SIZE</strong> 是 5，指 5 个字节，因为指令 <code>CALL/JMP ${target address}</code> 的字节数为 5 （<code>CALL/JMP</code> 指令编号占 1 个字节，<code>${target address}</code> 目标地址占 4 个字节）。</p>
+</blockquote>
+<h2 id="补丁-on-x86">补丁 on x86</h2>
+<p>eBPF 本身并没有打补丁的能力，使用的都是 x86 提供的指令补丁的能力。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// ${KERNEL}/arch/x86/net/bpf_jit_comp.c
+</span><span class="c1"></span>
+<span class="k">static</span> <span class="kt">int</span> <span class="nf">__bpf_arch_text_poke</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ip</span><span class="p">,</span> <span class="k">enum</span> <span class="n">bpf_text_poke_type</span> <span class="n">t</span><span class="p">,</span>
+                <span class="kt">void</span> <span class="o">*</span><span class="n">old_addr</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">new_addr</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">const</span> <span class="n">u8</span> <span class="o">*</span><span class="n">nop_insn</span> <span class="o">=</span> <span class="n">x86_nops</span><span class="p">[</span><span class="mi">5</span><span class="p">];</span>
+    <span class="n">u8</span> <span class="n">old_insn</span><span class="p">[</span><span class="n">X86_PATCH_SIZE</span><span class="p">];</span>
+    <span class="n">u8</span> <span class="n">new_insn</span><span class="p">[</span><span class="n">X86_PATCH_SIZE</span><span class="p">];</span>
+    <span class="n">u8</span> <span class="o">*</span><span class="n">prog</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
+
+    <span class="n">memcpy</span><span class="p">(</span><span class="n">old_insn</span><span class="p">,</span> <span class="n">nop_insn</span><span class="p">,</span> <span class="n">X86_PATCH_SIZE</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">old_addr</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">prog</span> <span class="o">=</span> <span class="n">old_insn</span><span class="p">;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">t</span> <span class="o">==</span> <span class="n">BPF_MOD_CALL</span> <span class="o">?</span>
+              <span class="n">emit_call</span><span class="p">(</span><span class="o">&amp;</span><span class="n">prog</span><span class="p">,</span> <span class="n">old_addr</span><span class="p">,</span> <span class="n">ip</span><span class="p">)</span> <span class="o">:</span>
+              <span class="n">emit_jump</span><span class="p">(</span><span class="o">&amp;</span><span class="n">prog</span><span class="p">,</span> <span class="n">old_addr</span><span class="p">,</span> <span class="n">ip</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">memcpy</span><span class="p">(</span><span class="n">new_insn</span><span class="p">,</span> <span class="n">nop_insn</span><span class="p">,</span> <span class="n">X86_PATCH_SIZE</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">new_addr</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">prog</span> <span class="o">=</span> <span class="n">new_insn</span><span class="p">;</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">t</span> <span class="o">==</span> <span class="n">BPF_MOD_CALL</span> <span class="o">?</span>
+              <span class="n">emit_call</span><span class="p">(</span><span class="o">&amp;</span><span class="n">prog</span><span class="p">,</span> <span class="n">new_addr</span><span class="p">,</span> <span class="n">ip</span><span class="p">)</span> <span class="o">:</span>
+              <span class="n">emit_jump</span><span class="p">(</span><span class="o">&amp;</span><span class="n">prog</span><span class="p">,</span> <span class="n">new_addr</span><span class="p">,</span> <span class="n">ip</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="n">EBUSY</span><span class="p">;</span>
+    <span class="n">mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">text_mutex</span><span class="p">);</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">memcmp</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="n">old_insn</span><span class="p">,</span> <span class="n">X86_PATCH_SIZE</span><span class="p">))</span>
+        <span class="k">goto</span> <span class="n">out</span><span class="p">;</span>
+    <span class="n">ret</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">memcmp</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="n">new_insn</span><span class="p">,</span> <span class="n">X86_PATCH_SIZE</span><span class="p">))</span> <span class="p">{</span>
+        <span class="n">text_poke_bp</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="n">new_insn</span><span class="p">,</span> <span class="n">X86_PATCH_SIZE</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="nl">out</span><span class="p">:</span>
+    <span class="n">mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">text_mutex</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="kt">int</span> <span class="nf">bpf_arch_text_poke</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ip</span><span class="p">,</span> <span class="k">enum</span> <span class="n">bpf_text_poke_type</span> <span class="n">t</span><span class="p">,</span>
+               <span class="kt">void</span> <span class="o">*</span><span class="n">old_addr</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">new_addr</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">is_kernel_text</span><span class="p">((</span><span class="kt">long</span><span class="p">)</span><span class="n">ip</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+        <span class="o">!</span><span class="n">is_bpf_text_address</span><span class="p">((</span><span class="kt">long</span><span class="p">)</span><span class="n">ip</span><span class="p">))</span>
+        <span class="cm">/* BPF poking in modules is not supported */</span>
+        <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+
+    <span class="cm">/*
+</span><span class="cm">     * See emit_prologue(), for IBT builds the trampoline hook is preceded
+</span><span class="cm">     * with an ENDBR instruction.
+</span><span class="cm">     */</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">is_endbr</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">u32</span> <span class="o">*</span><span class="p">)</span><span class="n">ip</span><span class="p">))</span>
+        <span class="n">ip</span> <span class="o">+=</span> <span class="n">ENDBR_INSN_SIZE</span><span class="p">;</span>
+
+    <span class="k">return</span> <span class="n">__bpf_arch_text_poke</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">old_addr</span><span class="p">,</span> <span class="n">new_addr</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p><code>__bpf_arch_text_poke()</code> 主要处理逻辑如下：</p>
+<ol>
+<li>利用原有的信息，判断在进行本次 poke 时原有的指令是否有变更了，如果有变更则跳过本次 poke。</li>
+<li>根据 poke 类型生成新的指令（<code>CALL/JMP ${target address}</code>）。</li>
+<li>调用 <code>text_poke_bp()</code> 进行指令 live patch。</li>
+</ol>
+<p>简单理解，便是将插桩的 nop 指令 live patch 为 <code>CALL/JMP ${target address}</code> 指令。</p>
+<p>可以看到，最终调用 <code>text_poke_bp()</code> 函数对指令进行 live patch。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span><span class="lnt">124
+</span><span class="lnt">125
+</span><span class="lnt">126
+</span><span class="lnt">127
+</span><span class="lnt">128
+</span><span class="lnt">129
+</span><span class="lnt">130
+</span><span class="lnt">131
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// ${KERNEL}/arch/x86/kernel/alternative.c
+</span><span class="c1"></span>
+<span class="cm">/**
+</span><span class="cm"> * text_poke_bp() -- update instructions on live kernel on SMP
+</span><span class="cm"> * @addr:   address to patch
+</span><span class="cm"> * @opcode: opcode of new instruction
+</span><span class="cm"> * @len:    length to copy
+</span><span class="cm"> * @emulate:    instruction to be emulated
+</span><span class="cm"> *
+</span><span class="cm"> * Update a single instruction with the vector in the stack, avoiding
+</span><span class="cm"> * dynamically allocated memory. This function should be used when it is
+</span><span class="cm"> * not possible to allocate memory.
+</span><span class="cm"> */</span>
+<span class="kt">void</span> <span class="n">__ref</span> <span class="nf">text_poke_bp</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">addr</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">opcode</span><span class="p">,</span> <span class="n">size_t</span> <span class="n">len</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">emulate</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="k">struct</span> <span class="n">text_poke_loc</span> <span class="n">tp</span><span class="p">;</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">unlikely</span><span class="p">(</span><span class="n">system_state</span> <span class="o">==</span> <span class="n">SYSTEM_BOOTING</span><span class="p">))</span> <span class="p">{</span>
+        <span class="n">text_poke_early</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">opcode</span><span class="p">,</span> <span class="n">len</span><span class="p">);</span>
+        <span class="k">return</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="n">text_poke_loc_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tp</span><span class="p">,</span> <span class="n">addr</span><span class="p">,</span> <span class="n">opcode</span><span class="p">,</span> <span class="n">len</span><span class="p">,</span> <span class="n">emulate</span><span class="p">);</span>
+    <span class="n">text_poke_bp_batch</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tp</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<span class="p">}</span>
+
+<span class="cm">/**
+</span><span class="cm"> * text_poke_bp_batch() -- update instructions on live kernel on SMP
+</span><span class="cm"> * @tp:         vector of instructions to patch
+</span><span class="cm"> * @nr_entries:     number of entries in the vector
+</span><span class="cm"> *
+</span><span class="cm"> * Modify multi-byte instruction by using int3 breakpoint on SMP.
+</span><span class="cm"> * We completely avoid stop_machine() here, and achieve the
+</span><span class="cm"> * synchronization using int3 breakpoint.
+</span><span class="cm"> *
+</span><span class="cm"> * The way it is done:
+</span><span class="cm"> *  - For each entry in the vector:
+</span><span class="cm"> *      - add a int3 trap to the address that will be patched
+</span><span class="cm"> *  - sync cores
+</span><span class="cm"> *  - For each entry in the vector:
+</span><span class="cm"> *      - update all but the first byte of the patched range
+</span><span class="cm"> *  - sync cores
+</span><span class="cm"> *  - For each entry in the vector:
+</span><span class="cm"> *      - replace the first byte (int3) by the first byte of
+</span><span class="cm"> *        replacing opcode
+</span><span class="cm"> *  - sync cores
+</span><span class="cm"> */</span>
+<span class="k">static</span> <span class="kt">void</span> <span class="nf">text_poke_bp_batch</span><span class="p">(</span><span class="k">struct</span> <span class="n">text_poke_loc</span> <span class="o">*</span><span class="n">tp</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">nr_entries</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="n">int3</span> <span class="o">=</span> <span class="n">INT3_INSN_OPCODE</span><span class="p">;</span>
+    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+    <span class="kt">int</span> <span class="n">do_sync</span><span class="p">;</span>
+
+    <span class="n">lockdep_assert_held</span><span class="p">(</span><span class="o">&amp;</span><span class="n">text_mutex</span><span class="p">);</span>
+
+    <span class="n">bp_desc</span><span class="p">.</span><span class="n">vec</span> <span class="o">=</span> <span class="n">tp</span><span class="p">;</span>
+    <span class="n">bp_desc</span><span class="p">.</span><span class="n">nr_entries</span> <span class="o">=</span> <span class="n">nr_entries</span><span class="p">;</span>
+
+    <span class="cm">/*
+</span><span class="cm">     * Corresponds to the implicit memory barrier in try_get_desc() to
+</span><span class="cm">     * ensure reading a non-zero refcount provides up to date bp_desc data.
+</span><span class="cm">     */</span>
+    <span class="n">atomic_set_release</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bp_desc</span><span class="p">.</span><span class="n">refs</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+
+    <span class="cm">/*
+</span><span class="cm">     * Corresponding read barrier in int3 notifier for making sure the
+</span><span class="cm">     * nr_entries and handler are correctly ordered wrt. patching.
+</span><span class="cm">     */</span>
+    <span class="n">smp_wmb</span><span class="p">();</span>
+
+    <span class="cm">/*
+</span><span class="cm">     * First step: add a int3 trap to the address that will be patched.
+</span><span class="cm">     */</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">nr_entries</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">old</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">u8</span> <span class="o">*</span><span class="p">)</span><span class="n">text_poke_addr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+        <span class="n">text_poke</span><span class="p">(</span><span class="n">text_poke_addr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="o">&amp;</span><span class="n">int3</span><span class="p">,</span> <span class="n">INT3_INSN_SIZE</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="n">text_poke_sync</span><span class="p">();</span>
+
+    <span class="cm">/*
+</span><span class="cm">     * Second step: update all but the first byte of the patched range.
+</span><span class="cm">     */</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">do_sync</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">nr_entries</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">u8</span> <span class="n">old</span><span class="p">[</span><span class="n">POKE_MAX_OPCODE_SIZE</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span> <span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">old</span><span class="p">,</span> <span class="p">};</span>
+        <span class="kt">int</span> <span class="n">len</span> <span class="o">=</span> <span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">len</span><span class="p">;</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">len</span> <span class="o">-</span> <span class="n">INT3_INSN_SIZE</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">memcpy</span><span class="p">(</span><span class="n">old</span> <span class="o">+</span> <span class="n">INT3_INSN_SIZE</span><span class="p">,</span>
+                   <span class="n">text_poke_addr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="n">INT3_INSN_SIZE</span><span class="p">,</span>
+                   <span class="n">len</span> <span class="o">-</span> <span class="n">INT3_INSN_SIZE</span><span class="p">);</span>
+            <span class="n">text_poke</span><span class="p">(</span><span class="n">text_poke_addr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">+</span> <span class="n">INT3_INSN_SIZE</span><span class="p">,</span>
+                  <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">text</span> <span class="o">+</span> <span class="n">INT3_INSN_SIZE</span><span class="p">,</span>
+                  <span class="n">len</span> <span class="o">-</span> <span class="n">INT3_INSN_SIZE</span><span class="p">);</span>
+            <span class="n">do_sync</span><span class="o">++</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="c1">// ...
+</span><span class="c1"></span>        <span class="c1">// perf event
+</span><span class="c1"></span>    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">do_sync</span><span class="p">)</span> <span class="p">{</span>
+        <span class="cm">/*
+</span><span class="cm">         * According to Intel, this core syncing is very likely
+</span><span class="cm">         * not necessary and we&#39;d be safe even without it. But
+</span><span class="cm">         * better safe than sorry (plus there&#39;s not only Intel).
+</span><span class="cm">         */</span>
+        <span class="n">text_poke_sync</span><span class="p">();</span>
+    <span class="p">}</span>
+
+    <span class="cm">/*
+</span><span class="cm">     * Third step: replace the first byte (int3) by the first byte of
+</span><span class="cm">     * replacing opcode.
+</span><span class="cm">     */</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">do_sync</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">nr_entries</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">text</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">INT3_INSN_OPCODE</span><span class="p">)</span>
+            <span class="k">continue</span><span class="p">;</span>
+
+        <span class="n">text_poke</span><span class="p">(</span><span class="n">text_poke_addr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">]),</span> <span class="n">tp</span><span class="p">[</span><span class="n">i</span><span class="p">].</span><span class="n">text</span><span class="p">,</span> <span class="n">INT3_INSN_SIZE</span><span class="p">);</span>
+        <span class="n">do_sync</span><span class="o">++</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">do_sync</span><span class="p">)</span>
+        <span class="n">text_poke_sync</span><span class="p">();</span>
+
+    <span class="cm">/*
+</span><span class="cm">     * Remove and wait for refs to be zero.
+</span><span class="cm">     */</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">atomic_dec_and_test</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bp_desc</span><span class="p">.</span><span class="n">refs</span><span class="p">))</span>
+        <span class="n">atomic_cond_read_acquire</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bp_desc</span><span class="p">.</span><span class="n">refs</span><span class="p">,</span> <span class="o">!</span><span class="n">VAL</span><span class="p">);</span>
+<span class="p">}</span>
+</code></pre></td></tr></table>
+</div>
+</div><p>用图片展示该过程：</p>
+<p><img src="/eBPF_Talk_39_poke_on_x86_2.png" alt=""></p>
+<h2 id="总结">总结</h2>
+<p>学习了 x86 指令插桩、指令 live patch 技术，可以更好地驾驶 eBPF 挖掘机了。</p>
+<p><code>tailcall</code>、<code>bpf2bpf</code> on x86 不再神秘。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2023-05-23
+        
+    </span>
+  </p>
+  
+  
+</div>
+<footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/poke/">poke</a>
+      <a href="/%20tags/x86/">x86</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-38-kernel-version/">
+        <span class="next-text nav-default">eBPF Talk: 学习经验之确认 kernel version</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2023<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
+
+<script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
