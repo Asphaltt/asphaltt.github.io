@@ -138,6 +138,30 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-43-trampoline-on-x86/">eBPF Talk: trampoline on x86【续】【汇编慎入】</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 475 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      书接上回，使用 fexit 的时候，为什么在 ret 前增加 add $0x8,%rsp 指令就能跳过执行原来的函数？ eBPF Talk: trampoline on x86【汇编慎入】 call 学习一下几条常用指令： call %N: 相当于 push %eip + mov
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-43-trampoline-on-x86/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-42-trampoline-on-x86/">eBPF Talk: trampoline on x86【汇编慎入】</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
@@ -348,30 +372,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-34-af_xdp/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-33-tailcall-on-x86/">eBPF Talk: tailcall on x86【汇编慎入】【译】</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 5184 字 </span>
-        <span class="more-meta"> 预计阅读 11 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf 【译】 以下为译文。 最初我们学习编程的时候，我们就学习了 递归。较
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-33-tailcall-on-x86/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
