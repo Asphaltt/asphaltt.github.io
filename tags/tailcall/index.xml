@@ -6,7 +6,34 @@
     <description>Recent content in tailcall on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 23 May 2023 22:06:44 +0800</lastBuildDate><atom:link href="https://le0nhwan9.github.io/tags/tailcall/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 22 Aug 2023 22:27:28 +0800</lastBuildDate><atom:link href="https://le0nhwan9.github.io/tags/tailcall/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 共享的 tailcall PROG_ARRAY bpf map</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/</link>
+      <pubDate>Tue, 22 Aug 2023 22:27:28 +0800</pubDate>
+      
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/</guid>
+      <description>在研究 eBPF Talk: trace tailcall 程序？NO！ 时，产生了疑惑： 静态 tailcall 使用的 PROG_ARRAY bpf map 能在多个进程之间共享吗？ TL;DR 能。且在更新 PROG_ARRAY bpf map 时，会更新静态 tailcall 的所有 bpf prog。 eBPF</description>
+    </item>
+    
+    <item>
+      <title>eBPF Talk: 更新 tailcall PROG_ARRAY bpf map</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-91-update-tailcall-bpf-map/</link>
+      <pubDate>Tue, 22 Aug 2023 22:27:23 +0800</pubDate>
+      
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-91-update-tailcall-bpf-map/</guid>
+      <description>在上一集 eBPF Talk: 动态或静态 tailcall 中，我们知道了 tailcall 有动态和静态之分。 对于动态 tailcall 而言，更新 PROG_ARRAY bpf map 时就比较简单，只需要更新一下 array-&amp;gt;ptrs 数组即可。 但对于静态 tailcall 而言</description>
+    </item>
+    
+    <item>
+      <title>eBPF Talk: 动态或静态 tailcall</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-90-dynamic-or-static-tailcall/</link>
+      <pubDate>Tue, 22 Aug 2023 22:27:18 +0800</pubDate>
+      
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-90-dynamic-or-static-tailcall/</guid>
+      <description>动态 tailcall？静态 tailcall？为什么 tailcall 会有动静之分呢？ 其实，就是看在使用 bpf_taill_call() 时，传入的 index 参数是常量还是变量。 动态 tailcall 在使用 bpf_tail_call() 时，传</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: bpf2bpf &amp; tailcall 报错分析</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</link>
