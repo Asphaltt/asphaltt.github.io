@@ -6,7 +6,16 @@
     <description>Recent content in iptables on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 21 May 2023 16:24:22 +0800</lastBuildDate><atom:link href="https://le0nhwan9.github.io/tags/iptables/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Fri, 29 Mar 2024 23:46:26 +0800</lastBuildDate><atom:link href="https://le0nhwan9.github.io/tags/iptables/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: skbtracer-iptables</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-45-skbtracer-iptables/</link>
+      <pubDate>Fri, 29 Mar 2024 23:46:26 +0800</pubDate>
+      
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-45-skbtracer-iptables/</guid>
+      <description>可还曾记得 skbtracer 内核网络包跟踪工具？ skbtracer: Linux 内核网络包路径追踪利器，Go 语言版本 这是我刚学习 eBPF 不久就开发的工具，不过更多时候是向 skbtracer 和 pwru 这两个网络包跟</description>
+    </item>
+    
     <item>
       <title>eBPF Talk: 低性能 eBPF ACL</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-26-iptables-in-bpf/</link>

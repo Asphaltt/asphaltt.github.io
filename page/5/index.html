@@ -143,6 +143,101 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/drgn-netdev_priv/">使用 drgn 查看网络设备的私有数据</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-01-01 </span>
+      <div class="post-category">
+          <a href="/categories/drgn/"> drgn </a>
+          </div>
+        <span class="more-meta"> 约 540 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
+    </div>
+    <div class="read-more">
+      <a href="/post/drgn-netdev_priv/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-syscalldist/">eBPF Talk: syscalldist: raw tracepoint 实战</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-12-22 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 796 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      bcc/libbpf-tools 里有许多使用 bcc 实现的小工具。 咱们也来实现一个类似的工具吧。 raw tracepoint 不同于 tracepoint，raw tracepoint 的资料较少。 关于 eBPF 进行 raw tracepoint 的资料更少： bpf,
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-syscalldist/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-two-map-helpers/">eBPF Talk: 两个简单好用的 map 处理函数</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-12-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 460 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近在用 eBPF 造轮子的时候，发现其中一个处理函数；而后，自己有样学样地封装了另外一个函数。 bpf_map_lookup_or_try_init 函数名称有点长。 该函数是用来查询某个 key 对应的 valu
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-two-map-helpers/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-asm-and-insn/">eBPF Talk: 此汇编非彼汇编</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-12-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 689 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      此汇编：在 C 代码里使用的 asm volatile 汇编代码。 彼汇编：eBPF verifier、JIT、runtime VM 等地方使用的汇编指令。 在文章 BPF 尾调用简介 里，
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-asm-and-insn/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-tailcall-intro/">eBPF Talk: eBPF 尾调用简介</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2022-11-24 </span>
@@ -281,101 +376,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-cpu-and-numa/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-final-step-to-co-re/">eBPF CO-RE 的终极一步</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-10-31 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-co-re/"> eBPF CO-RE </a>
-          </div>
-        <span class="more-meta"> 约 15 字 </span>
-        <span class="more-meta"> 预计阅读 1 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      请移步：eBPF CO-RE 的终极一步。
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-final-step-to-co-re/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-two-macros/">eBPF Talk: 宏的两种写法</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-10-30 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 564 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF 的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。 写法一
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-two-macros/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-variables-declaration-location/">eBPF Talk: 变量声明的位置</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-10-29 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 758 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      据了解（未查证），从 clang12 开始，eBPF 代码中的变量声明不再要求写在函数体的最前方，而是可以按需声明并初始化。 写法一：一次性声明全部的变量 1 2 3
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-variables-declaration-location/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-black-magic-correct/">为 eBPF 程序注入黑魔法 【正确姿势】</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-08-24 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          </div>
-        <span class="more-meta"> 约 1263 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      为 eBPF 程序注入黑魔法 【错误姿势】 中提出的在加载阶段中动态变更常量值的办法并不可靠，毕竟在 cilium/ebpf 中已提供了重写常量的函数 RewriteConstan
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-black-magic-correct/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

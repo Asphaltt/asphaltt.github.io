@@ -143,6 +143,102 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-31-global-variable-constant-variable-and-bpf-map/">eBPF Talk: 全局变量、常量与 bpf map</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1865 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      全局变量的用法请参考 eBPF Talk: 全局变量实战指南。 常量的使用例子请参考 为 eBPF 程序注入黑魔法。 有同事提了个问题：在 eBPF 运行的时候是怎么访问它们的内存的呢？
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-31-global-variable-constant-variable-and-bpf-map/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-30-veth-xdp-gro/">eBPF Talk: veth, XDP, GRO ?</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 952 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      书接上回 eBPF Talk: XDP 转发失败了，今回讲解为什么从物理网卡的驱动模式 XDP 程序 xdp_redirect() 到 veth 设备时一定要开启对端设备的 GRO 功能？ 网络包 xdp_redirect() 转发到哪里去？ 简单而言，网
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-30-veth-xdp-gro/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-29-failed-to-xdp-redirect/">eBPF Talk: XDP 转发失败了</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1198 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      奇葩场景遇到个奇葩问题。 为了更好的性能，就将 XDP 程序挂载到网卡驱动里。但有个业务需求，在 XDP 程序里将需要延迟的流量转发到 veth 设备。所以，就直接在 XDP
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-29-failed-to-xdp-redirect/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-28-xdp-on-veth/">eBPF Talk: 在 veth 上运行 XDP</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1239 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      veth 设备在 Linux 容器网络里被广泛使用，像其它网络设备一样都支持运行 XDP 程序。 与此同时，veth 设备还支持 driver 模式的 XDP 程序。 如果在往 veth 设备上挂载 XDP 程序时
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-28-xdp-on-veth/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-27-xdp-metadata-in-action/">eBPF Talk: XDP metadata 实战指南</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-21 </span>
@@ -281,102 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-22-global-variables-in-action/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-21-xdp-acl-optimisation/">eBPF Talk: 优化 XDP ACL</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1476 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      书接上回 ，本文讲解对高性能 XDP ACL 的开源项目 xdp_acl 的优化内容： 按需开启 eBPF 中的 debug 日志 动态调整 bitmap 大小 使用 PERCPU ARRAY 优化规则 bpf map 动态增删 ACL 规则的处理 以下代码片段
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-21-xdp-acl-optimisation/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-20-xdp-acl-again/">eBPF Talk: 再论高性能 eBPF ACL</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1230 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      因为近期又得搞基于 eBPF 的 ACL，所以再次研究基于 eBPF 的 ACL 的几篇论文和一个开源项目。 以前，我研究过 「eBPF技术实践：高性能ACL」，并实现了一个
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-20-xdp-acl-again/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-19-how-skbs-work/">eBPF Talk: SKB 工作原理【译】</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 2210 字 </span>
-        <span class="more-meta"> 预计阅读 5 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      翻译自 How SKBs work。 数据区域的布局 第一张图描述的是 SKB 数据区域的布局，以及几个 struct sk_buff 中的指针。 本文余下内容将讲解 SKB 数据区域的操作：通过修改这些指
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-19-how-skbs-work/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-18-another-side-of-bpf-helpers/">eBPF Talk: bpf helpers 的另一面</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-20 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1659 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，verifier 是怎么处理 bpf helpers 的。 书接上回 eBPF Talk: 揭秘 XDP 转发网络包，本文解答： 为什么 XDP
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-18-another-side-of-bpf-helpers/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

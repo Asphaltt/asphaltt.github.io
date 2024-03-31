@@ -143,6 +143,102 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-41-freplace-on-x86/">eBPF Talk: freplace on x86【汇编慎入】</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1195 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      freplace 技术便是对 prologue 进行 poke 的简单应用。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 TL;DR 究竟有多简单呢？就是将 prologue 里的第一条 nop 指令替换成 jmp 指令；
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-41-freplace-on-x86/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-40-perilogue-on-x86/">eBPF Talk: perilogue on x86【汇编慎入】</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 631 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      perilogue 是个缝合单词，由 prologue 和 epilogue 缝合组成。 而 prologue 和 epilogue 是 函数调用规约 中的术语。 prologue: 函数整体指令中最开始的几条指令。 epilogue: 函数整体指令中最末尾的几条指令。 perilogue: 函数
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-40-perilogue-on-x86/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-39-poke-on-x86/">eBPF Talk: poke on x86【汇编慎入】</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1753 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。 TL;DR 在 x86 架构平台上的指令插桩&amp;补丁的步骤如下： 在需要的地方预
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-39-poke-on-x86/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-38-kernel-version/">eBPF Talk: 学习经验之确认 kernel version</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1170 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      当我们想要在项目特定版本内核中落地某个 eBPF 特性时，需要确认该版本内核是否支持该 eBPF 特性。 与此同时，也想知道，该 eBPF 特性最低要求哪个版本的内核。 前置
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-38-kernel-version/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-37-loop/">eBPF Talk: 实战经验之 loop</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
@@ -281,102 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-32-tailcall-and-bpf2bpf/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-31-global-variable-constant-variable-and-bpf-map/">eBPF Talk: 全局变量、常量与 bpf map</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1865 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      全局变量的用法请参考 eBPF Talk: 全局变量实战指南。 常量的使用例子请参考 为 eBPF 程序注入黑魔法。 有同事提了个问题：在 eBPF 运行的时候是怎么访问它们的内存的呢？
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-31-global-variable-constant-variable-and-bpf-map/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-30-veth-xdp-gro/">eBPF Talk: veth, XDP, GRO ?</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 952 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      书接上回 eBPF Talk: XDP 转发失败了，今回讲解为什么从物理网卡的驱动模式 XDP 程序 xdp_redirect() 到 veth 设备时一定要开启对端设备的 GRO 功能？ 网络包 xdp_redirect() 转发到哪里去？ 简单而言，网
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-30-veth-xdp-gro/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-29-failed-to-xdp-redirect/">eBPF Talk: XDP 转发失败了</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1198 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      奇葩场景遇到个奇葩问题。 为了更好的性能，就将 XDP 程序挂载到网卡驱动里。但有个业务需求，在 XDP 程序里将需要延迟的流量转发到 veth 设备。所以，就直接在 XDP
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-29-failed-to-xdp-redirect/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-28-xdp-on-veth/">eBPF Talk: 在 veth 上运行 XDP</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1239 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      veth 设备在 Linux 容器网络里被广泛使用，像其它网络设备一样都支持运行 XDP 程序。 与此同时，veth 设备还支持 driver 模式的 XDP 程序。 如果在往 veth 设备上挂载 XDP 程序时
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-28-xdp-on-veth/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
