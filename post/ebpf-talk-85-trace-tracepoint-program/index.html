@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: trace tracepoint 程序 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-85-trace-tracepoint-program/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: trace tracepoint 程序" />
+<meta property="og:description" content="此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-85-trace-tracepoint-program/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-04-04T22:38:55+08:00" />
+<meta property="article:modified_time" content="2024-04-04T22:38:55+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: trace tracepoint 程序">
+  <meta itemprop="description" content="此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程">
+  <meta itemprop="datePublished" content="2024-04-04T22:38:55+08:00">
+  <meta itemprop="dateModified" content="2024-04-04T22:38:55+08:00">
+  <meta itemprop="wordCount" content="1051">
+  <meta itemprop="keywords" content="EBPF,Tracepoint,Fentry,Fexit"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: trace tracepoint 程序"/>
+<meta name="twitter:description" content="此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: trace tracepoint 程序</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-04 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1051 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#trace-tracepoint-程序的-demo">trace <code>tracepoint</code> 程序的 demo</a></li>
+        <li><a href="#fentryfexit-的函数参数"><code>fentry</code>/<code>fexit</code> 的函数参数</a>
+          <ul>
+            <li><a href="#fentryfexit-的函数参数里不能再使用-ctx"><code>fentry</code>/<code>fexit</code> 的函数参数里不能再使用 <code>ctx</code></a></li>
+          </ul>
+        </li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>此处指的是 trace <code>tracepoint</code> bpf 程序，而不是 trace <code>tracepoint</code> 事件。</p>
+<ul>
+<li><a href="/post/ebpf-talk-79-trace-xdp-program/">eBPF Talk: trace XDP 程序</a></li>
+<li><a href="/post/ebpf-talk-80-trace-tc-bpf-program/">eBPF Talk: trace tc-bpf 程序</a></li>
+<li><a href="/post/ebpf-talk-81-trace-bpf2bpf-program/">eBPF Talk: trace bpf2bpf 函数调用</a></li>
+<li><a href="/post/ebpf-talk-82-trace-freplace-program/">eBPF Talk: trace freplace 程序</a></li>
+<li><a href="/post/ebpf-talk-83-trace-tailcall-program/">eBPF Talk: trace tailcall 程序？NO！</a></li>
+<li><a href="/post/ebpf-talk-84-trace-kprobe-program/">eBPF Talk: trace kprobe 程序</a></li>
+<li><a href="/post/ebpf-talk-85-trace-tracepoint-program/">eBPF Talk: trace tracepoint 程序</a></li>
+</ul>
+<h2 id="trace-tracepoint-程序的-demo">trace <code>tracepoint</code> 程序的 demo</h2>
+<p>demo 效果如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ./fentry_fexit-tracepoint</span>
+</span></span><span class="line"><span class="cl">2023/07/22 14:31:02 Attached fentry<span class="o">(</span>netlink_extack<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/07/22 14:31:03 Attached fexit<span class="o">(</span>netlink_extack<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/07/22 14:31:03 Attached tracepoint<span class="o">(</span>netlink_extack<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/07/22 14:31:03 Keep setting tc filter...
+</span></span><span class="line"><span class="cl">2023/07/22 14:31:04 Listening events...
+</span></span><span class="line"><span class="cl">2023/07/22 14:31:04 Errmsg: Parent Qdisc doesn<span class="s1">&#39;t exists (fentry)
+</span></span></span><span class="line"><span class="cl"><span class="s1">2023/07/22 14:31:04 Errmsg: Parent Qdisc doesn&#39;</span>t exists <span class="o">(</span>tracepoint<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/07/22 14:31:04 Errmsg: Parent Qdisc doesn<span class="s1">&#39;t exists (fexit: 72)
+</span></span></span><span class="line"><span class="cl"><span class="s1">2023/07/22 14:31:05 set tc filter: filter replace: netlink receive: invalid argument, offset: 0, message: &#34;Parent Qdisc doesn&#39;</span>t exists<span class="s2">&#34;
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中使用的 trace 手段是 <code>fentry</code> 和 <code>fexit</code>。</p>
+<ul>
+<li><a href="/post/ebpf-talk-42-trampoline-on-x86/">fentry/fexit on x86</a></li>
+</ul>
+<p>demo 中使用的 <code>fentry</code>/<code>fexit</code> bpf 代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fentry/netlink_extack&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fentry_netlink_extack</span><span class="p">,</span> <span class="k">struct</span> <span class="n">netlink_extack_error_ctx</span> <span class="o">*</span><span class="n">nl_ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_printk</span><span class="p">(</span><span class="s">&#34;tcpconn, fentry_netlink_extack</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * BPF_CORE_READ() is not dedicated to user-defined struct.
+</span></span></span><span class="line"><span class="cl"><span class="cm">     */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">msg</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_probe_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">msg</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">msg</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">nl_ctx</span><span class="o">-&gt;</span><span class="n">msg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">*</span><span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">__u64</span><span class="p">)</span> <span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">nl_ctx</span> <span class="o">+</span> <span class="p">(</span><span class="n">__u16</span><span class="p">)</span> <span class="n">msg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">__output_msg</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">PROBE_TYPE_FENTRY</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fexit/netlink_extack&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fexit_netlink_extack</span><span class="p">,</span> <span class="k">struct</span> <span class="n">netlink_extack_error_ctx</span> <span class="o">*</span><span class="n">nl_ctx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">retval</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_printk</span><span class="p">(</span><span class="s">&#34;tcpconn, fexit_netlink_extack</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">msg</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_probe_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">msg</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">msg</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">nl_ctx</span><span class="o">-&gt;</span><span class="n">msg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">*</span><span class="n">c</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">__u64</span><span class="p">)</span> <span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">nl_ctx</span> <span class="o">+</span> <span class="p">(</span><span class="n">__u16</span><span class="p">)</span> <span class="n">msg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">__output_msg</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">PROBE_TYPE_FEXIT</span><span class="p">,</span> <span class="n">retval</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>demo 中使用的 <code>tracepoint</code> bpf 代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tp/netlink/netlink_extack&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">tp__netlink_extack</span><span class="p">(</span><span class="k">struct</span> <span class="n">netlink_extack_error_ctx</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">__u64</span><span class="p">)</span> <span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">ctx</span> <span class="o">+</span> <span class="p">(</span><span class="n">__u16</span><span class="p">)</span> <span class="n">ctx</span><span class="o">-&gt;</span><span class="n">msg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">__output_msg</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">PROBE_TYPE_DEFAULT</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>本 demo 就是对 <code>tracepoint</code> bpf 程序的 <code>tp__netlink_extack()</code> 函数进行 <code>fenrty</code>/<code>fexit</code>。</p>
+<p>用户态的 Go 代码需要做的事情是：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl">    <span class="nx">spec</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">loadFf</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Failed to load bpf obj: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">tpFentry</span> <span class="o">:=</span> <span class="nx">spec</span><span class="p">.</span><span class="nx">Programs</span><span class="p">[</span><span class="s">&#34;fentry_netlink_extack&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tpFentry</span><span class="p">.</span><span class="nx">AttachTarget</span> <span class="p">=</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">TpNetlinkExtack</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tpFentry</span><span class="p">.</span><span class="nx">AttachTo</span> <span class="p">=</span> <span class="s">&#34;tp__netlink_extack&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tpExit</span> <span class="o">:=</span> <span class="nx">spec</span><span class="p">.</span><span class="nx">Programs</span><span class="p">[</span><span class="s">&#34;fexit_netlink_extack&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tpExit</span><span class="p">.</span><span class="nx">AttachTarget</span> <span class="p">=</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">TpNetlinkExtack</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tpExit</span><span class="p">.</span><span class="nx">AttachTo</span> <span class="p">=</span> <span class="s">&#34;tp__netlink_extack&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol>
+<li>第一步，创建 <code>tracepoint</code> 程序。</li>
+<li>第二步，给 <code>fentry</code> 和 <code>fexit</code> 程序指定 <code>AttachTarget</code> 和 <code>AttachTo</code>。</li>
+<li>其中，<code>AttachTarget</code> 是 <code>tracepoint</code> 程序，<code>AttachTo</code> 是 <code>tracepoint</code> 程序中的函数名。</li>
+<li>即，将 <code>fentry</code> 和 <code>fexit</code> 程序 attach 到 <code>tracepoint</code> 程序的 <code>tp__netlink_extack</code> 函数上。</li>
+</ol>
+<p>P.S. demo 源代码：<a href="https://github.com/Asphaltt/learn-by-example">GitHub Asphaltt/learn-by-example/ebpf/fentry_fexit-tracepoint</a></p>
+<h2 id="fentryfexit-的函数参数"><code>fentry</code>/<code>fexit</code> 的函数参数</h2>
+<p>仔细对比上面 <code>fentry</code>/<code>fexit</code> 的函数定义和 <code>tracepoint</code> 程序的函数定义：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fentry/netlink_extack&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fentry_netlink_extack</span><span class="p">,</span> <span class="k">struct</span> <span class="n">netlink_extack_error_ctx</span> <span class="o">*</span><span class="n">nl_ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fexit/netlink_extack&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fexit_netlink_extack</span><span class="p">,</span> <span class="k">struct</span> <span class="n">netlink_extack_error_ctx</span> <span class="o">*</span><span class="n">nl_ctx</span><span class="p">,</span> <span class="kt">int</span> <span class="n">retval</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tp/netlink/netlink_extack&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">tp__netlink_extack</span><span class="p">(</span><span class="k">struct</span> <span class="n">netlink_extack_error_ctx</span> <span class="o">*</span><span class="n">ctx</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因为 <code>tracepoint</code> 程序只有一个参数：<code>struct netlink_extack_error_ctx *ctx</code>，所以 <code>fentry</code>/<code>fexit</code> 的函数参数就有一个对应的参数：<code>struct netlink_extack_error_ctx *nl_ctx</code>；但参数名不能叫 <code>ctx</code>。</p>
+<p>其中的 <code>struct netlink_extack_error_ctx</code> 定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">netlink_extack_error_ctx</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">unused</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * bpf does not support tracepoint __data_loc directly.
+</span></span></span><span class="line"><span class="cl"><span class="cm">     *
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * Actually, this field is a 32 bit integer whose value encodes
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * information on where to find the actual data. The first 2 bytes is
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * the size of the data. The last 2 bytes is the offset from the start
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * of the tracepoint struct where the data begins.
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * -- https://github.com/iovisor/bpftrace/pull/1542
+</span></span></span><span class="line"><span class="cl"><span class="cm">     */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">msg</span><span class="p">;</span> <span class="c1">// __data_loc char[] msg;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="fentryfexit-的函数参数里不能再使用-ctx"><code>fentry</code>/<code>fexit</code> 的函数参数里不能再使用 <code>ctx</code></h3>
+<p>这是因为 <code>BPF_PROG()</code> 宏里已默认提供了 <code>ctx</code> 参数，所以不能再使用 <code>ctx</code> 参数名了。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define BPF_PROG(name, args...)                                     \
+</span></span></span><span class="line"><span class="cl"><span class="cp">name(unsigned long long *ctx);                                      \
+</span></span></span><span class="line"><span class="cl"><span class="cp">static __always_inline typeof(name(0))                              \
+</span></span></span><span class="line"><span class="cl"><span class="cp">____##name(unsigned long long *ctx, ##args);                        \
+</span></span></span><span class="line"><span class="cl"><span class="cp">typeof(name(0)) name(unsigned long long *ctx)                       \
+</span></span></span><span class="line"><span class="cl"><span class="cp">{                                                                   \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    _Pragma(&#34;GCC diagnostic push&#34;)                                  \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    _Pragma(&#34;GCC diagnostic ignored \&#34;-Wint-conversion\&#34;&#34;)          \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    return ____##name(___bpf_ctx_cast(args));                       \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    _Pragma(&#34;GCC diagnostic pop&#34;)                                   \
+</span></span></span><span class="line"><span class="cl"><span class="cp">}                                                                   \
+</span></span></span><span class="line"><span class="cl"><span class="cp">static __always_inline typeof(name(0))                              \
+</span></span></span><span class="line"><span class="cl"><span class="cp">____##name(unsigned long long *ctx, ##args)
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="小结">小结</h2>
+<p>trace <code>tracepoint</code> 的做法类似 trace <code>kprobe</code>。</p>
+<p>不过，此处选择的 <code>tracepoint</code> 是 <code>netlink_extack</code>；它有个特殊的地方是，它的 <code>tracepoint</code> 中的参数是：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Bash" data-lang="Bash"><span class="line"><span class="cl"><span class="c1"># bpftrace -lv &#39;tracepoint:netlink:*&#39;</span>
+</span></span><span class="line"><span class="cl">tracepoint:netlink:netlink_extack
+</span></span><span class="line"><span class="cl">    __data_loc char<span class="o">[]</span> msg
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>本应是 <code>const char *msg</code>，但 <code>tracepoint</code> 里使用的是 <code>__data_loc char[] msg</code>；带有 <code>__data_loc</code> annotation，就不等同于 <code>char *msg</code> 了。</p>
+<p>所以，遇到 <code>__data_loc</code> 时，bpf 代码里为什么就要通过 <code>(void *)(__u64) ((void *) nl_ctx + (__u16) msg)</code> 来获取 <code>msg</code> 的值呢？</p>
+<p>敬请期待下一篇文章：<em>eBPF Talk: tracepoint __data_loc</em>。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-04-04
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/tracepoint/">tracepoint</a>
+      <a href="/%20tags/fentry/">fentry</a>
+      <a href="/%20tags/fexit/">fexit</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-84-trace-kprobe-program/">
+        <span class="next-text nav-default">eBPF Talk: trace kprobe 程序</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

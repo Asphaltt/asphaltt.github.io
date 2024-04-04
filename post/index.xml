@@ -6,8 +6,50 @@
     <description>Recent content in Posts on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
-    <lastBuildDate>Thu, 04 Apr 2024 21:59:50 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 04 Apr 2024 22:38:55 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: trace tracepoint 程序</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-85-trace-tracepoint-program/</link>
+      <pubDate>Thu, 04 Apr 2024 22:38:55 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-85-trace-tracepoint-program/</guid>
+      <description>此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程</description>
+    </item>
+    <item>
+      <title>eBPF Talk: trace kprobe 程序</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-84-trace-kprobe-program/</link>
+      <pubDate>Thu, 04 Apr 2024 22:37:42 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-84-trace-kprobe-program/</guid>
+      <description>此处指的是 trace kprobe bpf 程序，而不是 trace kprobe 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace kprobe 程</description>
+    </item>
+    <item>
+      <title>eBPF Talk: trace tailcall 程序？NO！</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-83-trace-tailcall-program/</link>
+      <pubDate>Thu, 04 Apr 2024 22:34:32 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-83-trace-tailcall-program/</guid>
+      <description>既然可以对 freplace 程序进行 trace，是否可以对 tailcall 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程</description>
+    </item>
+    <item>
+      <title>eBPF Talk: trace freplace 程序</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-82-trace-freplace-program/</link>
+      <pubDate>Thu, 04 Apr 2024 22:30:23 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-82-trace-freplace-program/</guid>
+      <description>既然可以对 bpf2bpf 函数调用进行 trace，是否可以对 freplace 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace</description>
+    </item>
+    <item>
+      <title>eBPF Talk: trace bpf2bpf 函数调用</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-81-trace-bpf2bpf-program/</link>
+      <pubDate>Thu, 04 Apr 2024 22:28:58 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-81-trace-bpf2bpf-program/</guid>
+      <description>如 trace XDP/tc-bpf 程序，bpf2bpf 函数调用也是可以被 trace 的。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace</description>
+    </item>
+    <item>
+      <title>eBPF Talk: trace tc-bpf 程序</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-80-trace-tc-bpf-program/</link>
+      <pubDate>Thu, 04 Apr 2024 22:18:37 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-80-trace-tc-bpf-program/</guid>
+      <description>如 eBPF Talk: trace XDP 程序，使用 bpf 也是能够对 tc-bpf 程序进行 trace 的。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint</description>
+    </item>
     <item>
       <title>eBPF Talk: trace XDP 程序</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-79-trace-xdp-program/</link>

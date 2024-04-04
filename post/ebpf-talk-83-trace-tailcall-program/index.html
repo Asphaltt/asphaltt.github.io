@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: trace tailcall 程序？NO！ - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="既然可以对 freplace 程序进行 trace，是否可以对 tailcall 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-83-trace-tailcall-program/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: trace tailcall 程序？NO！" />
+<meta property="og:description" content="既然可以对 freplace 程序进行 trace，是否可以对 tailcall 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-83-trace-tailcall-program/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-04-04T22:34:32+08:00" />
+<meta property="article:modified_time" content="2024-04-04T22:34:32+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: trace tailcall 程序？NO！">
+  <meta itemprop="description" content="既然可以对 freplace 程序进行 trace，是否可以对 tailcall 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程">
+  <meta itemprop="datePublished" content="2024-04-04T22:34:32+08:00">
+  <meta itemprop="dateModified" content="2024-04-04T22:34:32+08:00">
+  <meta itemprop="wordCount" content="2325">
+  <meta itemprop="keywords" content="EBPF,Tailcall,Fentry,Fexit"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: trace tailcall 程序？NO！"/>
+<meta name="twitter:description" content="既然可以对 freplace 程序进行 trace，是否可以对 tailcall 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: trace tailcall 程序？NO！</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-04 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 2325 字 </span>
+      <span class="more-meta"> 预计阅读 5 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#trace-tailcall-程序的-demo">trace <code>tailcall</code> 程序的 demo</a></li>
+        <li><a href="#fentryfexit-的函数参数"><code>fentry</code>/<code>fexit</code> 的函数参数</a></li>
+        <li><a href="#汇编分析">汇编分析</a></li>
+        <li><a href="#tailcall-复用当前栈空间"><code>tailcall</code> 复用当前栈空间</a></li>
+        <li><a href="#jit-里对-tailcall-的处理">JIT 里对 <code>tailcall</code> 的处理</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>既然可以对 <code>freplace</code> 程序进行 trace，是否可以对 <code>tailcall</code> 程序进行 trace 呢？</p>
+<ul>
+<li><a href="/post/ebpf-talk-79-trace-xdp-program/">eBPF Talk: trace XDP 程序</a></li>
+<li><a href="/post/ebpf-talk-80-trace-tc-bpf-program/">eBPF Talk: trace tc-bpf 程序</a></li>
+<li><a href="/post/ebpf-talk-81-trace-bpf2bpf-program/">eBPF Talk: trace bpf2bpf 函数调用</a></li>
+<li><a href="/post/ebpf-talk-82-trace-freplace-program/">eBPF Talk: trace freplace 程序</a></li>
+<li><a href="/post/ebpf-talk-83-trace-tailcall-program/">eBPF Talk: trace tailcall 程序？NO！</a></li>
+<li><a href="/post/ebpf-talk-84-trace-kprobe-program/">eBPF Talk: trace kprobe 程序</a></li>
+<li><a href="/post/ebpf-talk-85-trace-tracepoint-program/">eBPF Talk: trace tracepoint 程序</a></li>
+</ul>
+<p>TL;DR: <strong>NO</strong>！经过 demo 验证，发现是不行的。</p>
+<h2 id="trace-tailcall-程序的-demo">trace <code>tailcall</code> 程序的 demo</h2>
+<p>demo 效果如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ./fentry_fexit-tailcall</span>
+</span></span><span class="line"><span class="cl">2023/07/19 21:44:34 Attached fentry<span class="o">(</span>tailcall<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/07/19 21:44:34 Attached fexit<span class="o">(</span>tailcall<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/07/19 21:44:34 Prepared tailcall<span class="o">(</span>handle_new_connection<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/07/19 21:44:35 Attached kprobe<span class="o">(</span>tcp_connect<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/07/19 21:44:35 Attached kprobe<span class="o">(</span>inet_csk_complete_hashdance<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/07/19 21:44:35 Listening events...
+</span></span><span class="line"><span class="cl">2023/07/19 21:44:38 new tcp connection: 10.0.2.15:42990 -&gt; 74.125.130.113:80 <span class="o">(</span>kprobe<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中使用的 trace 手段是 <code>fentry</code> 和 <code>fexit</code>。</p>
+<ul>
+<li><a href="/post/ebpf-talk-42-trampoline-on-x86/">fentry/fexit on x86</a></li>
+</ul>
+<p>demo 中使用的 <code>fentry</code>/<code>fexit</code> bpf 代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PERCPU_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__type</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">__u32</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__type</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">__u64</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">socks</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fentry/tailcall&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fentry_tailcall</span><span class="p">,</span> <span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">regs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_printk</span><span class="p">(</span><span class="s">&#34;tcpconn, fentry_tailcall</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">**</span><span class="n">skp</span> <span class="o">=</span> <span class="nf">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">socks</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span> <span class="o">=</span> <span class="o">*</span><span class="n">skp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="n">PROBE_TYPE_FENTRY</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fexit/tailcall&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fexit_tailcall</span><span class="p">,</span> <span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">regs</span><span class="p">,</span> <span class="kt">int</span> <span class="n">retval</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_printk</span><span class="p">(</span><span class="s">&#34;tcpconn, fexit_tailcall</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">**</span><span class="n">skp</span> <span class="o">=</span> <span class="nf">bpf_map_lookup_and_delete</span><span class="p">(</span><span class="o">&amp;</span><span class="n">socks</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span> <span class="o">=</span> <span class="o">*</span><span class="n">skp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="n">PROBE_TYPE_FEXIT</span><span class="p">,</span> <span class="n">retval</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>demo 中使用的 <code>tailcall</code> bpf 代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PROG_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">progs</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PERCPU_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__type</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">__u32</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__type</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">__u64</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">socks</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/hanle_new_connection&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">handle_new_connection</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">**</span><span class="n">skp</span> <span class="o">=</span> <span class="nf">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">socks</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// bpf_map_delete_elem(&amp;socks, &amp;key);
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nf">bpf_printk</span><span class="p">(</span><span class="s">&#34;tcpconn, handle_new_connection</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span> <span class="o">=</span> <span class="o">*</span><span class="n">skp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="n">PROBE_TYPE_DEFAULT</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/tcp_connect&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">k_tcp_connect</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sk</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="nf">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">socks</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sk</span><span class="p">,</span> <span class="n">BPF_ANY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_tail_call_static</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">progs</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/inet_csk_complete_hashdance&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">k_icsk_complete_hashdance</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sk</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="nf">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">socks</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sk</span><span class="p">,</span> <span class="n">BPF_ANY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_tail_call_static</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">progs</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在 <code>kprobe</code> bpf 程序中通过 <code>bpf_tail_call_static()</code> 调用 <code>tailcall</code> bpf 程序 <code>handle_new_connection()</code>。</p>
+<p>而后，对 <code>handle_new_connection()</code> 进行 <code>fentry</code>/<code>fexit</code>。</p>
+<p>用户态的 Go 代码需要做的事情是：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl">    <span class="nx">spec</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">loadFentryFexit</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Failed to load bpf obj: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">tailcallFentry</span> <span class="o">:=</span> <span class="nx">spec</span><span class="p">.</span><span class="nx">Programs</span><span class="p">[</span><span class="s">&#34;fentry_tailcall&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tailcallFentry</span><span class="p">.</span><span class="nx">AttachTarget</span> <span class="p">=</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">tcpconnPrograms</span><span class="p">.</span><span class="nx">HandleNewConnection</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tailcallFentry</span><span class="p">.</span><span class="nx">AttachTo</span> <span class="p">=</span> <span class="s">&#34;handle_new_connection&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tailcallFexit</span> <span class="o">:=</span> <span class="nx">spec</span><span class="p">.</span><span class="nx">Programs</span><span class="p">[</span><span class="s">&#34;fexit_tailcall&#34;</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tailcallFexit</span><span class="p">.</span><span class="nx">AttachTarget</span> <span class="p">=</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">tcpconnPrograms</span><span class="p">.</span><span class="nx">HandleNewConnection</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">tailcallFexit</span><span class="p">.</span><span class="nx">AttachTo</span> <span class="p">=</span> <span class="s">&#34;handle_new_connection&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol>
+<li>第一步，创建 <code>kprobe</code> 程序，其中包含了 <code>tailcall</code> 程序。</li>
+<li>第二步，给 <code>fentry</code> 和 <code>fexit</code> 程序指定 <code>AttachTarget</code> 和 <code>AttachTo</code>。</li>
+<li>其中，<code>AttachTarget</code> 是 <code>tailcall</code> 程序，<code>AttachTo</code> 是 <code>tailcall</code> 程序中的函数名。</li>
+<li>即，将 <code>fentry</code> 和 <code>fexit</code> 程序 attach 到 <code>tailcall</code> 程序的 <code>handle_new_connection</code> 函数上。</li>
+</ol>
+<p>P.S. demo 源代码：<a href="https://github.com/Asphaltt/learn-by-example">GitHub Asphaltt/learn-by-example/ebpf/fentry_fexit-tailcall</a></p>
+<h2 id="fentryfexit-的函数参数"><code>fentry</code>/<code>fexit</code> 的函数参数</h2>
+<p>仔细对比上面 <code>fentry</code>/<code>fexit</code> 的函数定义和 <code>tailcall</code> 程序的函数定义：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fentry/tailcall&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fentry_tailcall</span><span class="p">,</span> <span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">regs</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fexit/tailcall&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fexit_tailcall</span><span class="p">,</span> <span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">regs</span><span class="p">,</span> <span class="kt">int</span> <span class="n">retval</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/hanle_new_connection&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">handle_new_connection</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>bpf 中规定 <code>tailcall</code> 程序的函数参数必须是 <code>ctx</code>；所以，此处 <code>tailcall</code> 程序的函数参数是 <code>struct pt_regs *regs</code>。</p>
+<p><code>tailcall</code> 的更多详情，请参考：</p>
+<ul>
+<li><a href="/post/ebpf-talk-33-tailcall-on-x86/">eBPF Talk: <code>tailcall</code> on x86【汇编慎入】【译】</a></li>
+</ul>
+<p>理论上，使用 <code>fentry</code>/<code>fexit</code> 是能够对 <code>tailcall</code> 程序进行 trace 的。可是为什么就是不行呢？</p>
+<p>下面从汇编的角度分析一下。</p>
+<h2 id="汇编分析">汇编分析</h2>
+<p>查看相关的函数入口地址：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># tail /proc/kallsyms</span>
+</span></span><span class="line"><span class="cl">ffffffffc02e9114 t bpf_prog_62bef93723588309_handle_new_connection      <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl">ffffffffc02e926c t bpf_prog_3fb68e69f39b4dbf_k_icsk_complete_hashdance  <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl">ffffffffc02e9464 t bpf_prog_cd7cd930d5a4d05c_k_tcp_connect      <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl">ffffffffc02e9514 t bpf_prog_eef12c319a7cffba_fentry_tailcall    <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl">ffffffffc02e966c t bpf_prog_68da9df9fd9eec33_fexit_tailcall     <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl">ffffffffc05b0000 t bpf_trampoline_897648164865_1        <span class="o">[</span>bpf<span class="o">]</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>kprobe</code> <code>tcp_connect()</code> 的 x86 汇编指令如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># gdb -q -c /proc/kcore -ex &#39;x/150i 0xffffffffc02e9464&#39; -ex &#39;quit&#39;</span>
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9464:  nopl   0x0<span class="o">(</span>%rax,%rax,1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9469:  xor    %eax,%eax
+</span></span><span class="line"><span class="cl">   0xffffffffc02e946b:  push   %rbp
+</span></span><span class="line"><span class="cl">   0xffffffffc02e946c:  mov    %rsp,%rbp
+</span></span><span class="line"><span class="cl">   0xffffffffc02e946f:  sub    <span class="nv">$0</span>x10,%rsp
+</span></span><span class="line"><span class="cl">   // ...
+</span></span><span class="line"><span class="cl">   0xffffffffc02e94df:  add    <span class="nv">$0</span>x10,%rsp
+</span></span><span class="line"><span class="cl">   0xffffffffc02e94e6:  jmp    0xffffffffc02e911f   // tailcall
+</span></span><span class="line"><span class="cl">   0xffffffffc02e94eb:  xor    %eax,%eax
+</span></span><span class="line"><span class="cl">   0xffffffffc02e94ed:  pop    %r13
+</span></span><span class="line"><span class="cl">   0xffffffffc02e94ef:  pop    %rbx
+</span></span><span class="line"><span class="cl">   0xffffffffc02e94f0:  leave
+</span></span><span class="line"><span class="cl">   0xffffffffc02e94f1:  ret
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>对 <code>tailcall</code> <code>handle_new_connection()</code> 函数进行 trace 后的 x86 汇编指令如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># gdb -q -c /proc/kcore -ex &#39;x/150i 0xffffffffc02e9114&#39; -ex &#39;quit&#39;</span>
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9114:  call   0xffffffffc05b0000
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9119:  xchg   %ax,%ax
+</span></span><span class="line"><span class="cl">   0xffffffffc02e911b:  push   %rbp
+</span></span><span class="line"><span class="cl">   0xffffffffc02e911c:  mov    %rsp,%rbp
+</span></span><span class="line"><span class="cl">   0xffffffffc02e911f:  sub    <span class="nv">$0</span>x18,%rsp
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9126:  push   %rbx
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9127:  push   %r13
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9129:  push   %r14
+</span></span><span class="line"><span class="cl">   0xffffffffc02e912b:  push   %r15
+</span></span><span class="line"><span class="cl">   // ...
+</span></span><span class="line"><span class="cl">   0xffffffffc02e922d:  xor    %eax,%eax
+</span></span><span class="line"><span class="cl">   0xffffffffc02e922f:  pop    %r15
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9231:  pop    %r14
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9233:  pop    %r13
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9235:  pop    %rbx
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9236:  leave
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9237:  ret
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到，第一条 <code>nop</code> 指令已被替换成 <code>call</code> 指令；而 <code>call</code> 指令的目标地址是 <code>0xffffffffc05b0000</code>，即 <code>bpf_trampoline_897648164865_1</code>，这是一个 bpf <code>trampoline</code>，里面会依次调用 <code>fentry</code>/<code>fexit</code> bpf 程序。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># gdb -q -c /proc/kcore -ex &#39;x/150i 0xffffffffc05b0000&#39; -ex &#39;quit&#39;</span>
+</span></span><span class="line"><span class="cl">   0xffffffffc05b0000:  push   %rbp
+</span></span><span class="line"><span class="cl">   0xffffffffc05b0001:  mov    %rsp,%rbp
+</span></span><span class="line"><span class="cl">   0xffffffffc05b0004:  sub    <span class="nv">$0</span>x48,%rsp
+</span></span><span class="line"><span class="cl">   0xffffffffc05b0008:  push   %rbx
+</span></span><span class="line"><span class="cl">   // ...
+</span></span><span class="line"><span class="cl">   0xffffffffc05b005a:  call   0xffffffffc02e9514       // fentry tailcall
+</span></span><span class="line"><span class="cl">   0xffffffffc05b005f:  movabs <span class="nv">$0</span>xffffad57800e5000,%rdi
+</span></span><span class="line"><span class="cl">   // ...
+</span></span><span class="line"><span class="cl">   0xffffffffc05b00bc:  call   0xffffffffc02e966c       // fexit tailcall
+</span></span><span class="line"><span class="cl">   0xffffffffc05b00c1:  movabs <span class="nv">$0</span>xffffad5780101000,%rdi
+</span></span><span class="line"><span class="cl">   // ...
+</span></span><span class="line"><span class="cl">   0xffffffffc05b00ea:  pop    %rbx
+</span></span><span class="line"><span class="cl">   0xffffffffc05b00eb:  leave
+</span></span><span class="line"><span class="cl">   0xffffffffc05b00ec:  add    <span class="nv">$0</span>x8,%rsp
+</span></span><span class="line"><span class="cl">   0xffffffffc05b00f0:  ret
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>画图分析一下：</p>
+<p><img src="/eBPF_Talk_83_trace_tailcall.png" alt="trace tailcall"></p>
+<p>可以看到，进行 <code>tailcall</code> 后，<code>tailcall</code> 所使用的 <code>jmp</code> 指令跳转的目标地址是 <code>0xffffffffc02e911f</code>；该地址并不是 <code>tailcall</code> 程序的入口地址，而是偏移入口地址 5 条指令的地址。</p>
+<p>最终导致，<code>jmp</code> 后直接跳过第一条指令，即跳过了 <code>fentry</code>/<code>fexit</code> 程序的执行；换句话说，<code>tailcall</code> 程序无法直接使用 <code>fentry</code>/<code>fexit</code> 进行 trace。</p>
+<h2 id="tailcall-复用当前栈空间"><code>tailcall</code> 复用当前栈空间</h2>
+<p>此时，该想起：<code>tailcall</code> 的目标之一是复用调用者的栈空间。</p>
+<p>如果 <code>jmp</code> 指令没有跳过前面几条指令，而是跳到 <code>0xffffffffc02e9114</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># gdb -q -c /proc/kcore -ex &#39;x/150i 0xffffffffc02e9114&#39; -ex &#39;quit&#39;</span>
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9114:  call   0xffffffffc05b0000
+</span></span><span class="line"><span class="cl">   0xffffffffc02e9119:  xchg   %ax,%ax
+</span></span><span class="line"><span class="cl">   0xffffffffc02e911b:  push   %rbp
+</span></span><span class="line"><span class="cl">   0xffffffffc02e911c:  mov    %rsp,%rbp
+</span></span><span class="line"><span class="cl">   0xffffffffc02e911f:  sub    <span class="nv">$0</span>x18,%rsp
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>就会通过 <code>push $rbp</code> 和 <code>mov %rsp,%rbp</code> 这两条指令使用一段新的栈空间，而不是复用调用者的栈空间。</p>
+<p>这便违背了 <code>tailcall</code> 复用调用者栈空间的初衷。</p>
+<h2 id="jit-里对-tailcall-的处理">JIT 里对 <code>tailcall</code> 的处理</h2>
+<p>既然事实已如此，就回过头来看看 JIT 里对 <code>tailcall</code> 的处理。</p>
+<p>在 x86 JIT 里，对 <code>bpf_tail_call_static()</code> 的处理如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">void</span> <span class="nf">emit_bpf_tail_call_direct</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_jit_poke_descriptor</span> <span class="o">*</span><span class="n">poke</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                      <span class="n">u8</span> <span class="o">**</span><span class="n">pprog</span><span class="p">,</span> <span class="n">u8</span> <span class="o">*</span><span class="n">ip</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                      <span class="kt">bool</span> <span class="o">*</span><span class="n">callee_regs_used</span><span class="p">,</span> <span class="n">u32</span> <span class="n">stack_depth</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                      <span class="k">struct</span> <span class="n">jit_context</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">tcc_off</span> <span class="o">=</span> <span class="o">-</span><span class="mi">4</span> <span class="o">-</span> <span class="nf">round_up</span><span class="p">(</span><span class="n">stack_depth</span><span class="p">,</span> <span class="mi">8</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u8</span> <span class="o">*</span><span class="n">prog</span> <span class="o">=</span> <span class="o">*</span><span class="n">pprog</span><span class="p">,</span> <span class="o">*</span><span class="n">start</span> <span class="o">=</span> <span class="o">*</span><span class="n">pprog</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">offset</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * if (tail_call_cnt++ &gt;= MAX_TAIL_CALL_CNT)
+</span></span></span><span class="line"><span class="cl"><span class="cm">     *  goto out;
+</span></span></span><span class="line"><span class="cl"><span class="cm">     */</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">EMIT2_off32</span><span class="p">(</span><span class="mh">0x8B</span><span class="p">,</span> <span class="mh">0x85</span><span class="p">,</span> <span class="n">tcc_off</span><span class="p">);</span>             <span class="cm">/* mov eax, dword ptr [rbp - tcc_off] */</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">EMIT3</span><span class="p">(</span><span class="mh">0x83</span><span class="p">,</span> <span class="mh">0xF8</span><span class="p">,</span> <span class="n">MAX_TAIL_CALL_CNT</span><span class="p">);</span>         <span class="cm">/* cmp eax, MAX_TAIL_CALL_CNT */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">offset</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">-&gt;</span><span class="n">tail_call_direct_label</span> <span class="o">-</span> <span class="p">(</span><span class="n">prog</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">start</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">EMIT2</span><span class="p">(</span><span class="n">X86_JAE</span><span class="p">,</span> <span class="n">offset</span><span class="p">);</span>                       <span class="cm">/* jae out */</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">EMIT3</span><span class="p">(</span><span class="mh">0x83</span><span class="p">,</span> <span class="mh">0xC0</span><span class="p">,</span> <span class="mh">0x01</span><span class="p">);</span>                      <span class="cm">/* add eax, 1 */</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">EMIT2_off32</span><span class="p">(</span><span class="mh">0x89</span><span class="p">,</span> <span class="mh">0x85</span><span class="p">,</span> <span class="n">tcc_off</span><span class="p">);</span>             <span class="cm">/* mov dword ptr [rbp - tcc_off], eax */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">poke</span><span class="o">-&gt;</span><span class="n">tailcall_bypass</span> <span class="o">=</span> <span class="n">ip</span> <span class="o">+</span> <span class="p">(</span><span class="n">prog</span> <span class="o">-</span> <span class="n">start</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">poke</span><span class="o">-&gt;</span><span class="n">adj_off</span> <span class="o">=</span> <span class="n">X86_TAIL_CALL_OFFSET</span><span class="p">;</span>           <span class="cm">/* 关键之处 */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">poke</span><span class="o">-&gt;</span><span class="n">tailcall_target</span> <span class="o">=</span> <span class="n">ip</span> <span class="o">+</span> <span class="n">ctx</span><span class="o">-&gt;</span><span class="n">tail_call_direct_label</span> <span class="o">-</span> <span class="n">X86_PATCH_SIZE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">poke</span><span class="o">-&gt;</span><span class="n">bypass_addr</span> <span class="o">=</span> <span class="p">(</span><span class="n">u8</span> <span class="o">*</span><span class="p">)</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">tailcall_target</span> <span class="o">+</span> <span class="n">X86_PATCH_SIZE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">emit_jump</span><span class="p">(</span><span class="o">&amp;</span><span class="n">prog</span><span class="p">,</span> <span class="p">(</span><span class="n">u8</span> <span class="o">*</span><span class="p">)</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">tailcall_target</span> <span class="o">+</span> <span class="n">X86_PATCH_SIZE</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">          <span class="n">poke</span><span class="o">-&gt;</span><span class="n">tailcall_bypass</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">pop_callee_regs</span><span class="p">(</span><span class="o">&amp;</span><span class="n">prog</span><span class="p">,</span> <span class="n">callee_regs_used</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">EMIT1</span><span class="p">(</span><span class="mh">0x58</span><span class="p">);</span>                                  <span class="cm">/* pop rax */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">stack_depth</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">EMIT3_off32</span><span class="p">(</span><span class="mh">0x48</span><span class="p">,</span> <span class="mh">0x81</span><span class="p">,</span> <span class="mh">0xC4</span><span class="p">,</span> <span class="nf">round_up</span><span class="p">(</span><span class="n">stack_depth</span><span class="p">,</span> <span class="mi">8</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">memcpy</span><span class="p">(</span><span class="n">prog</span><span class="p">,</span> <span class="n">x86_nops</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">X86_PATCH_SIZE</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">prog</span> <span class="o">+=</span> <span class="n">X86_PATCH_SIZE</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* out: */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ctx</span><span class="o">-&gt;</span><span class="n">tail_call_direct_label</span> <span class="o">=</span> <span class="n">prog</span> <span class="o">-</span> <span class="n">start</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">*</span><span class="n">pprog</span> <span class="o">=</span> <span class="n">prog</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中关键之处是：<code>poke-&gt;adj_off = X86_TAIL_CALL_OFFSET;</code>。</p>
+<p>这是在 <code>tailcall</code> 调用者侧对 <code>bpf_tail_call_static()</code> 的处理。</p>
+<p>而后，在给 bpf prog <strong>ARRAY</strong> bpf map 更新 bpf prog 时，会更新某条指令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">void</span> <span class="nf">bpf_tail_call_direct_fixup</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_jit_poke_descriptor</span> <span class="o">*</span><span class="n">poke</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_array</span> <span class="o">*</span><span class="n">array</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">target</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">i</span><span class="p">,</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">size_poke_tab</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">poke</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">poke_tab</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">aux</span> <span class="o">&amp;&amp;</span> <span class="n">poke</span><span class="o">-&gt;</span><span class="n">aux</span> <span class="o">!=</span> <span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="nf">WARN_ON_ONCE</span><span class="p">(</span><span class="nf">READ_ONCE</span><span class="p">(</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">tailcall_target_stable</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">reason</span> <span class="o">!=</span> <span class="n">BPF_POKE_REASON_TAIL_CALL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">array</span> <span class="o">=</span> <span class="nf">container_of</span><span class="p">(</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">tail_call</span><span class="p">.</span><span class="n">map</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_array</span><span class="p">,</span> <span class="n">map</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">poke_mutex</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">target</span> <span class="o">=</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">ptrs</span><span class="p">[</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">tail_call</span><span class="p">.</span><span class="n">key</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">ret</span> <span class="o">=</span> <span class="nf">__bpf_arch_text_poke</span><span class="p">(</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">tailcall_target</span><span class="p">,</span>   <span class="cm">/* 关键之处 */</span>
+</span></span><span class="line"><span class="cl">                           <span class="n">BPF_MOD_JUMP</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                           <span class="p">(</span><span class="n">u8</span> <span class="o">*</span><span class="p">)</span><span class="n">target</span><span class="o">-&gt;</span><span class="n">bpf_func</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">                           <span class="n">poke</span><span class="o">-&gt;</span><span class="n">adj_off</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">BUG_ON</span><span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="n">ret</span> <span class="o">=</span> <span class="nf">__bpf_arch_text_poke</span><span class="p">(</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">tailcall_bypass</span><span class="p">,</span>   <span class="cm">/* 附带之处 */</span>
+</span></span><span class="line"><span class="cl">                           <span class="n">BPF_MOD_JUMP</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                           <span class="p">(</span><span class="n">u8</span> <span class="o">*</span><span class="p">)</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">tailcall_target</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">                           <span class="n">X86_PATCH_SIZE</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">BUG_ON</span><span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">WRITE_ONCE</span><span class="p">(</span><span class="n">poke</span><span class="o">-&gt;</span><span class="n">tailcall_target_stable</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">poke_mutex</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中需要关注的地方：</p>
+<ol>
+<li><code>__bpf_arch_text_poke(poke-&gt;tailcall_target, BPF_MOD_JUMP, NULL, (u8 *)target-&gt;bpf_func + poke-&gt;adj_off);</code></li>
+<li><code>__bpf_arch_text_poke(poke-&gt;tailcall_bypass, BPF_MOD_JUMP, (u8 *)poke-&gt;tailcall_target + X86_PATCH_SIZE, NULL);</code> 将原先 <code>jmp</code> 指令替换成 <code>nop</code> 指令，为了不跳过后面的 <code>tailcall</code> 逻辑。</li>
+</ol>
+<p>其中 <code>poke-&gt;adj_off = X86_TAIL_CALL_OFFSET;</code>，而 <code>X86_TAIL_CALL_OFFSET</code> 的值是 11。用上面的例子来计算：<code>0xffffffffc02e911f - 0xffffffffc02e9114 = 11</code>。</p>
+<h2 id="小结">小结</h2>
+<ul>
+<li><code>tailcall</code> 程序无法直接使用 <code>fentry</code>/<code>fexit</code> 进行 trace。</li>
+<li><code>tailcall</code> 为了复用调用者的栈空间，会跳过前面几条指令，而这几条指令包含了 <code>call</code> <code>fentry</code>/<code>fexit</code> 程序的指令。</li>
+</ul>
+<p>简而言之，<code>tailcall</code> 程序不支持 <code>fentry</code>/<code>fexit</code> 进行 trace。</p>
+<p>所以，对于 <code>tailcall</code> 地狱，就无法使用 <code>fentry</code>/<code>fexit</code> 进行 trace，从而无法通过外部手段跟踪 <code>tailcall</code> 地狱中的调用链。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-04-04
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/tailcall/">tailcall</a>
+      <a href="/%20tags/fentry/">fentry</a>
+      <a href="/%20tags/fexit/">fexit</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-84-trace-kprobe-program/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: trace kprobe 程序</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-82-trace-freplace-program/">
+        <span class="next-text nav-default">eBPF Talk: trace freplace 程序</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

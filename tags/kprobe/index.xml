@@ -6,8 +6,15 @@
     <description>Recent content in Kprobe on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 29 Mar 2024 23:56:03 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 04 Apr 2024 22:37:42 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/kprobe/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: trace kprobe 程序</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-84-trace-kprobe-program/</link>
+      <pubDate>Thu, 04 Apr 2024 22:37:42 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-84-trace-kprobe-program/</guid>
+      <description>此处指的是 trace kprobe bpf 程序，而不是 trace kprobe 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace kprobe 程</description>
+    </item>
     <item>
       <title>eBPF Talk: kprobe 获取第 n 个参数</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-48-kprobe-nth-argument/</link>

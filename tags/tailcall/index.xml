@@ -6,8 +6,15 @@
     <description>Recent content in Tailcall on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 22 Aug 2023 22:27:28 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 04 Apr 2024 22:34:32 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/tailcall/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: trace tailcall 程序？NO！</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-83-trace-tailcall-program/</link>
+      <pubDate>Thu, 04 Apr 2024 22:34:32 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-83-trace-tailcall-program/</guid>
+      <description>既然可以对 freplace 程序进行 trace，是否可以对 tailcall 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程</description>
+    </item>
     <item>
       <title>eBPF Talk: 共享的 tailcall PROG_ARRAY bpf map</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/</link>

@@ -52,7 +52,7 @@
   <meta itemprop="description" content="在 XDP 程序运行起来后，特别是在生产环境中，有没有办法去观察它的运行情况呢？特别是 XDP 程序的最终结果。 将问题泛化一下，即有没有办法去 trace bpf 程序？ TL;DR 有">
   <meta itemprop="datePublished" content="2024-04-04T21:59:50+08:00">
   <meta itemprop="dateModified" content="2024-04-04T21:59:50+08:00">
-  <meta itemprop="wordCount" content="1641">
+  <meta itemprop="wordCount" content="1689">
   <meta itemprop="keywords" content="EBPF"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: trace XDP 程序"/>
 <meta name="twitter:description" content="在 XDP 程序运行起来后，特别是在生产环境中，有没有办法去观察它的运行情况呢？特别是 XDP 程序的最终结果。 将问题泛化一下，即有没有办法去 trace bpf 程序？ TL;DR 有"/>
 
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 1641 字 </span>
+      <span class="more-meta"> 约 1689 字 </span>
       <span class="more-meta"> 预计阅读 4 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -186,6 +186,15 @@
     <p>在 XDP 程序运行起来后，特别是在生产环境中，有没有办法去观察它的运行情况呢？特别是 XDP 程序的最终结果。</p>
 <p>将问题泛化一下，即有没有办法去 trace bpf 程序？</p>
 <p>TL;DR 有，却没有，得看具体是那种 bpf 程序。不过，trace XDP 程序是可以的。</p>
+<ul>
+<li><a href="/post/ebpf-talk-79-trace-xdp-program/">eBPF Talk: trace XDP 程序</a></li>
+<li><a href="/post/ebpf-talk-80-trace-tc-bpf-program/">eBPF Talk: trace tc-bpf 程序</a></li>
+<li><a href="/post/ebpf-talk-81-trace-bpf2bpf-program/">eBPF Talk: trace bpf2bpf 函数调用</a></li>
+<li><a href="/post/ebpf-talk-82-trace-freplace-program/">eBPF Talk: trace freplace 程序</a></li>
+<li><a href="/post/ebpf-talk-83-trace-tailcall-program/">eBPF Talk: trace tailcall 程序？NO！</a></li>
+<li><a href="/post/ebpf-talk-84-trace-kprobe-program/">eBPF Talk: trace kprobe 程序</a></li>
+<li><a href="/post/ebpf-talk-85-trace-tracepoint-program/">eBPF Talk: trace tracepoint 程序</a></li>
+</ul>
 <h2 id="trace-xdp-程序的-demo">trace XDP 程序的 demo</h2>
 <p>demo 效果如下：</p>
 <div class="highlight"><div class="chroma">
@@ -744,7 +753,11 @@
       <a href="/%20tags/ebpf/">eBPF</a>
       </div>
     <nav class="post-nav">
-      
+      <a class="prev" href="/post/ebpf-talk-80-trace-tc-bpf-program/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: trace tc-bpf 程序</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
       <a class="next" href="/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/">
         <span class="next-text nav-default">eBPF Talk: XDP ACL 进阶之 TupleMerge</span>
         <span class="next-text nav-mobile">下一篇</span>

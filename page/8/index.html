@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
-  <meta itemprop="dateModified" content="2024-04-04T21:59:50+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-04-04T22:38:55+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -143,6 +143,150 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-19-how-skbs-work/">eBPF Talk: SKB 工作原理【译】</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 2210 字 </span>
+        <span class="more-meta"> 预计阅读 5 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      翻译自 How SKBs work。 数据区域的布局 第一张图描述的是 SKB 数据区域的布局，以及几个 struct sk_buff 中的指针。 本文余下内容将讲解 SKB 数据区域的操作：通过修改这些指
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-19-how-skbs-work/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-18-another-side-of-bpf-helpers/">eBPF Talk: bpf helpers 的另一面</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1659 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，verifier 是怎么处理 bpf helpers 的。 书接上回 eBPF Talk: 揭秘 XDP 转发网络包，本文解答： 为什么 XDP
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-18-another-side-of-bpf-helpers/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-17-xdp-redirect-packet/">eBPF Talk: 揭秘 XDP 转发网络包</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1354 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      书接上回 eBPF Talk: 解密 XDP generic 模式，本文从源代码层面剖析 XDP 转发网络包的实现。 demo 按需将网络包从另一张网卡转发走。 1 2 3 4 5 6 7 8 9 static volatile const u32 REDIRECT_IFINDEX = 0xFFFFFFFF; SEC(&#34;xdp&#34;) int xdp_redirect(struct xdp_md
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-17-xdp-redirect-packet/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-16-xdp-generic-mode/">eBPF Talk: 解密 XDP generic 模式</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1270 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      近期又得搞 XDP 了，就顺手研究了下 XDP generic 模式的源代码。 XDP generic 模式的函数位置 已知，内核协议栈会对每个 skb 都执行一次 XDP generic 模式处理，当然是启用了 XDP generic 模式的情
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-16-xdp-generic-mode/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-15-useful-histogram/">eBPF Talk: 好用的 histogram</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 632 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近 eBPF 轮子造的多了后，发现需要用 histogram 的时候，要写的代码就一个模板，如下。 以下内容以 syscalldist 为例。 用于 histogram 的 C 代码 参考（抄袭） libbpf-tools 里 histogram 的实现，用于 histogram 的 C 代
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-15-useful-histogram/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-14-bpf2bpf-functions-call/">eBPF Talk: bpf2bpf 特性揭秘</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1770 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在 eBPF Talk: bpf2bpf 特性简介 中已介绍了 bpf2bpf 特性，同时有 demo 介绍该怎么使用该特性。 在该特性神秘面纱的背后，到底是怎样的呢？让我娓娓道来。 编译阶段 不懂编译器 clang 中
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-14-bpf2bpf-functions-call/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/">eBPF Talk: cilium/ebpf 中 bpf map 的诞生</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-20 </span>
@@ -232,150 +376,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-syscalldist/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-two-map-helpers/">eBPF Talk: 两个简单好用的 map 处理函数</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-12-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 460 字 </span>
-        <span class="more-meta"> 预计阅读 1 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近在用 eBPF 造轮子的时候，发现其中一个处理函数；而后，自己有样学样地封装了另外一个函数。 bpf_map_lookup_or_try_init 函数名称有点长。 该函数是用来查询某个 key 对应的 valu
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-two-map-helpers/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-asm-and-insn/">eBPF Talk: 此汇编非彼汇编</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-12-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 689 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      此汇编：在 C 代码里使用的 asm volatile 汇编代码。 彼汇编：eBPF verifier、JIT、runtime VM 等地方使用的汇编指令。 在文章 BPF 尾调用简介 里，
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-asm-and-insn/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-tailcall-intro/">eBPF Talk: eBPF 尾调用简介</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-11-24 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1524 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在 bpf2bpf 特性简介 中提及到 bpf_tail_call()，我们就认真学习一下它吧。 bpf_tail_call 从 4.2 内核版本开始，eBPF 支持了尾调用特性。 该特性的主要特点是
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-tailcall-intro/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-bpf2bpf-functions-call/">eBPF Talk: bpf2bpf 特性简介</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-11-16 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1156 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近才了解到 eBPF 里有 bpf2bpf 这个特性，故特意学习了一番。 bpf2bpf 简介 bpf2bpf 特性要求 4.16 内核版本，参考 BPF Features by Linux Kernel Version。 在 bpf2bpf 特性出现之前，eBPF 程序都要
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-bpf2bpf-functions-call/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-a-bpf-map-story/">eBPF Talk: BPF map 趣事一则</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-11-13 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 588 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      有同事报告一个错误：lookup: cannot allocate memory，并请求如何解决。 lookup 项目中使用的 eBPF 库是 cilium/ebpf。查看一下 BPF map lookup 的源代码，如下
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-a-bpf-map-story/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-external-btf/">eBPF Talk: 为当前内核提供外部 BTF 文件</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-11-06 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 547 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近系统地学习了 eBPF CO-RE（Compile Once, Run Everywhere，一次编译，到处运行），其中包括了 BTF。 BTF，BPF Type Format，
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-external-btf/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

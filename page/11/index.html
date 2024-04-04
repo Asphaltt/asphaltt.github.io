@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
-  <meta itemprop="dateModified" content="2024-04-04T21:59:50+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-04-04T22:38:55+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -143,6 +143,144 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/iptables-nfqueue-usage/">iptables-nfqueue 的使用</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-12-12 </span>
+      <div class="post-category">
+          <a href="/categories/iptables/"> iptables </a>
+          </div>
+        <span class="more-meta"> 约 1620 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      本文主要翻译自 Using NFQUEUE and libnetfilter_queue，将 C 代码例子换成 Go 代码例子。 介绍 NFQUEUE 是一种 iptables 和 ip6tables 的目标（an iptables and ip6tables target），将
+    </div>
+    <div class="read-more">
+      <a href="/post/iptables-nfqueue-usage/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/iptables-nfqueue/">一文吃透 iptables-nfqueue</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-12-09 </span>
+      <div class="post-category">
+          <a href="/categories/iptables/"> iptables </a>
+          </div>
+        <span class="more-meta"> 约 3152 字 </span>
+        <span class="more-meta"> 预计阅读 7 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      iptables 常用，iptables-nfqueue 少用。因需要深度理解 iptables-nfqueue，所以顺手撸了一遍 iptables-nfqueue 的源代码。 iptables-nfqueue ，aka NFQU
+    </div>
+    <div class="read-more">
+      <a href="/post/iptables-nfqueue/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/go-nfnetlink-example/">使用 Go 对接 iptables NFQUEUE 的例子</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-11-03 </span>
+      <div class="post-category">
+          <a href="/categories/iptables/"> iptables </a>
+          </div>
+        <span class="more-meta"> 约 584 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近在学习 iptables NFQUEUE 的时候，顺手使用 Go 语言写了一个例子。 源代码：github.com/Asphaltt/go-nfnetlink-example 例
+    </div>
+    <div class="read-more">
+      <a href="/post/go-nfnetlink-example/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/netlink-and-go/">netlink 是 Go 和内核模块之间优秀的通信兵</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-11-03 </span>
+      <div class="post-category">
+          <a href="/categories/linux/"> Linux </a>
+          </div>
+        <span class="more-meta"> 约 1070 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      netlink 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 ip 命令，就是使用 netlink 去跟内核进行
+    </div>
+    <div class="read-more">
+      <a href="/post/netlink-and-go/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/skbtracer/">skbtracer: Linux 内核网络包路径追踪利器</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-11-02 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          </div>
+        <span class="more-meta"> 约 872 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      skbtracer 是基于 eBPF 技术的 skb 网络包路径追踪利器，基于 goebpf , libbpf-bootstrap (required Linux Kernel 4.15+ with CONFIG_DEBUG_INFO_BTF=y, Go 1.16+) 实现，参考 Python 版本 github.com/DavadDi/skbtracer。 skbtracer
+    </div>
+    <div class="read-more">
+      <a href="/post/skbtracer/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/linux-how-anti-synflood-works/">Linux 对抗 synflood 的实现</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-05-19 </span>
+      <div class="post-category">
+          <a href="/categories/linux/"> Linux </a>
+          </div>
+        <span class="more-meta"> 约 1571 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      synflood 介绍 synflood 是一种 TCP 半连接攻击，会消耗尽服务器资源从而导致服务器拒绝服务。 参考搜狗百科：syn flood。 Linux 中对抗 synflood 的手段 Linux 中对抗 synflood 的主要手段是
+    </div>
+    <div class="read-more">
+      <a href="/post/linux-how-anti-synflood-works/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/linux-custom-netfilter-hook-experiment/">Linux 自定义 netfilter 钩子实验</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2021-04-19 </span>
@@ -233,75 +371,6 @@
   </div>
 </article>
 
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-replay-proxy-traffic-experiment/">Linux 代理流量回放实验</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-01-23 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 451 字 </span>
-        <span class="more-meta"> 预计阅读 1 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      代理流量回放方案 在 SOCKS5、TCP PROXY、Nginx 等代理中，如若需要对代理的流量还原成真实的 IP 网络包并发给网络审计设备，可以采取如
-    </div>
-    <div class="read-more">
-      <a href="/post/linux-replay-proxy-traffic-experiment/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-bridge-flood-experiment/">Linux bridge 强制泛洪实验</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-01-16 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 647 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在上一章 Linux bridge 泛洪 中介绍了 Linux bridge 强制泛洪的原理，接下来抓一下 bridge 泛洪出来的网络包。 环境准备 学习了 docker网络之namespace 、 docker
-    </div>
-    <div class="read-more">
-      <a href="/post/linux-bridge-flood-experiment/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-bridge-flood/">Linux bridge 泛洪</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-01-13 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 540 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在 Linux 中，bridge 是虚拟的二层网络设备。不同于 eth 或 ens 等真实的网络设备，bridge 能够让同一 Linux 系统内的其他网络设备连接起来；比如 docker 默认的网
-    </div>
-    <div class="read-more">
-      <a href="/post/linux-bridge-flood/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
     </section>
   
   <nav class="pagination">
@@ -309,7 +378,10 @@
         <i class="iconfont icon-left"></i>
         <span class="prev-text">上一页</span>
       </a>
-    
+    <a class="next" href="/page/12/">
+        <span class="next-text">下一页</span>
+        <i class="iconfont icon-right"></i>
+      </a>
   </nav>
         </div>
         

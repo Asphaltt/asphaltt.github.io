@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Tracepoint on LeonHwang&#39;s Blogs</title>
+    <link>https://le0nhwan9.github.io/tags/tracepoint/</link>
+    <description>Recent content in Tracepoint on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo 0.125.0-DEV</generator>
+    <language>zh</language>
+    <lastBuildDate>Thu, 04 Apr 2024 22:38:55 +0800</lastBuildDate>
+    <atom:link href="https://le0nhwan9.github.io/tags/tracepoint/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: trace tracepoint 程序</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-85-trace-tracepoint-program/</link>
+      <pubDate>Thu, 04 Apr 2024 22:38:55 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-85-trace-tracepoint-program/</guid>
+      <description>此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程</description>
+    </item>
+  </channel>
+</rss>
