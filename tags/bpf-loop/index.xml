@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Bpf Loop on LeonHwang&#39;s Blogs</title>
+    <link>https://le0nhwan9.github.io/tags/bpf-loop/</link>
+    <description>Recent content in Bpf Loop on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Wed, 03 Apr 2024 23:06:44 +0800</lastBuildDate>
+    <atom:link href="https://le0nhwan9.github.io/tags/bpf-loop/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: verifier 支持有限循环</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-73---verifier-finite-loop/</link>
+      <pubDate>Wed, 03 Apr 2024 23:06:44 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-73---verifier-finite-loop/</guid>
+      <description>verifier 支持有限循环后，我们不再需要 #pragma unroll 将 for 循环展开了，留给 clang 编译器决定即可。 bpf: introduce bounded loops since 5.3 kernel. 也就是，eBPF Talk: binary search 里的 __should_delay_sip() 函数里不再需要 #pragma clang loop unroll(full) 了。</description>
+    </item>
+    <item>
+      <title>eBPF Talk: binary search</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-71---binary-search/</link>
+      <pubDate>Wed, 03 Apr 2024 23:00:58 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-71---binary-search/</guid>
+      <description>其实，bpf 子系统里并没有一个叫 bpf_binary_search() 的 helper 函数。 但并不是说，在 eBPF 里就实现不了二分查找了。 小需求 怎么判断一个 IP 地址是否在某几个 CIDR 里？ 已知方法有二：</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 实战经验之 loop</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-37---loop/</link>
+      <pubDate>Tue, 23 May 2023 22:14:15 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-37---loop/</guid>
+      <description>最近刚好打算使用 for 遍历 CIDR 数组的方式替换性能较差的 LPM trie bpf map，就顺便总结一下 loop 相关经验。 在 eBPF 中，出于性能、安全考虑，并不支持无限循环。这并不</description>
+    </item>
+  </channel>
+</rss>

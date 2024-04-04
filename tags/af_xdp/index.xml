@@ -6,24 +6,35 @@
     <description>Recent content in AF_XDP on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Tue, 23 May 2023 22:09:09 +0800</lastBuildDate><atom:link href="https://le0nhwan9.github.io/tags/af_xdp/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 03 Apr 2024 22:44:30 +0800</lastBuildDate>
+    <atom:link href="https://le0nhwan9.github.io/tags/af_xdp/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 使用 metadata 将信息从 XDP 传给 AF_XDP</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-64---metadata-from-xdp-to-af_xdp/</link>
+      <pubDate>Wed, 03 Apr 2024 22:44:30 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-64---metadata-from-xdp-to-af_xdp/</guid>
+      <description>学习了 XDP metadata 和 AF_XDP，是否可以使用 metadata 将信息从 XDP 传给 AF_XDP 呢？ eBPF Talk: XDP metadata 实战指南 eBPF Talk: 使用 AF_XDP 注入延时 TL;DR 答案是可以的，复制网络包内容时将 metadata 一起进行复</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 使用 AF_XDP 注入延时</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-56---latency-injection-with-af_xdp/</link>
+      <pubDate>Sun, 31 Mar 2024 23:50:45 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-56---latency-injection-with-af_xdp/</guid>
+      <description>学习了 AF_XDP 后，一时手痒弄了个 ping-latency-injector。 eBPF Talk: 使用 AF_XDP 加速网络【译】 eBPF Talk: XDP redirect to AF_XDP ping-latency-injector 它可以用来混淆使用 ping 实现的网络距</description>
+    </item>
     <item>
       <title>eBPF Talk: XDP redirect to AF_XDP</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-36---xdp-redirect-to-af_xdp/</link>
       <pubDate>Tue, 23 May 2023 22:09:09 +0800</pubDate>
-      
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-36---xdp-redirect-to-af_xdp/</guid>
       <description>通过学习 eBPF Talk: AF_XDP，我们掌握了 AF_XDP 的那些基础知识。 提问：对于如下高性能场景，在网卡收到网络包后，该网络包会被哪个 AF_XDP socket 处理呢？ 该网卡独占一</description>
     </item>
-    
     <item>
       <title>eBPF Talk: 使用 AF_XDP 加速网络【译】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-34-af_xdp/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-34---af_xdp/</link>
       <pubDate>Tue, 23 May 2023 22:02:31 +0800</pubDate>
-      
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-34-af_xdp/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-34---af_xdp/</guid>
       <description>本文翻译自 2018 年的 LWN: Accelerating networking with AF_XDP。 以下为译文。 Linux 网络栈不缺乏特性，且对于大部分使用场景都有不错的性能表现。不过，随着网络的高速发展，对网</description>
     </item>
-    
   </channel>
 </rss>

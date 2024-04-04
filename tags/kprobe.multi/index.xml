@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kprobe.multi on LeonHwang&#39;s Blogs</title>
+    <link>https://le0nhwan9.github.io/tags/kprobe.multi/</link>
+    <description>Recent content in Kprobe.multi on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Mon, 01 Apr 2024 21:14:35 +0800</lastBuildDate>
+    <atom:link href="https://le0nhwan9.github.io/tags/kprobe.multi/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: kprobe.multi 与 fprobe</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-57---kprobe.multi-and-fprobe/</link>
+      <pubDate>Mon, 01 Apr 2024 21:14:35 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-57---kprobe.multi-and-fprobe/</guid>
+      <description>在『eBPF Talk 读者群』里讨论起 kfuncs、kprobe、fentry/fexit 等，聊到 kprobe.multi 与 fprobe；我立刻学习了一下 kprobe.multi 和 fprobe</description>
+    </item>
+  </channel>
+</rss>

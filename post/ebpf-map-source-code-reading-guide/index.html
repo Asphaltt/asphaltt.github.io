@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-map-source-code-reading-guide/" />
@@ -37,7 +37,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,13 +47,11 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-map-source-code-reading-guide/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2023-01-04T22:34:51+08:00" />
 <meta property="article:modified_time" content="2023-01-04T22:34:51+08:00" />
-
 <meta itemprop="name" content="eBPF Talk: bpf map 源码导读">
 <meta itemprop="description" content="eBPF map 有诸多类型。如果想要理解它们的实现，该如何去阅读它们的源代码呢？ 类型接口 在内核的源代码海洋中，接口的定义一般是：结构体的字段都是函数指针"><meta itemprop="datePublished" content="2023-01-04T22:34:51+08:00" />
 <meta itemprop="dateModified" content="2023-01-04T22:34:51+08:00" />
 <meta itemprop="wordCount" content="899">
-<meta itemprop="keywords" content="eBPF,bpf map," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="eBPF Talk: bpf map 源码导读"/>
+<meta itemprop="keywords" content="eBPF,bpf map," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: bpf map 源码导读"/>
 <meta name="twitter:description" content="eBPF map 有诸多类型。如果想要理解它们的实现，该如何去阅读它们的源代码呢？ 类型接口 在内核的源代码海洋中，接口的定义一般是：结构体的字段都是函数指针"/>
 
 
@@ -219,39 +217,39 @@
 </span><span class="lnt">32
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// ${KERNEL}/include/linux/bpf.h
-</span><span class="c1"></span>
-<span class="cm">/* map is generic key/value storage optionally accesible by eBPF programs */</span>
-<span class="k">struct</span> <span class="n">bpf_map_ops</span> <span class="p">{</span>
-    <span class="cm">/* funcs callable from userspace (via syscall) */</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_alloc_check</span><span class="p">)(</span><span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
-    <span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">map_alloc</span><span class="p">)(</span><span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
-    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">map_release</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">map_file</span><span class="p">);</span>
-    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">map_free</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">);</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_get_next_key</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">next_key</span><span class="p">);</span>
-    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">map_release_uref</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">);</span>
-    <span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">map_lookup_elem_sys_only</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_lookup_batch</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="k">const</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span>
-                <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="n">uattr</span><span class="p">);</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_lookup_and_delete_batch</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span>
-                       <span class="k">const</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span>
-                       <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="n">uattr</span><span class="p">);</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_update_batch</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="k">const</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span>
-                <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="n">uattr</span><span class="p">);</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_delete_batch</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="k">const</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span>
-                <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="n">uattr</span><span class="p">);</span>
-
-    <span class="cm">/* funcs callable from userspace and from eBPF programs */</span>
-    <span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">map_lookup_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_update_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">,</span> <span class="n">u64</span> <span class="n">flags</span><span class="p">);</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_delete_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_push_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">,</span> <span class="n">u64</span> <span class="n">flags</span><span class="p">);</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_pop_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">);</span>
-    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_peek_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">);</span>
-
-    <span class="c1">// ...
-</span><span class="c1"></span><span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/include/linux/bpf.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/* map is generic key/value storage optionally accesible by eBPF programs */</span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">bpf_map_ops</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* funcs callable from userspace (via syscall) */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_alloc_check</span><span class="p">)(</span><span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">map_alloc</span><span class="p">)(</span><span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">map_release</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">map_file</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">map_free</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_get_next_key</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">next_key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">map_release_uref</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">map_lookup_elem_sys_only</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_lookup_batch</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="k">const</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="n">uattr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_lookup_and_delete_batch</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                       <span class="k">const</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                       <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="n">uattr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_update_batch</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="k">const</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="n">uattr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_delete_batch</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="k">const</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="n">uattr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* funcs callable from userspace and from eBPF programs */</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">map_lookup_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_update_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">,</span> <span class="n">u64</span> <span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_delete_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_push_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">,</span> <span class="n">u64</span> <span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_pop_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">map_peek_elem</span><span class="p">)(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>不同 map 类型会有对应的 <code>struct bpf_map_ops</code> 变量。它们的对应关系请查看：</p>
 <div class="highlight"><div class="chroma">
@@ -280,29 +278,29 @@
 </span><span class="lnt">22
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// ${KERNEL}/include/linux/bpf_types.h
-</span><span class="c1"></span>
-<span class="c1">// ...
-</span><span class="c1"></span>
-<span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_ARRAY</span><span class="p">,</span> <span class="n">array_map_ops</span><span class="p">)</span>
-<span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_PERCPU_ARRAY</span><span class="p">,</span> <span class="n">percpu_array_map_ops</span><span class="p">)</span>
-<span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_PROG_ARRAY</span><span class="p">,</span> <span class="n">prog_array_map_ops</span><span class="p">)</span>
-<span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_PERF_EVENT_ARRAY</span><span class="p">,</span> <span class="n">perf_event_array_map_ops</span><span class="p">)</span>
-<span class="cp">#ifdef CONFIG_CGROUPS
-</span><span class="cp"></span><span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_CGROUP_ARRAY</span><span class="p">,</span> <span class="n">cgroup_array_map_ops</span><span class="p">)</span>
-<span class="cp">#endif
-</span><span class="cp">#ifdef CONFIG_CGROUP_BPF
-</span><span class="cp"></span><span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_CGROUP_STORAGE</span><span class="p">,</span> <span class="n">cgroup_storage_map_ops</span><span class="p">)</span>
-<span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE</span><span class="p">,</span> <span class="n">cgroup_storage_map_ops</span><span class="p">)</span>
-<span class="cp">#endif
-</span><span class="cp"></span><span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_HASH</span><span class="p">,</span> <span class="n">htab_map_ops</span><span class="p">)</span>
-<span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_PERCPU_HASH</span><span class="p">,</span> <span class="n">htab_percpu_map_ops</span><span class="p">)</span>
-<span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_LRU_HASH</span><span class="p">,</span> <span class="n">htab_lru_map_ops</span><span class="p">)</span>
-<span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_LRU_PERCPU_HASH</span><span class="p">,</span> <span class="n">htab_lru_percpu_map_ops</span><span class="p">)</span>
-<span class="n">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_LPM_TRIE</span><span class="p">,</span> <span class="n">trie_map_ops</span><span class="p">)</span>
-
-<span class="c1">// ...
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/include/linux/bpf_types.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_ARRAY</span><span class="p">,</span> <span class="n">array_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_PERCPU_ARRAY</span><span class="p">,</span> <span class="n">percpu_array_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_PROG_ARRAY</span><span class="p">,</span> <span class="n">prog_array_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_PERF_EVENT_ARRAY</span><span class="p">,</span> <span class="n">perf_event_array_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#ifdef CONFIG_CGROUPS
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_CGROUP_ARRAY</span><span class="p">,</span> <span class="n">cgroup_array_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span><span class="line"><span class="cl"><span class="cp">#ifdef CONFIG_CGROUP_BPF
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_CGROUP_STORAGE</span><span class="p">,</span> <span class="n">cgroup_storage_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE</span><span class="p">,</span> <span class="n">cgroup_storage_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_HASH</span><span class="p">,</span> <span class="n">htab_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_PERCPU_HASH</span><span class="p">,</span> <span class="n">htab_percpu_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_LRU_HASH</span><span class="p">,</span> <span class="n">htab_lru_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_LRU_PERCPU_HASH</span><span class="p">,</span> <span class="n">htab_lru_percpu_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_MAP_TYPE</span><span class="p">(</span><span class="n">BPF_MAP_TYPE_LPM_TRIE</span><span class="p">,</span> <span class="n">trie_map_ops</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// ...
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="类型的具体实现">类型的具体实现</h2>
 <p>这些 <code>_ops</code> 变量都在哪里呢？它们大部分都在目录 <code>kernel/bpf/</code> 下。
@@ -330,25 +328,25 @@
 </span><span class="lnt">18
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// ${KERNEL}/kernel/bpf/hashtab.c
-</span><span class="c1"></span>
-<span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_map_ops</span> <span class="n">htab_map_ops</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="p">.</span><span class="n">map_meta_equal</span> <span class="o">=</span> <span class="n">bpf_map_meta_equal</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">map_alloc_check</span> <span class="o">=</span> <span class="n">htab_map_alloc_check</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">map_alloc</span> <span class="o">=</span> <span class="n">htab_map_alloc</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">map_free</span> <span class="o">=</span> <span class="n">htab_map_free</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">map_get_next_key</span> <span class="o">=</span> <span class="n">htab_map_get_next_key</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">map_lookup_elem</span> <span class="o">=</span> <span class="n">htab_map_lookup_elem</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">map_update_elem</span> <span class="o">=</span> <span class="n">htab_map_update_elem</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">map_delete_elem</span> <span class="o">=</span> <span class="n">htab_map_delete_elem</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">map_gen_lookup</span> <span class="o">=</span> <span class="n">htab_map_gen_lookup</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">map_seq_show_elem</span> <span class="o">=</span> <span class="n">htab_map_seq_show_elem</span><span class="p">,</span>
-    <span class="n">BATCH_OPS</span><span class="p">(</span><span class="n">htab</span><span class="p">),</span>
-    <span class="p">.</span><span class="n">map_btf_name</span> <span class="o">=</span> <span class="s">&#34;bpf_htab&#34;</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">map_btf_id</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">htab_map_btf_id</span><span class="p">,</span>
-    <span class="p">.</span><span class="n">iter_seq_info</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">iter_seq_info</span><span class="p">,</span>
-<span class="p">};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/hashtab.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_map_ops</span> <span class="n">htab_map_ops</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_meta_equal</span> <span class="o">=</span> <span class="n">bpf_map_meta_equal</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_alloc_check</span> <span class="o">=</span> <span class="n">htab_map_alloc_check</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_alloc</span> <span class="o">=</span> <span class="n">htab_map_alloc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_free</span> <span class="o">=</span> <span class="n">htab_map_free</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_get_next_key</span> <span class="o">=</span> <span class="n">htab_map_get_next_key</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_lookup_elem</span> <span class="o">=</span> <span class="n">htab_map_lookup_elem</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_update_elem</span> <span class="o">=</span> <span class="n">htab_map_update_elem</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_delete_elem</span> <span class="o">=</span> <span class="n">htab_map_delete_elem</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_gen_lookup</span> <span class="o">=</span> <span class="n">htab_map_gen_lookup</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_seq_show_elem</span> <span class="o">=</span> <span class="n">htab_map_seq_show_elem</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">BATCH_OPS</span><span class="p">(</span><span class="n">htab</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_btf_name</span> <span class="o">=</span> <span class="s">&#34;bpf_htab&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">map_btf_id</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">htab_map_btf_id</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">iter_seq_info</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">iter_seq_info</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>通过类型跟接口的实现，便可快捷查找某个类型的具体实现。</p>
 <h2 id="内核对用户态提供的-api">内核对用户态提供的 API</h2>
@@ -389,38 +387,38 @@
 </span><span class="lnt">31
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
-</span><span class="c1"></span>
-<span class="n">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">bpf</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="p">,</span> <span class="n">uattr</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="c1">// ...
-</span><span class="c1"></span>
-    <span class="k">switch</span> <span class="p">(</span><span class="n">cmd</span><span class="p">)</span> <span class="p">{</span>
-    <span class="k">case</span> <span class="nl">BPF_MAP_CREATE</span><span class="p">:</span>
-        <span class="n">err</span> <span class="o">=</span> <span class="n">map_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
-        <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="nl">BPF_MAP_LOOKUP_ELEM</span><span class="p">:</span>
-        <span class="n">err</span> <span class="o">=</span> <span class="n">map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
-        <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="nl">BPF_MAP_UPDATE_ELEM</span><span class="p">:</span>
-        <span class="n">err</span> <span class="o">=</span> <span class="n">map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
-        <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="nl">BPF_MAP_DELETE_ELEM</span><span class="p">:</span>
-        <span class="n">err</span> <span class="o">=</span> <span class="n">map_delete_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
-        <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="nl">BPF_MAP_GET_NEXT_KEY</span><span class="p">:</span>
-        <span class="n">err</span> <span class="o">=</span> <span class="n">map_get_next_key</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
-        <span class="k">break</span><span class="p">;</span>
-    <span class="k">case</span> <span class="nl">BPF_MAP_FREEZE</span><span class="p">:</span>
-        <span class="n">err</span> <span class="o">=</span> <span class="n">map_freeze</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
-        <span class="k">break</span><span class="p">;</span>
-
-    <span class="c1">// ...
-</span><span class="c1"></span>    <span class="p">}</span>
-
-    <span class="c1">// ...
-</span><span class="c1"></span><span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">bpf</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="n">__user</span> <span class="o">*</span><span class="p">,</span> <span class="n">uattr</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">switch</span> <span class="p">(</span><span class="n">cmd</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_MAP_CREATE</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="nf">map_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_MAP_LOOKUP_ELEM</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="nf">map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_MAP_UPDATE_ELEM</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="nf">map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_MAP_DELETE_ELEM</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="nf">map_delete_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_MAP_GET_NEXT_KEY</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="nf">map_get_next_key</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_MAP_FREEZE</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="nf">map_freeze</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>如此，便可一步一步地深入研究 bpf map 的具体实现。</p>
 <h2 id="内核源代码阅读工具">内核源代码阅读工具</h2>
@@ -472,7 +470,7 @@
       <a href="/%20tags/bpf-map/">bpf map</a>
       </div>
     <nav class="post-nav">
-      <a class="prev" href="/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/">
+      <a class="prev" href="/post/ebpf-talk-13---bpf-map-new-born-in-cilium_ebpf/">
         <i class="iconfont icon-left"></i>
         <span class="prev-text nav-default">eBPF Talk: cilium/ebpf 中 bpf map 的诞生</span>
         <span class="prev-text nav-mobile">上一篇</span>
@@ -546,9 +544,7 @@
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

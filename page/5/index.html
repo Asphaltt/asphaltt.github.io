@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/" />
@@ -39,7 +39,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,10 +47,8 @@
 <meta property="og:description" content="Run eBPF with Go, run eBPF in kernel space" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://le0nhwan9.github.io/" />
-
 <meta itemprop="name" content="LeonHwang&#39;s Blogs">
-<meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space"><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+<meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -143,239 +141,240 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-map-source-code-reading-guide/">eBPF Talk: bpf map 源码导读</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-42---trampoline-on-x86/">eBPF Talk: trampoline on x86【汇编慎入】</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2023-01-04 </span>
+      <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 899 字 </span>
+        <span class="more-meta"> 约 1295 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      类似 freplace，trampoline 是对 prologue 进行 poke 的另一个应用。 eBPF Talk: freplace on x86【汇编慎入】 TL;DR 类似 freplace，trampoline 是
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-42---trampoline-on-x86/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-41---freplace-on-x86/">eBPF Talk: freplace on x86【汇编慎入】</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1191 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      freplace 技术便是对 prologue 进行 poke 的简单应用。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 TL;DR 究竟有多简单呢？就是将 prologue 里的第一条 nop 指令替换成 jmp 指令；
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-41---freplace-on-x86/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-40---perilogue-on-x86/">eBPF Talk: perilogue on x86【汇编慎入】</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 623 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      eBPF map 有诸多类型。如果想要理解它们的实现，该如何去阅读它们的源代码呢？ 类型接口 在内核的源代码海洋中，接口的定义一般是：结构体的字段都是函数指针
+      perilogue 是个缝合单词，由 prologue 和 epilogue 缝合组成。 而 prologue 和 epilogue 是 函数调用规约 中的术语。 prologue: 函数整体指令中最开始的几条指令。 epilogue: 函数整体指令中最末尾的几条指令。 perilogue: 函数
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-map-source-code-reading-guide/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-40---perilogue-on-x86/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/drgn-netdev_priv/">使用 drgn 查看网络设备的私有数据</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-39---poke-on-x86/">eBPF Talk: poke on x86【汇编慎入】</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2023-01-01 </span>
-      <div class="post-category">
-          <a href="/categories/drgn/"> drgn </a>
-          </div>
-        <span class="more-meta"> 约 540 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
-    </div>
-    <div class="read-more">
-      <a href="/post/drgn-netdev_priv/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-syscalldist/">eBPF Talk: syscalldist: raw tracepoint 实战</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-12-22 </span>
+      <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 796 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      bcc/libbpf-tools 里有许多使用 bcc 实现的小工具。 咱们也来实现一个类似的工具吧。 raw tracepoint 不同于 tracepoint，raw tracepoint 的资料较少。 关于 eBPF 进行 raw tracepoint 的资料更少： bpf,
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-syscalldist/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-two-map-helpers/">eBPF Talk: 两个简单好用的 map 处理函数</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-12-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 460 字 </span>
-        <span class="more-meta"> 预计阅读 1 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近在用 eBPF 造轮子的时候，发现其中一个处理函数；而后，自己有样学样地封装了另外一个函数。 bpf_map_lookup_or_try_init 函数名称有点长。 该函数是用来查询某个 key 对应的 valu
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-two-map-helpers/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-asm-and-insn/">eBPF Talk: 此汇编非彼汇编</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-12-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 689 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      此汇编：在 C 代码里使用的 asm volatile 汇编代码。 彼汇编：eBPF verifier、JIT、runtime VM 等地方使用的汇编指令。 在文章 BPF 尾调用简介 里，
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-asm-and-insn/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-tailcall-intro/">eBPF Talk: eBPF 尾调用简介</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-11-24 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1524 字 </span>
+        <span class="more-meta"> 约 1753 字 </span>
         <span class="more-meta"> 预计阅读 4 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      在 bpf2bpf 特性简介 中提及到 bpf_tail_call()，我们就认真学习一下它吧。 bpf_tail_call 从 4.2 内核版本开始，eBPF 支持了尾调用特性。 该特性的主要特点是
+      小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。 TL;DR 在 x86 架构平台上的指令插桩&amp;补丁的步骤如下： 在需要的地方预
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-tailcall-intro/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-39---poke-on-x86/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-bpf2bpf-functions-call/">eBPF Talk: bpf2bpf 特性简介</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-38---kernel-version/">eBPF Talk: 学习经验之确认 kernel version</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2022-11-16 </span>
+      <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1156 字 </span>
+        <span class="more-meta"> 约 1170 字 </span>
         <span class="more-meta"> 预计阅读 3 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      最近才了解到 eBPF 里有 bpf2bpf 这个特性，故特意学习了一番。 bpf2bpf 简介 bpf2bpf 特性要求 4.16 内核版本，参考 BPF Features by Linux Kernel Version。 在 bpf2bpf 特性出现之前，eBPF 程序都要
+      当我们想要在项目特定版本内核中落地某个 eBPF 特性时，需要确认该版本内核是否支持该 eBPF 特性。 与此同时，也想知道，该 eBPF 特性最低要求哪个版本的内核。 前置
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-bpf2bpf-functions-call/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-38---kernel-version/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-a-bpf-map-story/">eBPF Talk: BPF map 趣事一则</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-37---loop/">eBPF Talk: 实战经验之 loop</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2022-11-13 </span>
+      <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 588 字 </span>
+        <span class="more-meta"> 约 1821 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近刚好打算使用 for 遍历 CIDR 数组的方式替换性能较差的 LPM trie bpf map，就顺便总结一下 loop 相关经验。 在 eBPF 中，出于性能、安全考虑，并不支持无限循环。这并不
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-37---loop/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-36---xdp-redirect-to-af_xdp/">eBPF Talk: XDP redirect to AF_XDP</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 2515 字 </span>
+        <span class="more-meta"> 预计阅读 6 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      通过学习 eBPF Talk: AF_XDP，我们掌握了 AF_XDP 的那些基础知识。 提问：对于如下高性能场景，在网卡收到网络包后，该网络包会被哪个 AF_XDP socket 处理呢？ 该网卡独占一
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-36---xdp-redirect-to-af_xdp/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-35---bpf2bpf-and-tailcall-error/">eBPF Talk: bpf2bpf &amp; tailcall 报错分析</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 864 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      有同事报告一个错误：lookup: cannot allocate memory，并请求如何解决。 lookup 项目中使用的 eBPF 库是 cilium/ebpf。查看一下 BPF map lookup 的源代码，如下
+      终于要将 bpf2bpf &amp; tailcall 的组合落地到项目中了。 不过，当头一棒的是：tail_calls are not allowed when call stack of previous frames is 256 bytes. Too large。 幸好学习过 eBPF Talk: tailcall on x86，
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-a-bpf-map-story/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-35---bpf2bpf-and-tailcall-error/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-external-btf/">eBPF Talk: 为当前内核提供外部 BTF 文件</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-34---af_xdp/">eBPF Talk: 使用 AF_XDP 加速网络【译】</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2022-11-06 </span>
+      <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 547 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
+        <span class="more-meta"> 约 2170 字 </span>
+        <span class="more-meta"> 预计阅读 5 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      最近系统地学习了 eBPF CO-RE（Compile Once, Run Everywhere，一次编译，到处运行），其中包括了 BTF。 BTF，BPF Type Format，
+      本文翻译自 2018 年的 LWN: Accelerating networking with AF_XDP。 以下为译文。 Linux 网络栈不缺乏特性，且对于大部分使用场景都有不错的性能表现。不过，随着网络的高速发展，对网
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-external-btf/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-34---af_xdp/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-trampoline-better-than-kprobe/">eBPF Talk: 比 kprobe 更好的 trampoline</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-33---tailcall-on-x86/">eBPF Talk: tailcall on x86【汇编慎入】【译】</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2022-11-01 </span>
+      <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1016 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
+        <span class="more-meta"> 约 5190 字 </span>
+        <span class="more-meta"> 预计阅读 11 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功
+      本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf【译】 以下为译文。 最初我们学习编程的时候，我们就学
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-trampoline-better-than-kprobe/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-33---tailcall-on-x86/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
@@ -441,9 +440,7 @@
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

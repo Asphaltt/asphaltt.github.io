@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/linux-how-anti-synflood-works/" />
@@ -37,7 +37,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,13 +47,11 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/linux-how-anti-synflood-works/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2021-05-19T21:54:30+08:00" />
 <meta property="article:modified_time" content="2021-05-19T21:54:30+08:00" />
-
 <meta itemprop="name" content="Linux 对抗 synflood 的实现">
 <meta itemprop="description" content="synflood 介绍 synflood 是一种 TCP 半连接攻击，会消耗尽服务器资源从而导致服务器拒绝服务。 参考搜狗百科：syn flood。 Linux 中对抗 synflood 的手段 Linux 中对抗 synflood 的主要手段是"><meta itemprop="datePublished" content="2021-05-19T21:54:30+08:00" />
 <meta itemprop="dateModified" content="2021-05-19T21:54:30+08:00" />
 <meta itemprop="wordCount" content="1571">
-<meta itemprop="keywords" content="Linux,synflood," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Linux 对抗 synflood 的实现"/>
+<meta itemprop="keywords" content="Linux,synflood," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="Linux 对抗 synflood 的实现"/>
 <meta name="twitter:description" content="synflood 介绍 synflood 是一种 TCP 半连接攻击，会消耗尽服务器资源从而导致服务器拒绝服务。 参考搜狗百科：syn flood。 Linux 中对抗 synflood 的手段 Linux 中对抗 synflood 的主要手段是"/>
 
 
@@ -227,40 +225,40 @@
 </span><span class="lnt">33
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt">// Documentations/networking/ip-sysctl.txt
-
-tcp_max_syn_backlog - INTEGER
-        Maximal number of remembered connection requests, which have not
-        received an acknowledgment from connecting client.
-        The minimal value is 128 for low memory machines, and it will
-        increase in proportion to the memory of machine.
-        If server suffers from overload, try increasing this number.
-
-tcp_syncookies - BOOLEAN
-        Only valid when the kernel was compiled with CONFIG_SYN_COOKIES
-        Send out syncookies when the syn backlog queue of a socket
-        overflows. This is to prevent against the common &#39;SYN flood attack&#39;
-        Default: 1
-
-        Note, that syncookies is fallback facility.
-        It MUST NOT be used to help highly loaded servers to stand
-        against legal connection rate. If you see SYN flood warnings
-        in your logs, but investigation shows that they occur
-        because of overload with legal connections, you should tune
-        another parameters until this warning disappear.
-        See: tcp_max_syn_backlog, tcp_synack_retries, tcp_abort_on_overflow.
-
-        syncookies seriously violate TCP protocol, do not allow
-        to use TCP extensions, can result in serious degradation
-        of some services (f.e. SMTP relaying), visible not by you,
-        but your clients and relays, contacting you. While you see
-        SYN flood warnings in logs not being really flooded, your server
-        is seriously misconfigured.
-
-        If you want to test which effects syncookies have to your
-        network connections you can set this knob to 2 to enable
-        unconditionally generation of syncookies.
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">// Documentations/networking/ip-sysctl.txt
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">tcp_max_syn_backlog - INTEGER
+</span></span><span class="line"><span class="cl">        Maximal number of remembered connection requests, which have not
+</span></span><span class="line"><span class="cl">        received an acknowledgment from connecting client.
+</span></span><span class="line"><span class="cl">        The minimal value is 128 for low memory machines, and it will
+</span></span><span class="line"><span class="cl">        increase in proportion to the memory of machine.
+</span></span><span class="line"><span class="cl">        If server suffers from overload, try increasing this number.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">tcp_syncookies - BOOLEAN
+</span></span><span class="line"><span class="cl">        Only valid when the kernel was compiled with CONFIG_SYN_COOKIES
+</span></span><span class="line"><span class="cl">        Send out syncookies when the syn backlog queue of a socket
+</span></span><span class="line"><span class="cl">        overflows. This is to prevent against the common &#39;SYN flood attack&#39;
+</span></span><span class="line"><span class="cl">        Default: 1
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        Note, that syncookies is fallback facility.
+</span></span><span class="line"><span class="cl">        It MUST NOT be used to help highly loaded servers to stand
+</span></span><span class="line"><span class="cl">        against legal connection rate. If you see SYN flood warnings
+</span></span><span class="line"><span class="cl">        in your logs, but investigation shows that they occur
+</span></span><span class="line"><span class="cl">        because of overload with legal connections, you should tune
+</span></span><span class="line"><span class="cl">        another parameters until this warning disappear.
+</span></span><span class="line"><span class="cl">        See: tcp_max_syn_backlog, tcp_synack_retries, tcp_abort_on_overflow.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        syncookies seriously violate TCP protocol, do not allow
+</span></span><span class="line"><span class="cl">        to use TCP extensions, can result in serious degradation
+</span></span><span class="line"><span class="cl">        of some services (f.e. SMTP relaying), visible not by you,
+</span></span><span class="line"><span class="cl">        but your clients and relays, contacting you. While you see
+</span></span><span class="line"><span class="cl">        SYN flood warnings in logs not being really flooded, your server
+</span></span><span class="line"><span class="cl">        is seriously misconfigured.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        If you want to test which effects syncookies have to your
+</span></span><span class="line"><span class="cl">        network connections you can set this knob to 2 to enable
+</span></span><span class="line"><span class="cl">        unconditionally generation of syncookies.
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>文档中已说明，当 syn backlog 溢出后就启用 syncookies。</p>
 <p>可以通过 <code>sysctl -w net.ipv4.tcp_syncookies=2</code> 强制开启 syncookies。</p>
@@ -454,181 +452,181 @@ tcp_syncookies - BOOLEAN
 </span><span class="lnt">174
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="c1">// net/ipv4/tcp_input.c
-</span><span class="c1"></span>
-<span class="c1">// tcp_v4_rcv -&gt; tcp_v4_do_rcv -&gt; tcp_rcv_state_process -&gt; tcp_v4_conn_request -&gt; tcp_conn_request
-</span><span class="c1"></span>
-<span class="kt">int</span> <span class="nf">tcp_conn_request</span><span class="p">(</span><span class="k">struct</span> <span class="n">request_sock_ops</span> <span class="o">*</span><span class="n">rsk_ops</span><span class="p">,</span>
-       <span class="k">const</span> <span class="k">struct</span> <span class="n">tcp_request_sock_ops</span> <span class="o">*</span><span class="n">af_ops</span><span class="p">,</span>
-       <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
-<span class="p">{</span>
-  <span class="p">...</span>
-  <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span><span class="p">;</span>
-  <span class="kt">bool</span> <span class="n">want_cookie</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
-  <span class="p">...</span>
-
-  <span class="c1">// 判断是否启用 syncookies
-</span><span class="c1"></span>  <span class="c1">// tcp_syncookies=2 就是强制启用 syncookies，忽略 syn backlog
-</span><span class="c1"></span>  <span class="k">if</span> <span class="p">((</span><span class="n">net</span><span class="o">-&gt;</span><span class="n">ipv4</span><span class="p">.</span><span class="n">sysctl_tcp_syncookies</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">||</span>
-      <span class="n">inet_csk_reqsk_queue_is_full</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">isn</span><span class="p">)</span> <span class="p">{</span>
-    <span class="n">want_cookie</span> <span class="o">=</span> <span class="n">tcp_syn_flood_action</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">rsk_ops</span><span class="o">-&gt;</span><span class="n">slab_name</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">want_cookie</span><span class="p">)</span>
-        <span class="k">goto</span> <span class="n">drop</span><span class="p">;</span>
-  <span class="p">}</span>
-
- <span class="p">...</span>
-
-  <span class="c1">// 处理 syn 包的 struct sock 对象
-</span><span class="c1"></span>  <span class="c1">// !want_cookie 是不将 req 跟 listener 相互绑定起来，响应 synack 后会释放掉 req 对象，从而减少服务器的资源占用
-</span><span class="c1"></span>  <span class="n">req</span> <span class="o">=</span> <span class="n">inet_reqsk_alloc</span><span class="p">(</span><span class="n">rsk_ops</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="o">!</span><span class="n">want_cookie</span><span class="p">);</span>
-  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">req</span><span class="p">)</span>
-    <span class="k">goto</span> <span class="n">drop</span><span class="p">;</span>
-
-  <span class="n">req</span><span class="o">-&gt;</span><span class="n">syncookie</span> <span class="o">=</span> <span class="n">want_cookie</span><span class="p">;</span>
- <span class="p">...</span>
-
- <span class="k">if</span> <span class="p">(</span><span class="n">want_cookie</span><span class="p">)</span> <span class="p">{</span>
-  <span class="n">isn</span> <span class="o">=</span> <span class="n">cookie_init_sequence</span><span class="p">(</span><span class="n">af_ops</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">req</span><span class="o">-&gt;</span><span class="n">mss</span><span class="p">);</span>
-  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">tmp_opt</span><span class="p">.</span><span class="n">tstamp_ok</span><span class="p">)</span>
-   <span class="n">inet_rsk</span><span class="p">(</span><span class="n">req</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">ecn_ok</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
- <span class="p">}</span>
-
- <span class="p">...</span>
-
- <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">want_cookie</span><span class="p">)</span> <span class="p">{</span>
-  <span class="n">tcp_reqsk_record_syn</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span>
-  <span class="n">fastopen_sk</span> <span class="o">=</span> <span class="n">tcp_try_fastopen</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">foc</span><span class="p">,</span> <span class="n">dst</span><span class="p">);</span>
- <span class="p">}</span>
- <span class="k">if</span> <span class="p">(</span><span class="n">fastopen_sk</span><span class="p">)</span> <span class="p">{</span>
-  <span class="n">af_ops</span><span class="o">-&gt;</span><span class="n">send_synack</span><span class="p">(</span><span class="n">fastopen_sk</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">fl</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span>
-        <span class="o">&amp;</span><span class="n">foc</span><span class="p">,</span> <span class="n">TCP_SYNACK_FASTOPEN</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span>
-  <span class="p">...</span>
- <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-  <span class="n">tcp_rsk</span><span class="p">(</span><span class="n">req</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">tfo_listener</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
-  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">want_cookie</span><span class="p">)</span> <span class="c1">// 不启用 syncookies，则将 req 加入到 syn backlog
-</span><span class="c1"></span>   <span class="n">inet_csk_reqsk_queue_hash_add</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span>
-    <span class="n">tcp_timeout_init</span><span class="p">((</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="p">)</span><span class="n">req</span><span class="p">));</span>
-    <span class="c1">// 发送 synack 包
-</span><span class="c1"></span>  <span class="n">af_ops</span><span class="o">-&gt;</span><span class="n">send_synack</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">fl</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">foc</span><span class="p">,</span>
-        <span class="o">!</span><span class="n">want_cookie</span> <span class="o">?</span> <span class="nl">TCP_SYNACK_NORMAL</span> <span class="p">:</span>
-         <span class="n">TCP_SYNACK_COOKIE</span><span class="p">,</span>
-        <span class="n">skb</span><span class="p">);</span>
-
-  <span class="k">if</span> <span class="p">(</span><span class="n">want_cookie</span><span class="p">)</span> <span class="p">{</span>
-      <span class="c1">// 发送 synack 包后，释放掉 req
-</span><span class="c1"></span>      <span class="c1">// 当发生 synflood 时，释放 req 是为了减少服务器资源占用
-</span><span class="c1"></span>   <span class="n">reqsk_free</span><span class="p">(</span><span class="n">req</span><span class="p">);</span>
-   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-  <span class="p">}</span>
- <span class="p">}</span>
-
- <span class="p">...</span>
- <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-
-  <span class="p">...</span>
-<span class="p">}</span>
-
-
-<span class="c1">// net/ipv4/tcp_input.c
-</span><span class="c1"></span>
-<span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="nf">inet_reqsk_alloc</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">request_sock_ops</span> <span class="o">*</span><span class="n">ops</span><span class="p">,</span>
-          <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk_listener</span><span class="p">,</span>
-          <span class="kt">bool</span> <span class="n">attach_listener</span><span class="p">)</span>
-<span class="p">{</span>
- <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span> <span class="o">=</span> <span class="n">reqsk_alloc</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">sk_listener</span><span class="p">,</span>
-            <span class="n">attach_listener</span><span class="p">);</span>
-
- <span class="p">...</span>
-
- <span class="k">return</span> <span class="n">req</span><span class="p">;</span>
-<span class="p">}</span>
-
-
-<span class="c1">// include/net/request_sock.h
-</span><span class="c1"></span>
-<span class="k">static</span> <span class="kr">inline</span> <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span>
-<span class="nf">reqsk_alloc</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">request_sock_ops</span> <span class="o">*</span><span class="n">ops</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk_listener</span><span class="p">,</span>
-     <span class="kt">bool</span> <span class="n">attach_listener</span><span class="p">)</span>
-<span class="p">{</span>
- <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span><span class="p">;</span>
-
- <span class="n">req</span> <span class="o">=</span> <span class="n">kmem_cache_alloc</span><span class="p">(</span><span class="n">ops</span><span class="o">-&gt;</span><span class="n">slab</span><span class="p">,</span> <span class="n">GFP_ATOMIC</span> <span class="o">|</span> <span class="n">__GFP_NOWARN</span><span class="p">);</span>
- <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">req</span><span class="p">)</span>
-  <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
-
- <span class="n">req</span><span class="o">-&gt;</span><span class="n">rsk_listener</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
- <span class="k">if</span> <span class="p">(</span><span class="n">attach_listener</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// syncookie 启用时，attach_listener 为 false
-</span><span class="c1"></span>  <span class="p">...</span>
-  <span class="n">req</span><span class="o">-&gt;</span><span class="n">rsk_listener</span> <span class="o">=</span> <span class="n">sk_listener</span><span class="p">;</span>
- <span class="p">}</span>
- <span class="p">...</span>
-
- <span class="k">return</span> <span class="n">req</span><span class="p">;</span>
-<span class="p">}</span>
-
-
-<span class="c1">// net/ipv4/tcp_ipv4.c
-</span><span class="c1"></span>
-<span class="c1">// af_ops-&gt;send_synack
-</span><span class="c1"></span><span class="k">static</span> <span class="kt">int</span> <span class="nf">tcp_v4_send_synack</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">dst_entry</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span>
-         <span class="k">struct</span> <span class="n">flowi</span> <span class="o">*</span><span class="n">fl</span><span class="p">,</span>
-         <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span><span class="p">,</span>
-         <span class="k">struct</span> <span class="n">tcp_fastopen_cookie</span> <span class="o">*</span><span class="n">foc</span><span class="p">,</span>
-         <span class="k">enum</span> <span class="n">tcp_synack_type</span> <span class="n">synack_type</span><span class="p">,</span>
-         <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">syn_skb</span><span class="p">)</span>
-<span class="p">{</span>
- <span class="p">...</span>
- <span class="kt">int</span> <span class="n">err</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
- <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">;</span>
-
- <span class="p">...</span>
-
- <span class="n">skb</span> <span class="o">=</span> <span class="n">tcp_make_synack</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">foc</span><span class="p">,</span> <span class="n">synack_type</span><span class="p">,</span> <span class="n">syn_skb</span><span class="p">);</span>
-
- <span class="k">if</span> <span class="p">(</span><span class="n">skb</span><span class="p">)</span> <span class="p">{</span>
-  <span class="p">...</span>
- <span class="p">}</span>
-
- <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
-<span class="p">}</span>
-
-
-<span class="c1">/// net/ipv4/tcp_output.c
-</span><span class="c1"></span>
-<span class="cm">/**
-</span><span class="cm"> * tcp_make_synack - 分配一个 skb 并构建一个 SYNACK 包
-</span><span class="cm"> */</span>
-<span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="nf">tcp_make_synack</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">dst_entry</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span>
-    <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span><span class="p">,</span>
-    <span class="k">struct</span> <span class="n">tcp_fastopen_cookie</span> <span class="o">*</span><span class="n">foc</span><span class="p">,</span>
-    <span class="k">enum</span> <span class="n">tcp_synack_type</span> <span class="n">synack_type</span><span class="p">,</span>
-    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">syn_skb</span><span class="p">)</span>
-<span class="p">{</span>
- <span class="p">...</span>
- <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">;</span>
- <span class="p">...</span>
-
- <span class="n">skb</span> <span class="o">=</span> <span class="n">alloc_skb</span><span class="p">(</span><span class="n">MAX_TCP_HEADER</span><span class="p">,</span> <span class="n">GFP_ATOMIC</span><span class="p">);</span>
- <span class="p">...</span>
-
- <span class="k">switch</span> <span class="p">(</span><span class="n">synack_type</span><span class="p">)</span> <span class="p">{</span>
- <span class="k">case</span> <span class="nl">TCP_SYNACK_NORMAL</span><span class="p">:</span>
-  <span class="n">skb_set_owner_w</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">req_to_sk</span><span class="p">(</span><span class="n">req</span><span class="p">));</span>
-  <span class="k">break</span><span class="p">;</span>
-
- <span class="k">case</span> <span class="nl">TCP_SYNACK_COOKIE</span><span class="p">:</span>
-  <span class="c1">// synflood 攻击时，skb 对象不绑定 socket 是为了减少服务器资源占用
-</span><span class="c1"></span>  <span class="k">break</span><span class="p">;</span>
-
- <span class="k">case</span> <span class="nl">TCP_SYNACK_FASTOPEN</span><span class="p">:</span>
-  <span class="n">skb_set_owner_w</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="p">)</span><span class="n">sk</span><span class="p">);</span>
-  <span class="k">break</span><span class="p">;</span>
- <span class="p">}</span>
- <span class="p">...</span>
-
- <span class="k">return</span> <span class="n">skb</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// net/ipv4/tcp_input.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// tcp_v4_rcv -&gt; tcp_v4_do_rcv -&gt; tcp_rcv_state_process -&gt; tcp_v4_conn_request -&gt; tcp_conn_request
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">tcp_conn_request</span><span class="p">(</span><span class="k">struct</span> <span class="n">request_sock_ops</span> <span class="o">*</span><span class="n">rsk_ops</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">       <span class="k">const</span> <span class="k">struct</span> <span class="n">tcp_request_sock_ops</span> <span class="o">*</span><span class="n">af_ops</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">       <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="p">...</span>
+</span></span><span class="line"><span class="cl">  <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">bool</span> <span class="n">want_cookie</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// 判断是否启用 syncookies
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="c1">// tcp_syncookies=2 就是强制启用 syncookies，忽略 syn backlog
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="k">if</span> <span class="p">((</span><span class="n">net</span><span class="o">-&gt;</span><span class="n">ipv4</span><span class="p">.</span><span class="n">sysctl_tcp_syncookies</span> <span class="o">==</span> <span class="mi">2</span> <span class="o">||</span>
+</span></span><span class="line"><span class="cl">      <span class="nf">inet_csk_reqsk_queue_is_full</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">isn</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">want_cookie</span> <span class="o">=</span> <span class="nf">tcp_syn_flood_action</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">rsk_ops</span><span class="o">-&gt;</span><span class="n">slab_name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">want_cookie</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">goto</span> <span class="n">drop</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="c1">// 处理 syn 包的 struct sock 对象
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="c1">// !want_cookie 是不将 req 跟 listener 相互绑定起来，响应 synack 后会释放掉 req 对象，从而减少服务器的资源占用
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">req</span> <span class="o">=</span> <span class="nf">inet_reqsk_alloc</span><span class="p">(</span><span class="n">rsk_ops</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="o">!</span><span class="n">want_cookie</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">req</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">goto</span> <span class="n">drop</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="n">req</span><span class="o">-&gt;</span><span class="n">syncookie</span> <span class="o">=</span> <span class="n">want_cookie</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">if</span> <span class="p">(</span><span class="n">want_cookie</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="n">isn</span> <span class="o">=</span> <span class="nf">cookie_init_sequence</span><span class="p">(</span><span class="n">af_ops</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">req</span><span class="o">-&gt;</span><span class="n">mss</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">tmp_opt</span><span class="p">.</span><span class="n">tstamp_ok</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">   <span class="nf">inet_rsk</span><span class="p">(</span><span class="n">req</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">ecn_ok</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">want_cookie</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">tcp_reqsk_record_syn</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="n">fastopen_sk</span> <span class="o">=</span> <span class="nf">tcp_try_fastopen</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">foc</span><span class="p">,</span> <span class="n">dst</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"> <span class="k">if</span> <span class="p">(</span><span class="n">fastopen_sk</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="n">af_ops</span><span class="o">-&gt;</span><span class="nf">send_synack</span><span class="p">(</span><span class="n">fastopen_sk</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">fl</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="o">&amp;</span><span class="n">foc</span><span class="p">,</span> <span class="n">TCP_SYNACK_FASTOPEN</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="p">...</span>
+</span></span><span class="line"><span class="cl"> <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">tcp_rsk</span><span class="p">(</span><span class="n">req</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">tfo_listener</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">want_cookie</span><span class="p">)</span> <span class="c1">// 不启用 syncookies，则将 req 加入到 syn backlog
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="nf">inet_csk_reqsk_queue_hash_add</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">tcp_timeout_init</span><span class="p">((</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="p">)</span><span class="n">req</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// 发送 synack 包
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="n">af_ops</span><span class="o">-&gt;</span><span class="nf">send_synack</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">fl</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">foc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="o">!</span><span class="n">want_cookie</span> <span class="o">?</span> <span class="nl">TCP_SYNACK_NORMAL</span> <span class="p">:</span>
+</span></span><span class="line"><span class="cl">         <span class="n">TCP_SYNACK_COOKIE</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">want_cookie</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="c1">// 发送 synack 包后，释放掉 req
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>      <span class="c1">// 当发生 synflood 时，释放 req 是为了减少服务器资源占用
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="nf">reqsk_free</span><span class="p">(</span><span class="n">req</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">   <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl"> <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl"> <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="p">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// net/ipv4/tcp_input.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="nf">inet_reqsk_alloc</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">request_sock_ops</span> <span class="o">*</span><span class="n">ops</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">          <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk_listener</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">          <span class="kt">bool</span> <span class="n">attach_listener</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span> <span class="o">=</span> <span class="nf">reqsk_alloc</span><span class="p">(</span><span class="n">ops</span><span class="p">,</span> <span class="n">sk_listener</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">attach_listener</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">return</span> <span class="n">req</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// include/net/request_sock.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="nf">reqsk_alloc</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">request_sock_ops</span> <span class="o">*</span><span class="n">ops</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk_listener</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">     <span class="kt">bool</span> <span class="n">attach_listener</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="n">req</span> <span class="o">=</span> <span class="nf">kmem_cache_alloc</span><span class="p">(</span><span class="n">ops</span><span class="o">-&gt;</span><span class="n">slab</span><span class="p">,</span> <span class="n">GFP_ATOMIC</span> <span class="o">|</span> <span class="n">__GFP_NOWARN</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">req</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="n">req</span><span class="o">-&gt;</span><span class="n">rsk_listener</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="k">if</span> <span class="p">(</span><span class="n">attach_listener</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// syncookie 启用时，attach_listener 为 false
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="p">...</span>
+</span></span><span class="line"><span class="cl">  <span class="n">req</span><span class="o">-&gt;</span><span class="n">rsk_listener</span> <span class="o">=</span> <span class="n">sk_listener</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">return</span> <span class="n">req</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// net/ipv4/tcp_ipv4.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// af_ops-&gt;send_synack
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">static</span> <span class="kt">int</span> <span class="nf">tcp_v4_send_synack</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">dst_entry</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">         <span class="k">struct</span> <span class="n">flowi</span> <span class="o">*</span><span class="n">fl</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">         <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">         <span class="k">struct</span> <span class="n">tcp_fastopen_cookie</span> <span class="o">*</span><span class="n">foc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">         <span class="k">enum</span> <span class="n">tcp_synack_type</span> <span class="n">synack_type</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">         <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">syn_skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl"> <span class="kt">int</span> <span class="n">err</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="n">skb</span> <span class="o">=</span> <span class="nf">tcp_make_synack</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">foc</span><span class="p">,</span> <span class="n">synack_type</span><span class="p">,</span> <span class="n">syn_skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">if</span> <span class="p">(</span><span class="n">skb</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="p">...</span>
+</span></span><span class="line"><span class="cl"> <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">/// net/ipv4/tcp_output.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/**
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * tcp_make_synack - 分配一个 skb 并构建一个 SYNACK 包
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="nf">tcp_make_synack</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">dst_entry</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">tcp_fastopen_cookie</span> <span class="o">*</span><span class="n">foc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="k">enum</span> <span class="n">tcp_synack_type</span> <span class="n">synack_type</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">syn_skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl"> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="n">skb</span> <span class="o">=</span> <span class="nf">alloc_skb</span><span class="p">(</span><span class="n">MAX_TCP_HEADER</span><span class="p">,</span> <span class="n">GFP_ATOMIC</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">switch</span> <span class="p">(</span><span class="n">synack_type</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="k">case</span> <span class="nl">TCP_SYNACK_NORMAL</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">skb_set_owner_w</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="nf">req_to_sk</span><span class="p">(</span><span class="n">req</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">  <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">case</span> <span class="nl">TCP_SYNACK_COOKIE</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">  <span class="c1">// synflood 攻击时，skb 对象不绑定 socket 是为了减少服务器资源占用
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>  <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">case</span> <span class="nl">TCP_SYNACK_FASTOPEN</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">  <span class="nf">skb_set_owner_w</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="p">)</span><span class="n">sk</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">return</span> <span class="n">skb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h3 id="接收-ack-包">接收 ack 包</h3>
 <ol>
@@ -690,56 +688,56 @@ tcp_syncookies - BOOLEAN
 </span><span class="lnt">49
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="c1">// net/ipv4/tcp_ipv4.c
-</span><span class="c1"></span>
-<span class="kt">int</span> <span class="nf">tcp_v4_do_rcv</span><span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
-<span class="p">{</span>
- <span class="p">...</span>
-
- <span class="k">if</span> <span class="p">(</span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_state</span> <span class="o">==</span> <span class="n">TCP_LISTEN</span><span class="p">)</span> <span class="p">{</span>
-  <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">nsk</span> <span class="o">=</span> <span class="n">tcp_v4_cookie_check</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span>
-
-  <span class="p">...</span>
- <span class="p">}</span> <span class="k">else</span>
-  <span class="p">...</span>
-
- <span class="k">if</span> <span class="p">(</span><span class="n">tcp_rcv_state_process</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">))</span> <span class="p">{</span>
-  <span class="n">rsk</span> <span class="o">=</span> <span class="n">sk</span><span class="p">;</span>
-  <span class="k">goto</span> <span class="n">reset</span><span class="p">;</span>
- <span class="p">}</span>
- <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-
-  <span class="p">...</span>
-<span class="p">}</span>
-
-
-<span class="c1">// net/ipv4/tcp_ipv4.c
-</span><span class="c1"></span>
-<span class="k">static</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="nf">tcp_v4_cookie_check</span><span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
-<span class="p">{</span>
- <span class="k">const</span> <span class="k">struct</span> <span class="n">tcphdr</span> <span class="o">*</span><span class="n">th</span> <span class="o">=</span> <span class="n">tcp_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
- <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">th</span><span class="o">-&gt;</span><span class="n">syn</span><span class="p">)</span>
-  <span class="n">sk</span> <span class="o">=</span> <span class="n">cookie_v4_check</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span>
-
- <span class="k">return</span> <span class="n">sk</span><span class="p">;</span>
-<span class="p">}</span>
-
-
-<span class="c1">// net/ipv4/syncookies.c
-</span><span class="c1"></span>
-<span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="nf">cookie_v4_check</span><span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
-<span class="p">{</span>
- <span class="p">...</span>
- <span class="kt">int</span> <span class="n">mss</span><span class="p">;</span>
- <span class="n">mss</span> <span class="o">=</span> <span class="n">__cookie_v4_check</span><span class="p">(</span><span class="n">ip_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">),</span> <span class="n">th</span><span class="p">,</span> <span class="n">cookie</span><span class="p">);</span>
- <span class="k">if</span> <span class="p">(</span><span class="n">mss</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
-  <span class="p">...</span>
- <span class="p">}</span>
-
- <span class="n">req</span> <span class="o">=</span> <span class="n">cookie_tcp_reqsk_alloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tcp_request_sock_ops</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span>
- <span class="p">...</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// net/ipv4/tcp_ipv4.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">tcp_v4_do_rcv</span><span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">if</span> <span class="p">(</span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_state</span> <span class="o">==</span> <span class="n">TCP_LISTEN</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">nsk</span> <span class="o">=</span> <span class="nf">tcp_v4_cookie_check</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="p">...</span>
+</span></span><span class="line"><span class="cl"> <span class="p">}</span> <span class="k">else</span>
+</span></span><span class="line"><span class="cl">  <span class="p">...</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">if</span> <span class="p">(</span><span class="nf">tcp_rcv_state_process</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="n">rsk</span> <span class="o">=</span> <span class="n">sk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">goto</span> <span class="n">reset</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"> <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="p">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// net/ipv4/tcp_ipv4.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="nf">tcp_v4_cookie_check</span><span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="k">const</span> <span class="k">struct</span> <span class="n">tcphdr</span> <span class="o">*</span><span class="n">th</span> <span class="o">=</span> <span class="nf">tcp_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"> <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">th</span><span class="o">-&gt;</span><span class="n">syn</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">  <span class="n">sk</span> <span class="o">=</span> <span class="nf">cookie_v4_check</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="k">return</span> <span class="n">sk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// net/ipv4/syncookies.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="nf">cookie_v4_check</span><span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl"> <span class="kt">int</span> <span class="n">mss</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="n">mss</span> <span class="o">=</span> <span class="nf">__cookie_v4_check</span><span class="p">(</span><span class="nf">ip_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">),</span> <span class="n">th</span><span class="p">,</span> <span class="n">cookie</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"> <span class="k">if</span> <span class="p">(</span><span class="n">mss</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="p">...</span>
+</span></span><span class="line"><span class="cl"> <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"> <span class="n">req</span> <span class="o">=</span> <span class="nf">cookie_tcp_reqsk_alloc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tcp_request_sock_ops</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"> <span class="p">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="验证-syncookies-启用的效果">验证 syncookies 启用的效果</h2>
 <p>调用函数 __cookie_v4_check 可以校验一个 ack 包是否为 syncookies 包，同时可以得到 mss（Max Segment Size：tcp 最大分片大小）。</p>
@@ -860,9 +858,7 @@ tcp_syncookies - BOOLEAN
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

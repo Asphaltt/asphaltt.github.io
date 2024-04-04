@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Bpf_timer on LeonHwang&#39;s Blogs</title>
+    <link>https://le0nhwan9.github.io/tags/bpf_timer/</link>
+    <description>Recent content in Bpf_timer on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Wed, 03 Apr 2024 23:17:12 +0800</lastBuildDate>
+    <atom:link href="https://le0nhwan9.github.io/tags/bpf_timer/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: introduce bpf_timer</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-75---introduce-bpf_timer/</link>
+      <pubDate>Wed, 03 Apr 2024 23:17:12 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-75---introduce-bpf_timer/</guid>
+      <description>bpf_timer 是 eBPF 里基于 hrtimer 实现的定时器。 hrtimers - subsystem for high-resolution kernel timers LWN bpf: Introduce BPF timers. bpf: Introduce bpf timers. since 5.15 kernel bpf_timer 最初的需求是在 perf events bpf prog 中做定期采样；后来在 XDP 中可以用来做垃圾回收和健康检</description>
+    </item>
+  </channel>
+</rss>

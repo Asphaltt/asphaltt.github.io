@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/linux-solve-policy-routing-problem/" />
@@ -37,7 +37,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,13 +47,11 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/linux-solve-policy-routing-problem/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2021-01-23T18:33:40+08:00" />
 <meta property="article:modified_time" content="2021-01-23T18:33:40+08:00" />
-
 <meta itemprop="name" content="Linux 策略路由导流到本地">
 <meta itemprop="description" content="在做 Linux 代理流量回放实验 时，因 ip route 配置失误导致实验失败；排查了一个星期，最终在阅读 Inline on a Linux router 博客时发现了配置失误的地方。 代理流量回放实验 在 namespace server"><meta itemprop="datePublished" content="2021-01-23T18:33:40+08:00" />
 <meta itemprop="dateModified" content="2021-01-23T18:33:40+08:00" />
 <meta itemprop="wordCount" content="1164">
-<meta itemprop="keywords" content="Linux,iptables,ip-rule,ip-route," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Linux 策略路由导流到本地"/>
+<meta itemprop="keywords" content="Linux,iptables,ip-rule,ip-route," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="Linux 策略路由导流到本地"/>
 <meta name="twitter:description" content="在做 Linux 代理流量回放实验 时，因 ip route 配置失误导致实验失败；排查了一个星期，最终在阅读 Inline on a Linux router 博客时发现了配置失误的地方。 代理流量回放实验 在 namespace server"/>
 
 
@@ -193,14 +191,14 @@
 </span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -t mangle -N DIVERT
-iptables -t mangle -A PREROUTING -p tcp -m socket -j DIVERT
-iptables -t mangle -A DIVERT -j MARK --set-mark <span class="m">1</span>
-iptables -t mangle -A DIVERT -j ACCEPT
-iptables -t mangle -A PREROUTING -p tcp -j TPROXY --tproxy-mark 0x1/0x1 --on-port <span class="si">${</span><span class="nv">LISTEN_PORT</span><span class="si">}</span>
-ip rule add fwmark <span class="m">1</span> lookup <span class="m">100</span>
-ip route add default dev <span class="si">${</span><span class="nv">VETH_SERVER_INNER</span><span class="si">}</span> scope host table <span class="m">100</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">iptables -t mangle -N DIVERT
+</span></span><span class="line"><span class="cl">iptables -t mangle -A PREROUTING -p tcp -m socket -j DIVERT
+</span></span><span class="line"><span class="cl">iptables -t mangle -A DIVERT -j MARK --set-mark <span class="m">1</span>
+</span></span><span class="line"><span class="cl">iptables -t mangle -A DIVERT -j ACCEPT
+</span></span><span class="line"><span class="cl">iptables -t mangle -A PREROUTING -p tcp -j TPROXY --tproxy-mark 0x1/0x1 --on-port <span class="si">${</span><span class="nv">LISTEN_PORT</span><span class="si">}</span>
+</span></span><span class="line"><span class="cl">ip rule add fwmark <span class="m">1</span> lookup <span class="m">100</span>
+</span></span><span class="line"><span class="cl">ip route add default dev <span class="si">${</span><span class="nv">VETH_SERVER_INNER</span><span class="si">}</span> scope host table <span class="m">100</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>其中最后那条 ip route 的配置是有问题的，下面就是该问题的排查过程。</p>
 <h2 id="学习-linux-收包过程">学习 Linux 收包过程</h2>
@@ -260,49 +258,49 @@ ip route add default dev <span class="si">${</span><span class="nv">VETH_SERVER_
 </span><span class="lnt">42
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">bpftrace --unsafe skbdrop.bt
-Attaching <span class="m">3</span> probes...
-Tracing unusual skb drop stacks. Hit Ctrl-C to end.
-^C#kernel
-IpInReceives                    <span class="m">17</span>                 0.0
-IpInDelivers                    <span class="m">17</span>                 0.0
-IpOutRequests                   <span class="m">22</span>                 0.0
-TcpInSegs                       <span class="m">17</span>                 0.0
-TcpOutSegs                      <span class="m">21</span>                 0.0
-TcpRetransSegs                  <span class="m">1</span>                  0.0
-TcpExtTCPHPHits                 <span class="m">1</span>                  0.0
-TcpExtTCPPureAcks               <span class="m">8</span>                  0.0
-TcpExtTCPHPAcks                 <span class="m">5</span>                  0.0
-TcpExtTCPTimeouts               <span class="m">1</span>                  0.0
-TcpExtTCPSynRetrans             <span class="m">1</span>                  0.0
-TcpExtTCPOrigDataSent           <span class="m">20</span>                 0.0
-TcpExtTCPDelivered              <span class="m">20</span>                 0.0
-TcpExtTcpTimeoutRehash          <span class="m">1</span>                  0.0
-IpExtInOctets                   <span class="m">880</span>                0.0
-IpExtOutOctets                  <span class="m">2239</span>               0.0
-IpExtInNoECTPkts                <span class="m">17</span>                 0.0
-
-@<span class="o">[</span>
-    kfree_skb+118
-    kfree_skb+118
-    ip_error+134
-    ip_rcv_finish+135
-    ip_rcv+188
-    __netif_receive_skb_one_core+136
-    __netif_receive_skb+24
-    process_backlog+169
-<span class="o">]</span>: <span class="m">2</span>
-@<span class="o">[</span>
-    kfree_skb+118
-    kfree_skb+118
-    unix_stream_connect+1919
-    __sys_connect_file+95
-    __sys_connect+161
-    __x64_sys_connect+26
-    do_syscall_64+73
-    entry_SYSCALL_64_after_hwframe+68
-<span class="o">]</span>: <span class="m">2</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">bpftrace --unsafe skbdrop.bt
+</span></span><span class="line"><span class="cl">Attaching <span class="m">3</span> probes...
+</span></span><span class="line"><span class="cl">Tracing unusual skb drop stacks. Hit Ctrl-C to end.
+</span></span><span class="line"><span class="cl">^C#kernel
+</span></span><span class="line"><span class="cl">IpInReceives                    <span class="m">17</span>                 0.0
+</span></span><span class="line"><span class="cl">IpInDelivers                    <span class="m">17</span>                 0.0
+</span></span><span class="line"><span class="cl">IpOutRequests                   <span class="m">22</span>                 0.0
+</span></span><span class="line"><span class="cl">TcpInSegs                       <span class="m">17</span>                 0.0
+</span></span><span class="line"><span class="cl">TcpOutSegs                      <span class="m">21</span>                 0.0
+</span></span><span class="line"><span class="cl">TcpRetransSegs                  <span class="m">1</span>                  0.0
+</span></span><span class="line"><span class="cl">TcpExtTCPHPHits                 <span class="m">1</span>                  0.0
+</span></span><span class="line"><span class="cl">TcpExtTCPPureAcks               <span class="m">8</span>                  0.0
+</span></span><span class="line"><span class="cl">TcpExtTCPHPAcks                 <span class="m">5</span>                  0.0
+</span></span><span class="line"><span class="cl">TcpExtTCPTimeouts               <span class="m">1</span>                  0.0
+</span></span><span class="line"><span class="cl">TcpExtTCPSynRetrans             <span class="m">1</span>                  0.0
+</span></span><span class="line"><span class="cl">TcpExtTCPOrigDataSent           <span class="m">20</span>                 0.0
+</span></span><span class="line"><span class="cl">TcpExtTCPDelivered              <span class="m">20</span>                 0.0
+</span></span><span class="line"><span class="cl">TcpExtTcpTimeoutRehash          <span class="m">1</span>                  0.0
+</span></span><span class="line"><span class="cl">IpExtInOctets                   <span class="m">880</span>                0.0
+</span></span><span class="line"><span class="cl">IpExtOutOctets                  <span class="m">2239</span>               0.0
+</span></span><span class="line"><span class="cl">IpExtInNoECTPkts                <span class="m">17</span>                 0.0
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">@<span class="o">[</span>
+</span></span><span class="line"><span class="cl">    kfree_skb+118
+</span></span><span class="line"><span class="cl">    kfree_skb+118
+</span></span><span class="line"><span class="cl">    ip_error+134
+</span></span><span class="line"><span class="cl">    ip_rcv_finish+135
+</span></span><span class="line"><span class="cl">    ip_rcv+188
+</span></span><span class="line"><span class="cl">    __netif_receive_skb_one_core+136
+</span></span><span class="line"><span class="cl">    __netif_receive_skb+24
+</span></span><span class="line"><span class="cl">    process_backlog+169
+</span></span><span class="line"><span class="cl"><span class="o">]</span>: <span class="m">2</span>
+</span></span><span class="line"><span class="cl">@<span class="o">[</span>
+</span></span><span class="line"><span class="cl">    kfree_skb+118
+</span></span><span class="line"><span class="cl">    kfree_skb+118
+</span></span><span class="line"><span class="cl">    unix_stream_connect+1919
+</span></span><span class="line"><span class="cl">    __sys_connect_file+95
+</span></span><span class="line"><span class="cl">    __sys_connect+161
+</span></span><span class="line"><span class="cl">    __x64_sys_connect+26
+</span></span><span class="line"><span class="cl">    do_syscall_64+73
+</span></span><span class="line"><span class="cl">    entry_SYSCALL_64_after_hwframe+68
+</span></span><span class="line"><span class="cl"><span class="o">]</span>: <span class="m">2</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>根据 <code>uname -r</code> 去查看 <a href="https://elixir.bootlin.com/linux/v5.8/source/net/ipv4/ip_input.c#L414">ip_rcv_finish</a> 源代码，发现 <code>ip_rcv_finish</code> 函数里并没有调用 <code>ip_error；</code>根据协议栈来排查这问题的办法无法进行下去了，因为不知道该如何继续阅读 <code>ip_rcv_finish</code> 后面的代码。</p>
 <h2 id="继续阅读-tproxy-相关的博客">继续阅读 TProxy 相关的博客</h2>
@@ -319,14 +317,14 @@ IpExtInNoECTPkts                <span class="m">17</span>                 0.0
 </span><span class="lnt">7
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -t mangle -N DIVERT
-iptables -t mangle -A PREROUTING -p tcp -m socket -j DIVERT
-iptables -t mangle -A DIVERT -j MARK --set-mark <span class="m">1</span>
-iptables -t mangle -A DIVERT -j ACCEPT
-iptables -t mangle -A PREROUTING -p tcp -j TPROXY --tproxy-mark 0x1/0x1 --on-port <span class="si">${</span><span class="nv">LISTEN_PORT</span><span class="si">}</span>
-ip rule add fwmark <span class="m">1</span> lookup <span class="m">100</span>
-ip route add <span class="nb">local</span> default dev <span class="si">${</span><span class="nv">VETH_SERVER_INNER</span><span class="si">}</span> scope host table <span class="m">100</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">iptables -t mangle -N DIVERT
+</span></span><span class="line"><span class="cl">iptables -t mangle -A PREROUTING -p tcp -m socket -j DIVERT
+</span></span><span class="line"><span class="cl">iptables -t mangle -A DIVERT -j MARK --set-mark <span class="m">1</span>
+</span></span><span class="line"><span class="cl">iptables -t mangle -A DIVERT -j ACCEPT
+</span></span><span class="line"><span class="cl">iptables -t mangle -A PREROUTING -p tcp -j TPROXY --tproxy-mark 0x1/0x1 --on-port <span class="si">${</span><span class="nv">LISTEN_PORT</span><span class="si">}</span>
+</span></span><span class="line"><span class="cl">ip rule add fwmark <span class="m">1</span> lookup <span class="m">100</span>
+</span></span><span class="line"><span class="cl">ip route add <span class="nb">local</span> default dev <span class="si">${</span><span class="nv">VETH_SERVER_INNER</span><span class="si">}</span> scope host table <span class="m">100</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>终于，实验成功了。</p>
 <h2 id="local-是什么">local 是什么？</h2>
@@ -363,35 +361,35 @@ ip route add <span class="nb">local</span> default dev <span class="si">${</span
 </span><span class="lnt">28
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-man" data-lang="man">       Route types:
-
-               unicast - the route entry describes real paths to the destinations covered by the route prefix.
-
-               unreachable - these destinations are unreachable. Packets are discarded and the ICMP message host unreachable is generated.  The
-               local senders get an EHOSTUNREACH error.
-
-               blackhole - these destinations are unreachable. Packets are discarded silently.  The local senders get an EINVAL error.
-
-               prohibit - these destinations are unreachable. Packets are discarded and the ICMP message communication administratively prohib‐
-               ited is generated. The local senders get an EACCES error.
-
-               local - the destinations are assigned to this host. The packets are looped back and delivered locally.
-
-               broadcast - the destinations are broadcast addresses. The packets are sent as link broadcasts.
-
-               throw - a special control route used together with policy rules. If such a route is selected, lookup in this table is terminated
-               pretending that no route was found. Without policy routing it is equivalent to the absence of the route in the routing table. The
-               packets are dropped and the ICMP message net unreachable is generated. The local senders get an ENETUNREACH error.
-
-               nat - a special NAT route. Destinations covered by the prefix are considered to be dummy (or external) addresses which require
-               translation to real (or internal) ones before forwarding. The addresses to translate to are selected with the attribute via.
-               Warning: Route NAT is no longer supported in Linux 2.6.
-
-               anycast - not implemented the destinations are anycast addresses assigned to this host. They are mainly equivalent to local with
-               one difference: such addresses are invalid when used as the source address of any packet.
-
-               multicast - a special type used for multicast routing. It is not present in normal routing tables.
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-man" data-lang="man"><span class="line"><span class="cl">       Route types:
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">               unicast - the route entry describes real paths to the destinations covered by the route prefix.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">               unreachable - these destinations are unreachable. Packets are discarded and the ICMP message host unreachable is generated.  The
+</span></span><span class="line"><span class="cl">               local senders get an EHOSTUNREACH error.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">               blackhole - these destinations are unreachable. Packets are discarded silently.  The local senders get an EINVAL error.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">               prohibit - these destinations are unreachable. Packets are discarded and the ICMP message communication administratively prohib‐
+</span></span><span class="line"><span class="cl">               ited is generated. The local senders get an EACCES error.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">               local - the destinations are assigned to this host. The packets are looped back and delivered locally.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">               broadcast - the destinations are broadcast addresses. The packets are sent as link broadcasts.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">               throw - a special control route used together with policy rules. If such a route is selected, lookup in this table is terminated
+</span></span><span class="line"><span class="cl">               pretending that no route was found. Without policy routing it is equivalent to the absence of the route in the routing table. The
+</span></span><span class="line"><span class="cl">               packets are dropped and the ICMP message net unreachable is generated. The local senders get an ENETUNREACH error.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">               nat - a special NAT route. Destinations covered by the prefix are considered to be dummy (or external) addresses which require
+</span></span><span class="line"><span class="cl">               translation to real (or internal) ones before forwarding. The addresses to translate to are selected with the attribute via.
+</span></span><span class="line"><span class="cl">               Warning: Route NAT is no longer supported in Linux 2.6.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">               anycast - not implemented the destinations are anycast addresses assigned to this host. They are mainly equivalent to local with
+</span></span><span class="line"><span class="cl">               one difference: such addresses are invalid when used as the source address of any packet.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">               multicast - a special type used for multicast routing. It is not present in normal routing tables.
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p><strong>local</strong> 是一个路由类型，指将网络包发给系统本地协议栈。</p>
 <h2 id="总结">总结</h2>
@@ -509,9 +507,7 @@ ip route add <span class="nb">local</span> default dev <span class="si">${</span
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

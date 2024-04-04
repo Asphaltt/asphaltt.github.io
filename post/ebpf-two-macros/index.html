@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-two-macros/" />
@@ -37,7 +37,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,13 +47,11 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-two-macros/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2022-10-30T15:45:41+08:00" />
 <meta property="article:modified_time" content="2022-10-30T15:45:41+08:00" />
-
 <meta itemprop="name" content="eBPF Talk: 宏的两种写法">
 <meta itemprop="description" content="宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF 的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。 写法一"><meta itemprop="datePublished" content="2022-10-30T15:45:41+08:00" />
 <meta itemprop="dateModified" content="2022-10-30T15:45:41+08:00" />
 <meta itemprop="wordCount" content="564">
-<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="eBPF Talk: 宏的两种写法"/>
+<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 宏的两种写法"/>
 <meta name="twitter:description" content="宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF 的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。 写法一"/>
 
 
@@ -194,17 +192,17 @@
 </span><span class="lnt">10
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define GET_TOS(sip, pod)                  \
-</span><span class="cp">    ({                                     \
-</span><span class="cp">        __u8 tos;                          \
-</span><span class="cp">        if (USE_TOS)                       \
-</span><span class="cp">            tos = POD_TOS;                 \
-</span><span class="cp">        else                               \
-</span><span class="cp">            tos = __get_pod_tos(sip, pod); \
-</span><span class="cp">                                           \
-</span><span class="cp">        tos;                               \
-</span><span class="cp">    })
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define GET_TOS(sip, pod)                  \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    ({                                     \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        __u8 tos;                          \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        if (USE_TOS)                       \
+</span></span></span><span class="line"><span class="cl"><span class="cp">            tos = POD_TOS;                 \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        else                               \
+</span></span></span><span class="line"><span class="cl"><span class="cp">            tos = __get_pod_tos(sip, pod); \
+</span></span></span><span class="line"><span class="cl"><span class="cp">                                           \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        tos;                               \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    })
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><p>如上代码片段，使用 <code>({})</code> 包裹多行代码，且在第一行声明返回值、在最后一行提供返回值。</p>
 <p>参考 <code>BPF_CORE_READ</code> 的宏定义：</p>
@@ -217,12 +215,12 @@
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define BPF_CORE_READ(src, a, ...) ({                  \
-</span><span class="cp">    ___type((src), a, ##__VA_ARGS__) __r;              \
-</span><span class="cp">    BPF_CORE_READ_INTO(&amp;__r, (src), a, ##__VA_ARGS__); \
-</span><span class="cp">    __r;                                               \
-</span><span class="cp">})
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define BPF_CORE_READ(src, a, ...) ({                  \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    ___type((src), a, ##__VA_ARGS__) __r;              \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    BPF_CORE_READ_INTO(&amp;__r, (src), a, ##__VA_ARGS__); \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    __r;                                               \
+</span></span></span><span class="line"><span class="cl"><span class="cp">})
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="写法二多行宏的推荐写法">写法二：多行宏的推荐写法</h2>
 <p>对于多行宏，常见写法如下：</p>
@@ -235,12 +233,12 @@
 </span><span class="lnt">5
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define __load_bytes(dst, size)                                                             \
-</span><span class="cp">    bpf_skb_load_bytes_relative(skb, var_off, ev-&gt;buff + cpy_off, size, BPF_HDR_START_MAC); \
-</span><span class="cp">    cpy_off += size;                                                                        \
-</span><span class="cp">    ev-&gt;total_len = cpy_off;                                                                \
-</span><span class="cp">    var_off += size;
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define __load_bytes(dst, size)                                                             \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    bpf_skb_load_bytes_relative(skb, var_off, ev-&gt;buff + cpy_off, size, BPF_HDR_START_MAC); \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    cpy_off += size;                                                                        \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    ev-&gt;total_len = cpy_off;                                                                \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    var_off += size;
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><p>直接写成多行。可是如果需要在宏里定义一个临时变量，这种写法就行不通了。此时，可以采取下面这种写法：</p>
 <div class="highlight"><div class="chroma">
@@ -259,19 +257,19 @@
 </span><span class="lnt">12
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="cp">#define print_ip_version(iph)                  \
-</span><span class="cp">    do {                                       \
-</span><span class="cp">        __u8 b;                                \
-</span><span class="cp">        bpf_probe_read(&amp;b, 1, iph);            \
-</span><span class="cp">        b &gt;&gt;= 4;                               \
-</span><span class="cp">        if (b == 4)                            \
-</span><span class="cp">            bpf_printk(&#34;IPv4\n&#34;);              \
-</span><span class="cp">        else if (b == 6)                       \
-</span><span class="cp">            bpf_printk(&#34;IPv6\n&#34;);              \
-</span><span class="cp">        else                                   \
-</span><span class="cp">            bpf_printk(&#34;Unkown IP version\n&#34;); \
-</span><span class="cp">    } while (0)
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define print_ip_version(iph)                  \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    do {                                       \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        __u8 b;                                \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        bpf_probe_read(&amp;b, 1, iph);            \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        b &gt;&gt;= 4;                               \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        if (b == 4)                            \
+</span></span></span><span class="line"><span class="cl"><span class="cp">            bpf_printk(&#34;IPv4\n&#34;);              \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        else if (b == 6)                       \
+</span></span></span><span class="line"><span class="cl"><span class="cp">            bpf_printk(&#34;IPv6\n&#34;);              \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        else                                   \
+</span></span></span><span class="line"><span class="cl"><span class="cp">            bpf_printk(&#34;Unkown IP version\n&#34;); \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    } while (0)
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><p>使用 <code>do {} while(0)</code> 包裹着多行代码。此时，<code>do-while</code> 里的代码块只会执行一遍。而在使用的时候，像函数调用一样直接使用就可以了，<code>print_ip_version(iph);</code>。</p>
 <h2 id="小结">小结</h2>
@@ -386,9 +384,7 @@
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

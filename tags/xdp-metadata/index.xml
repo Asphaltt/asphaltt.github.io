@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>XDP Metadata on LeonHwang&#39;s Blogs</title>
+    <link>https://le0nhwan9.github.io/tags/xdp-metadata/</link>
+    <description>Recent content in XDP Metadata on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Wed, 03 Apr 2024 22:54:12 +0800</lastBuildDate>
+    <atom:link href="https://le0nhwan9.github.io/tags/xdp-metadata/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 踩坑 XDP on Mellanox</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-68---xdp-shit-on-mellanox/</link>
+      <pubDate>Wed, 03 Apr 2024 22:54:12 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-68---xdp-shit-on-mellanox/</guid>
+      <description>对 XDP 了解得越多，对 XDP 的信心越是膨胀。最近在 XDP on Mellanox 上踩了个坑，让我对 XDP 的认识又有了新的提升：就是需要保持对技术的敬畏之心，不要过于自信。 P.S. Mellanox 网</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 使用 metadata 将信息从 XDP 传给 AF_XDP</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-64---metadata-from-xdp-to-af_xdp/</link>
+      <pubDate>Wed, 03 Apr 2024 22:44:30 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-64---metadata-from-xdp-to-af_xdp/</guid>
+      <description>学习了 XDP metadata 和 AF_XDP，是否可以使用 metadata 将信息从 XDP 传给 AF_XDP 呢？ eBPF Talk: XDP metadata 实战指南 eBPF Talk: 使用 AF_XDP 注入延时 TL;DR 答案是可以的，复制网络包内容时将 metadata 一起进行复</description>
+    </item>
+  </channel>
+</rss>

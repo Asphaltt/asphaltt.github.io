@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/iptables-bpf-acl/" />
@@ -37,7 +37,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,13 +47,11 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/iptables-bpf-acl/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2022-04-01T21:14:32+08:00" />
 <meta property="article:modified_time" content="2022-04-01T21:14:32+08:00" />
-
 <meta itemprop="name" content="demo for 「eBPF 技术实践：高性能 ACL」">
 <meta itemprop="description" content="在阅读了字节跳动发出的公众号文章 eBPF 技术实践：高性能 ACL 后，对其中提出的 O(1) 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，"><meta itemprop="datePublished" content="2022-04-01T21:14:32+08:00" />
 <meta itemprop="dateModified" content="2022-04-01T21:14:32+08:00" />
 <meta itemprop="wordCount" content="1231">
-<meta itemprop="keywords" content="iptables,iptables-bpf,eBPF,XDP ACL," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="demo for 「eBPF 技术实践：高性能 ACL」"/>
+<meta itemprop="keywords" content="iptables,iptables-bpf,eBPF,XDP,XDP ACL," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="demo for 「eBPF 技术实践：高性能 ACL」"/>
 <meta name="twitter:description" content="在阅读了字节跳动发出的公众号文章 eBPF 技术实践：高性能 ACL 后，对其中提出的 O(1) 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，"/>
 
 
@@ -195,8 +193,8 @@
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -I OUTPUT -m bpf --object-pinned /sys/fs/bpf/ipt_acl -j DROP
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">iptables -I OUTPUT -m bpf --object-pinned /sys/fs/bpf/ipt_acl -j DROP
+</span></span></code></pre></td></tr></table>
 </div>
 </div><blockquote>
 <p>该 iptables 规则的理解请参考： <a href="/post/iptables-bpf/">该如此玩转 iptables-bpf</a></p>
@@ -225,11 +223,11 @@
 </span><span class="lnt">4
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">iptables -A OUTPUT -s 192.168.1.113 -d 1.1.1.1 -p icmp -j DROP    <span class="c1"># rule1 =&gt; 0b0001</span>
-iptables -A OUTPUT -s 192.168.2.113 -d 8.8.8.8 -p icmp -j ACCEPT  <span class="c1"># rule2 =&gt; 0b0010</span>
-iptables -A OUTPUT -s 192.168.1.113 -d 8.8.8.8 -p icmp -j ACCEPT  <span class="c1"># rule3 =&gt; 0b0100</span>
-iptables -A OUTPUT -s 192.168.2.113 -d 1.1.1.1 -p icmp -j DROP    <span class="c1"># rule4 =&gt; 0b1000</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">iptables -A OUTPUT -s 192.168.1.113 -d 1.1.1.1 -p icmp -j DROP    <span class="c1"># rule1 =&gt; 0b0001</span>
+</span></span><span class="line"><span class="cl">iptables -A OUTPUT -s 192.168.2.113 -d 8.8.8.8 -p icmp -j ACCEPT  <span class="c1"># rule2 =&gt; 0b0010</span>
+</span></span><span class="line"><span class="cl">iptables -A OUTPUT -s 192.168.1.113 -d 8.8.8.8 -p icmp -j ACCEPT  <span class="c1"># rule3 =&gt; 0b0100</span>
+</span></span><span class="line"><span class="cl">iptables -A OUTPUT -s 192.168.2.113 -d 1.1.1.1 -p icmp -j DROP    <span class="c1"># rule4 =&gt; 0b1000</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>对 iptables 规则进行预处理：</p>
 <p><img src="/ebpf-acl-prehandling.png" alt="rule prehandling"></p>
@@ -286,53 +284,53 @@ iptables -A OUTPUT -s 192.168.2.113 -d 1.1.1.1 -p icmp -j DROP    <span class="c
 </span><span class="lnt">46
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># ping -c4 -W1 1.1.1.1</span>
-PING 1.1.1.1 <span class="o">(</span>1.1.1.1<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
-<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.910 ms
-<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.783 ms
-<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">3</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.936 ms
-<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">4</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.787 ms
-
---- 1.1.1.1 ping statistics ---
-<span class="m">4</span> packets transmitted, <span class="m">4</span> received, 0% packet loss, <span class="nb">time</span> 3012ms
-rtt min/avg/max/mdev <span class="o">=</span> 0.783/0.854/0.936/0.069 ms
-
-<span class="c1"># make</span>
-clang -I./ebpf/headers -O2 -g -target bpf -c ebpf/acl.c  -o iptables-ebpf-acl.elf
-go build -v -trimpath -o iptables-ebpf-acl main.go
-
-<span class="c1"># make setup</span>
-bpftool prog load iptables-ebpf-acl.elf /sys/fs/bpf/ipt_acl
-libbpf: elf: skipping unrecognized data section<span class="o">(</span>6<span class="o">)</span> .rodata.str1.1
-iptables -I OUTPUT -m bpf --object-pinned /sys/fs/bpf/ipt_acl -j DROP
-
-<span class="c1"># ./iptables-ebpf-acl -s 149.28.xxx.yyy -d 1.1.1.1</span>
-2022/03/30 14:41:31 Found maps: map<span class="o">[</span>filter_daddrs:55 filter_rules:56 filter_saddrs:54<span class="o">]</span>
-2022/03/30 14:41:31 149.28.xxx.yyy -&gt; 1.1.1.1 is disallowed to be pinged
-
-<span class="c1"># ping -c4 -W1 1.1.1.1</span>
-PING 1.1.1.1 <span class="o">(</span>1.1.1.1<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
-
---- 1.1.1.1 ping statistics ---
-<span class="m">4</span> packets transmitted, <span class="m">0</span> received, 100% packet loss, <span class="nb">time</span> 3075ms
-
-<span class="c1"># make clean</span>
-rm -f iptables-ebpf-acl.elf
-rm -f iptables-ebpf-acl
-iptables -D OUTPUT -m bpf --object-pinned /sys/fs/bpf/ipt_acl -j DROP
-rm -f /sys/fs/bpf/ipt_acl
-
-<span class="c1"># ping -c4 -W1 1.1.1.1</span>
-PING 1.1.1.1 <span class="o">(</span>1.1.1.1<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
-<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>1.64 ms
-<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.841 ms
-<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">3</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.906 ms
-<span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">4</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>3.26 ms
-
---- 1.1.1.1 ping statistics ---
-<span class="m">4</span> packets transmitted, <span class="m">4</span> received, 0% packet loss, <span class="nb">time</span> 3021ms
-rtt min/avg/max/mdev <span class="o">=</span> 0.841/1.661/3.257/0.973 ms
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ping -c4 -W1 1.1.1.1</span>
+</span></span><span class="line"><span class="cl">PING 1.1.1.1 <span class="o">(</span>1.1.1.1<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.910 ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.783 ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">3</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.936 ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">4</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.787 ms
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">--- 1.1.1.1 ping statistics ---
+</span></span><span class="line"><span class="cl"><span class="m">4</span> packets transmitted, <span class="m">4</span> received, 0% packet loss, <span class="nb">time</span> 3012ms
+</span></span><span class="line"><span class="cl">rtt min/avg/max/mdev <span class="o">=</span> 0.783/0.854/0.936/0.069 ms
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># make</span>
+</span></span><span class="line"><span class="cl">clang -I./ebpf/headers -O2 -g -target bpf -c ebpf/acl.c  -o iptables-ebpf-acl.elf
+</span></span><span class="line"><span class="cl">go build -v -trimpath -o iptables-ebpf-acl main.go
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># make setup</span>
+</span></span><span class="line"><span class="cl">bpftool prog load iptables-ebpf-acl.elf /sys/fs/bpf/ipt_acl
+</span></span><span class="line"><span class="cl">libbpf: elf: skipping unrecognized data section<span class="o">(</span>6<span class="o">)</span> .rodata.str1.1
+</span></span><span class="line"><span class="cl">iptables -I OUTPUT -m bpf --object-pinned /sys/fs/bpf/ipt_acl -j DROP
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ./iptables-ebpf-acl -s 149.28.xxx.yyy -d 1.1.1.1</span>
+</span></span><span class="line"><span class="cl">2022/03/30 14:41:31 Found maps: map<span class="o">[</span>filter_daddrs:55 filter_rules:56 filter_saddrs:54<span class="o">]</span>
+</span></span><span class="line"><span class="cl">2022/03/30 14:41:31 149.28.xxx.yyy -&gt; 1.1.1.1 is disallowed to be pinged
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ping -c4 -W1 1.1.1.1</span>
+</span></span><span class="line"><span class="cl">PING 1.1.1.1 <span class="o">(</span>1.1.1.1<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">--- 1.1.1.1 ping statistics ---
+</span></span><span class="line"><span class="cl"><span class="m">4</span> packets transmitted, <span class="m">0</span> received, 100% packet loss, <span class="nb">time</span> 3075ms
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># make clean</span>
+</span></span><span class="line"><span class="cl">rm -f iptables-ebpf-acl.elf
+</span></span><span class="line"><span class="cl">rm -f iptables-ebpf-acl
+</span></span><span class="line"><span class="cl">iptables -D OUTPUT -m bpf --object-pinned /sys/fs/bpf/ipt_acl -j DROP
+</span></span><span class="line"><span class="cl">rm -f /sys/fs/bpf/ipt_acl
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ping -c4 -W1 1.1.1.1</span>
+</span></span><span class="line"><span class="cl">PING 1.1.1.1 <span class="o">(</span>1.1.1.1<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>1.64 ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.841 ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">3</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>0.906 ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 1.1.1.1: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">4</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">59</span> <span class="nv">time</span><span class="o">=</span>3.26 ms
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">--- 1.1.1.1 ping statistics ---
+</span></span><span class="line"><span class="cl"><span class="m">4</span> packets transmitted, <span class="m">4</span> received, 0% packet loss, <span class="nb">time</span> 3021ms
+</span></span><span class="line"><span class="cl">rtt min/avg/max/mdev <span class="o">=</span> 0.841/1.661/3.257/0.973 ms
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="demo-系统环境">demo 系统环境</h2>
 <div class="highlight"><div class="chroma">
@@ -348,16 +346,16 @@ rtt min/avg/max/mdev <span class="o">=</span> 0.841/1.661/3.257/0.973 ms
 </span><span class="lnt">9
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># lsb_release -a</span>
-No LSB modules are available.
-Distributor ID: Ubuntu
-Description:    Ubuntu 21.10
-Release:        21.10
-Codename:       impish
-
-<span class="c1"># uname -a</span>
-Linux vultr 5.13.0-28-generic <span class="c1">#31-Ubuntu SMP Thu Jan 13 17:41:06 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># lsb_release -a</span>
+</span></span><span class="line"><span class="cl">No LSB modules are available.
+</span></span><span class="line"><span class="cl">Distributor ID: Ubuntu
+</span></span><span class="line"><span class="cl">Description:    Ubuntu 21.10
+</span></span><span class="line"><span class="cl">Release:        21.10
+</span></span><span class="line"><span class="cl">Codename:       impish
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># uname -a</span>
+</span></span><span class="line"><span class="cl">Linux vultr 5.13.0-28-generic <span class="c1">#31-Ubuntu SMP Thu Jan 13 17:41:06 UTC 2022 x86_64 x86_64 x86_64 GNU/Linux</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="小结">小结</h2>
 <p>诚如该公众号文章所说，该匹配算法并不局限于 iptables xt_bpf，而能够适用于任何使用 eBPF 匹配网络包的场景，譬如 XDP、TC，甚至是 Open vSwitch 中基于 eBPF 的扩展。</p>
@@ -397,6 +395,7 @@ Linux vultr 5.13.0-28-generic <span class="c1">#31-Ubuntu SMP Thu Jan 13 17:41:0
       <a href="/%20tags/iptables/">iptables</a>
       <a href="/%20tags/iptables-bpf/">iptables-bpf</a>
       <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/xdp/">XDP</a>
       <a href="/%20tags/xdp-acl/">XDP ACL</a>
       </div>
     <nav class="post-nav">
@@ -474,9 +473,7 @@ Linux vultr 5.13.0-28-generic <span class="c1">#31-Ubuntu SMP Thu Jan 13 17:41:0
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

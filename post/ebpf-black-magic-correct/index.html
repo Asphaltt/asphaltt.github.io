@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-black-magic-correct/" />
@@ -37,7 +37,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,13 +47,11 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-black-magic-correct/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2022-08-24T22:09:42+08:00" />
 <meta property="article:modified_time" content="2022-08-24T22:09:42+08:00" />
-
 <meta itemprop="name" content="为 eBPF 程序注入黑魔法 【正确姿势】">
 <meta itemprop="description" content="为 eBPF 程序注入黑魔法 【错误姿势】 中提出的在加载阶段中动态变更常量值的办法并不可靠，毕竟在 cilium/ebpf 中已提供了重写常量的函数 RewriteConstan"><meta itemprop="datePublished" content="2022-08-24T22:09:42+08:00" />
 <meta itemprop="dateModified" content="2022-08-24T22:09:42+08:00" />
 <meta itemprop="wordCount" content="1263">
-<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="为 eBPF 程序注入黑魔法 【正确姿势】"/>
+<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="为 eBPF 程序注入黑魔法 【正确姿势】"/>
 <meta name="twitter:description" content="为 eBPF 程序注入黑魔法 【错误姿势】 中提出的在加载阶段中动态变更常量值的办法并不可靠，毕竟在 cilium/ebpf 中已提供了重写常量的函数 RewriteConstan"/>
 
 
@@ -189,8 +187,8 @@
 <pre tabindex="0" class="chroma"><code><span class="lnt">1
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">static</span> <span class="k">volatile</span> <span class="k">const</span> <span class="n">__be32</span> <span class="n">FILTER_ADDR</span><span class="p">;</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">static</span> <span class="k">volatile</span> <span class="k">const</span> <span class="n">__be32</span> <span class="n">FILTER_ADDR</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>Go 中使用如下写法去支持动态的 IP 地址过滤：</p>
 <div class="highlight"><div class="chroma">
@@ -209,19 +207,19 @@
 </span><span class="lnt">12
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="nx">filterAddr</span> <span class="kt">string</span>
-    <span class="nx">flag</span><span class="p">.</span><span class="nf">StringVar</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">filterAddr</span><span class="p">,</span> <span class="s">&#34;filter-addr&#34;</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="s">&#34;filter IP address&#34;</span><span class="p">)</span>
-    <span class="nx">flag</span><span class="p">.</span><span class="nf">Parse</span><span class="p">()</span>
-
-    <span class="nx">ip</span> <span class="o">:=</span> <span class="nx">netip</span><span class="p">.</span><span class="nf">MustParseAddr</span><span class="p">(</span><span class="nx">filterAddr</span><span class="p">)</span>
-    <span class="c1">// if !ip.Is4() { ... }
-</span><span class="c1"></span>
-    <span class="nx">spec</span><span class="p">.</span><span class="nf">RewriteConstants</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}</span> <span class="p">{</span>
-        <span class="s">&#34;FILTER_ADDR&#34;</span><span class="p">:</span> <span class="nx">ip</span><span class="p">.</span><span class="nf">As4</span><span class="p">(),</span>
-    <span class="p">})</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kd">var</span> <span class="nx">filterAddr</span> <span class="kt">string</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">flag</span><span class="p">.</span><span class="nf">StringVar</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">filterAddr</span><span class="p">,</span> <span class="s">&#34;filter-addr&#34;</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="s">&#34;filter IP address&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">flag</span><span class="p">.</span><span class="nf">Parse</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">ip</span> <span class="o">:=</span> <span class="nx">netip</span><span class="p">.</span><span class="nf">MustParseAddr</span><span class="p">(</span><span class="nx">filterAddr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// if !ip.Is4() { ... }
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nx">spec</span><span class="p">.</span><span class="nf">RewriteConstants</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="s">&#34;FILTER_ADDR&#34;</span><span class="p">:</span> <span class="nx">ip</span><span class="p">.</span><span class="nf">As4</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">    <span class="p">})</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="重写常量的实用方法">重写常量的实用方法</h2>
 <p>但在 <code>tc-dump</code> 中，并没有使用 N 个常量去支持过滤 IP 地址、端口、4 层协议等，而是使用了一个 <code>struct</code> 去封装了所有需要过滤的字段。这样一来，相关代码就变得比较简洁、易于理解了。</p>
@@ -247,25 +245,25 @@
 </span><span class="lnt">18
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">config_t</span> <span class="p">{</span>
-    <span class="n">__be16</span> <span class="n">vlan_id</span><span class="p">;</span>
-    <span class="n">__be32</span> <span class="n">vxlan_vni</span><span class="p">;</span>
-
-    <span class="n">u32</span> <span class="n">mark</span><span class="p">;</span>
-
-    <span class="n">__be32</span> <span class="n">saddr</span><span class="p">;</span>
-    <span class="n">__be32</span> <span class="n">daddr</span><span class="p">;</span>
-    <span class="n">__be32</span> <span class="n">addr</span><span class="p">;</span>
-    <span class="n">__be16</span> <span class="n">sport</span><span class="p">;</span>
-    <span class="n">__be16</span> <span class="n">dport</span><span class="p">;</span>
-    <span class="n">__be16</span> <span class="n">port</span><span class="p">;</span>
-
-    <span class="n">u8</span> <span class="n">l4_proto</span><span class="p">;</span>
-    <span class="n">u8</span> <span class="n">pad1</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
-<span class="p">}</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">))</span> <span class="n">config_t</span><span class="p">;</span>
-
-<span class="k">static</span> <span class="k">volatile</span> <span class="k">const</span> <span class="n">config_t</span> <span class="n">__cfg</span> <span class="o">=</span> <span class="p">{};</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="kt">config_t</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__be16</span> <span class="n">vlan_id</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__be32</span> <span class="n">vxlan_vni</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">u32</span> <span class="n">mark</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__be32</span> <span class="n">saddr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__be32</span> <span class="n">daddr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__be32</span> <span class="n">addr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__be16</span> <span class="n">sport</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__be16</span> <span class="n">dport</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__be16</span> <span class="n">port</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">u8</span> <span class="n">l4_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u8</span> <span class="n">pad1</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="nf">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">))</span> <span class="kt">config_t</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="k">volatile</span> <span class="k">const</span> <span class="kt">config_t</span> <span class="n">__cfg</span> <span class="o">=</span> <span class="p">{};</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>而在 Go 中，也使用一个 <code>struct</code> 去提供“常量”内容。</p>
 <div class="highlight"><div class="chroma">
@@ -301,36 +299,36 @@
 </span><span class="lnt">29
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="kd">type</span> <span class="nx">config</span> <span class="kd">struct</span> <span class="p">{</span>
-    <span class="nx">VlanID</span>   <span class="kt">uint16</span>
-    <span class="nx">VxlanVNI</span> <span class="kt">uint32</span>
-
-    <span class="nx">Mark</span> <span class="kt">uint32</span>
-
-    <span class="nx">Saddr</span> <span class="kt">uint32</span>
-    <span class="nx">Daddr</span> <span class="kt">uint32</span>
-    <span class="nx">Addr</span>  <span class="kt">uint32</span>
-    <span class="nx">Sport</span> <span class="kt">uint16</span>
-    <span class="nx">Dport</span> <span class="kt">uint16</span>
-    <span class="nx">Port</span>  <span class="kt">uint16</span>
-
-    <span class="nx">L4Proto</span> <span class="kt">uint8</span>
-    <span class="nx">Pad</span>     <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="kt">uint8</span>
-<span class="p">}</span>
-
-<span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
-    <span class="c1">// ...
-</span><span class="c1"></span>
-    <span class="nx">flags</span> <span class="o">:=</span> <span class="nf">parseFlags</span><span class="p">()</span>
-    <span class="nx">cfg</span> <span class="o">:=</span> <span class="nf">newConfig</span><span class="p">(</span><span class="nx">flags</span><span class="p">)</span>
-
-    <span class="nx">rewriteConst</span> <span class="o">:=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}{</span>
-        <span class="s">&#34;__cfg&#34;</span><span class="p">:</span> <span class="o">*</span><span class="nx">cfg</span><span class="p">,</span>
-    <span class="p">}</span>
-
-    <span class="c1">// ...
-</span><span class="c1"></span><span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">config</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">VlanID</span>   <span class="kt">uint16</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">VxlanVNI</span> <span class="kt">uint32</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">Mark</span> <span class="kt">uint32</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">Saddr</span> <span class="kt">uint32</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">Daddr</span> <span class="kt">uint32</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">Addr</span>  <span class="kt">uint32</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">Sport</span> <span class="kt">uint16</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">Dport</span> <span class="kt">uint16</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">Port</span>  <span class="kt">uint16</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">L4Proto</span> <span class="kt">uint8</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">Pad</span>     <span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="kt">uint8</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nx">flags</span> <span class="o">:=</span> <span class="nf">parseFlags</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">cfg</span> <span class="o">:=</span> <span class="nf">newConfig</span><span class="p">(</span><span class="nx">flags</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">rewriteConst</span> <span class="o">:=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{}{</span>
+</span></span><span class="line"><span class="cl">        <span class="s">&#34;__cfg&#34;</span><span class="p">:</span> <span class="o">*</span><span class="nx">cfg</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="常量被重写的本质">常量被重写的“本质”</h2>
 <p>其本质是内存替换，即替换需要被重写的常量对应的那一段内存。</p>
@@ -382,48 +380,48 @@
 </span><span class="lnt">41
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="kd">func</span> <span class="p">(</span><span class="nx">cs</span> <span class="o">*</span><span class="nx">CollectionSpec</span><span class="p">)</span> <span class="nf">RewriteConstants</span><span class="p">(</span><span class="nx">consts</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
-    <span class="nx">rodata</span> <span class="o">:=</span> <span class="nx">cs</span><span class="p">.</span><span class="nx">Maps</span><span class="p">[</span><span class="s">&#34;.rodata&#34;</span><span class="p">]</span> <span class="c1">// 常量是保存在 ELF .rodata secion 中
-</span><span class="c1"></span>    <span class="c1">// ...
-</span><span class="c1"></span>
-    <span class="nx">kv</span> <span class="o">:=</span> <span class="nx">rodata</span><span class="p">.</span><span class="nx">Contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="nx">value</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">kv</span><span class="p">.</span><span class="nx">Value</span><span class="p">.([]</span><span class="kt">byte</span><span class="p">)</span>
-    <span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;first value in .rodata is %T not []byte&#34;</span><span class="p">,</span> <span class="nx">kv</span><span class="p">.</span><span class="nx">Value</span><span class="p">)</span>
-    <span class="p">}</span>
-
-    <span class="nx">buf</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span> <span class="c1">// 准备一段新的 buffer
-</span><span class="c1"></span>    <span class="nb">copy</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">value</span><span class="p">)</span> <span class="c1">// 复制原有的内容，毕竟不确定是否 patch 所有常量
-</span><span class="c1"></span>
-    <span class="nx">err</span> <span class="o">:=</span> <span class="nf">patchValue</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">rodata</span><span class="p">.</span><span class="nx">Value</span><span class="p">,</span> <span class="nx">consts</span><span class="p">)</span> <span class="c1">// 使用提供的常量进行替换
-</span><span class="c1"></span>    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
-        <span class="k">return</span> <span class="nx">err</span>
-    <span class="p">}</span>
-
-    <span class="nx">rodata</span><span class="p">.</span><span class="nx">Contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">=</span> <span class="nx">MapKV</span><span class="p">{</span><span class="nx">kv</span><span class="p">.</span><span class="nx">Key</span><span class="p">,</span> <span class="nx">buf</span><span class="p">}</span> <span class="c1">// 使用替换后的 buffer
-</span><span class="c1"></span>    <span class="k">return</span> <span class="kc">nil</span>
-<span class="p">}</span>
-
-<span class="kd">func</span> <span class="nf">patchValue</span><span class="p">(</span><span class="nx">value</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span> <span class="nx">typ</span> <span class="nx">btf</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span> <span class="nx">replacements</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
-    <span class="nx">replaced</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">bool</span><span class="p">)</span>
-    <span class="nx">replace</span> <span class="o">:=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">offset</span><span class="p">,</span> <span class="nx">size</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">replacement</span> <span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="nx">offset</span><span class="o">+</span><span class="nx">size</span> <span class="p">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
-            <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;%s: offset %d(+%d) is out of bounds&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">offset</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span>
-        <span class="p">}</span>
-
-        <span class="nx">buf</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">marshalBytes</span><span class="p">(</span><span class="nx">replacement</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span> <span class="c1">// 将提供的常量 marshal 成 buffer
-</span><span class="c1"></span>        <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
-            <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;marshal %s: %w&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
-        <span class="p">}</span>
-
-        <span class="nb">copy</span><span class="p">(</span><span class="nx">value</span><span class="p">[</span><span class="nx">offset</span><span class="p">:</span><span class="nx">offset</span><span class="o">+</span><span class="nx">size</span><span class="p">],</span> <span class="nx">buf</span><span class="p">)</span> <span class="c1">// 替换对应的 buffer 内容
-</span><span class="c1"></span>        <span class="nx">replaced</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="p">=</span> <span class="kc">true</span>
-        <span class="k">return</span> <span class="kc">nil</span>
-    <span class="p">}</span>
-
-    <span class="c1">// ...
-</span><span class="c1"></span><span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">cs</span> <span class="o">*</span><span class="nx">CollectionSpec</span><span class="p">)</span> <span class="nf">RewriteConstants</span><span class="p">(</span><span class="nx">consts</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">rodata</span> <span class="o">:=</span> <span class="nx">cs</span><span class="p">.</span><span class="nx">Maps</span><span class="p">[</span><span class="s">&#34;.rodata&#34;</span><span class="p">]</span> <span class="c1">// 常量是保存在 ELF .rodata secion 中
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nx">kv</span> <span class="o">:=</span> <span class="nx">rodata</span><span class="p">.</span><span class="nx">Contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">value</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">kv</span><span class="p">.</span><span class="nx">Value</span><span class="p">.([]</span><span class="kt">byte</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;first value in .rodata is %T not []byte&#34;</span><span class="p">,</span> <span class="nx">kv</span><span class="p">.</span><span class="nx">Value</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">buf</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">value</span><span class="p">))</span> <span class="c1">// 准备一段新的 buffer
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nb">copy</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">value</span><span class="p">)</span> <span class="c1">// 复制原有的内容，毕竟不确定是否 patch 所有常量
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nx">err</span> <span class="o">:=</span> <span class="nf">patchValue</span><span class="p">(</span><span class="nx">buf</span><span class="p">,</span> <span class="nx">rodata</span><span class="p">.</span><span class="nx">Value</span><span class="p">,</span> <span class="nx">consts</span><span class="p">)</span> <span class="c1">// 使用提供的常量进行替换
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">err</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">rodata</span><span class="p">.</span><span class="nx">Contents</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">=</span> <span class="nx">MapKV</span><span class="p">{</span><span class="nx">kv</span><span class="p">.</span><span class="nx">Key</span><span class="p">,</span> <span class="nx">buf</span><span class="p">}</span> <span class="c1">// 使用替换后的 buffer
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">return</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">patchValue</span><span class="p">(</span><span class="nx">value</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">,</span> <span class="nx">typ</span> <span class="nx">btf</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span> <span class="nx">replacements</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">replaced</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">(</span><span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">bool</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">replace</span> <span class="o">:=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">name</span> <span class="kt">string</span><span class="p">,</span> <span class="nx">offset</span><span class="p">,</span> <span class="nx">size</span> <span class="kt">int</span><span class="p">,</span> <span class="nx">replacement</span> <span class="kd">interface</span><span class="p">{})</span> <span class="kt">error</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nx">offset</span><span class="o">+</span><span class="nx">size</span> <span class="p">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">value</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;%s: offset %d(+%d) is out of bounds&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">offset</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="nx">buf</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">marshalBytes</span><span class="p">(</span><span class="nx">replacement</span><span class="p">,</span> <span class="nx">size</span><span class="p">)</span> <span class="c1">// 将提供的常量 marshal 成 buffer
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;marshal %s: %w&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="nb">copy</span><span class="p">(</span><span class="nx">value</span><span class="p">[</span><span class="nx">offset</span><span class="p">:</span><span class="nx">offset</span><span class="o">+</span><span class="nx">size</span><span class="p">],</span> <span class="nx">buf</span><span class="p">)</span> <span class="c1">// 替换对应的 buffer 内容
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="nx">replaced</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span> <span class="p">=</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>由上代码分析可知，eBPF 的 C 代码中常量定义的类型跟 Go 代码中对应的用于替换的
 “常量” 的类型可以是不一致的，
@@ -551,9 +549,7 @@ eBPF verifier（内核中的校验器）。而我现在还没有计划去深入�
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

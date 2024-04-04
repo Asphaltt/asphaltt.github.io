@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-trampoline-better-than-kprobe/" />
@@ -37,7 +37,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,13 +47,11 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-trampoline-better-than-kprobe/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2022-11-01T23:31:04+08:00" />
 <meta property="article:modified_time" content="2022-11-01T23:31:04+08:00" />
-
 <meta itemprop="name" content="eBPF Talk: 比 kprobe 更好的 trampoline">
 <meta itemprop="description" content="eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功"><meta itemprop="datePublished" content="2022-11-01T23:31:04+08:00" />
 <meta itemprop="dateModified" content="2022-11-01T23:31:04+08:00" />
 <meta itemprop="wordCount" content="1016">
-<meta itemprop="keywords" content="eBPF,kprobe,trampoline," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="eBPF Talk: 比 kprobe 更好的 trampoline"/>
+<meta itemprop="keywords" content="eBPF,kprobe,trampoline," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 比 kprobe 更好的 trampoline"/>
 <meta name="twitter:description" content="eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功"/>
 
 
@@ -223,39 +221,39 @@
 </span><span class="lnt">32
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// net/core/dev.c
-</span><span class="c1"></span>
-<span class="k">static</span> <span class="kt">int</span> <span class="nf">netif_rx_internal</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
-
-    <span class="c1">//...
-</span><span class="c1"></span>
-<span class="cp">#ifdef CONFIG_RPS
-</span><span class="cp"></span>    <span class="k">if</span> <span class="p">(</span><span class="n">static_branch_unlikely</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rps_needed</span><span class="p">))</span> <span class="p">{</span>
-        <span class="k">struct</span> <span class="n">rps_dev_flow</span> <span class="n">voidflow</span><span class="p">,</span> <span class="o">*</span><span class="n">rflow</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">voidflow</span><span class="p">;</span>
-        <span class="kt">int</span> <span class="n">cpu</span><span class="p">;</span>
-
-        <span class="c1">//...
-</span><span class="c1"></span>
-        <span class="n">cpu</span> <span class="o">=</span> <span class="n">get_rps_cpu</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">rflow</span><span class="p">);</span>
-        <span class="k">if</span> <span class="p">(</span><span class="n">cpu</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="n">cpu</span> <span class="o">=</span> <span class="n">smp_processor_id</span><span class="p">();</span>
-
-        <span class="n">ret</span> <span class="o">=</span> <span class="n">enqueue_to_backlog</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">cpu</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">rflow</span><span class="o">-&gt;</span><span class="n">last_qtail</span><span class="p">);</span>
-
-        <span class="c1">//...
-</span><span class="c1"></span>    <span class="p">}</span> <span class="k">else</span>
-<span class="cp">#endif
-</span><span class="cp"></span>    <span class="p">{</span>
-        <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">qtail</span><span class="p">;</span>
-
-        <span class="n">ret</span> <span class="o">=</span> <span class="n">enqueue_to_backlog</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">get_cpu</span><span class="p">(),</span> <span class="o">&amp;</span><span class="n">qtail</span><span class="p">);</span>
-        <span class="n">put_cpu</span><span class="p">();</span>
-    <span class="p">}</span>
-    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">netif_rx_internal</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">//...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#ifdef CONFIG_RPS
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>    <span class="k">if</span> <span class="p">(</span><span class="nf">static_branch_unlikely</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rps_needed</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">rps_dev_flow</span> <span class="n">voidflow</span><span class="p">,</span> <span class="o">*</span><span class="n">rflow</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">voidflow</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">cpu</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="c1">//...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">        <span class="n">cpu</span> <span class="o">=</span> <span class="nf">get_rps_cpu</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">rflow</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">cpu</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">cpu</span> <span class="o">=</span> <span class="nf">smp_processor_id</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">ret</span> <span class="o">=</span> <span class="nf">enqueue_to_backlog</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">cpu</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">rflow</span><span class="o">-&gt;</span><span class="n">last_qtail</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="c1">//...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span> <span class="k">else</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>    <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">qtail</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">ret</span> <span class="o">=</span> <span class="nf">enqueue_to_backlog</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="nf">get_cpu</span><span class="p">(),</span> <span class="o">&amp;</span><span class="n">qtail</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">put_cpu</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>这段代码的意思是，通过 <code>get_rps_cpu()</code> 计算当前网络包 <code>skb</code> 应该投递到哪个 CPU 去处理。</p>
 <h3 id="用-trampoline-trace-get_rps_cpu">用 trampoline trace <code>get_rps_cpu()</code></h3>
@@ -312,55 +310,55 @@
 </span><span class="lnt">48
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">struct</span> <span class="n">rps_key</span> <span class="p">{</span>
-    <span class="n">__u32</span> <span class="n">ifindex</span><span class="p">;</span>
-    <span class="n">__u32</span> <span class="n">curr_node_id</span><span class="p">;</span>
-    <span class="n">__u32</span> <span class="n">curr_cpu</span><span class="p">;</span>
-    <span class="n">__u32</span> <span class="n">targ_cpu</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">));</span>
-
-<span class="k">struct</span> <span class="p">{</span>
-    <span class="n">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_HASH</span><span class="p">);</span>
-    <span class="n">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">rps_key</span><span class="p">));</span>
-    <span class="n">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u64</span><span class="p">));</span>
-    <span class="n">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">65536</span><span class="p">);</span>
-<span class="p">}</span> <span class="n">rps_record</span> <span class="n">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
-
-<span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">void</span>
-<span class="nf">handle_rps</span><span class="p">(</span><span class="n">__u32</span> <span class="n">ifindex</span><span class="p">,</span> <span class="kt">int</span> <span class="n">targ_cpu</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="k">struct</span> <span class="n">rps_key</span> <span class="n">key</span> <span class="o">=</span> <span class="p">{};</span>
-    <span class="n">key</span><span class="p">.</span><span class="n">curr_node_id</span> <span class="o">=</span> <span class="n">bpf_get_numa_node_id</span><span class="p">();</span>
-    <span class="n">key</span><span class="p">.</span><span class="n">curr_cpu</span> <span class="o">=</span> <span class="n">bpf_get_smp_processor_id</span><span class="p">();</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="n">targ_cpu</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="n">targ_cpu</span> <span class="o">==</span> <span class="n">key</span><span class="p">.</span><span class="n">curr_cpu</span><span class="p">)</span>
-        <span class="k">return</span><span class="p">;</span>
-
-    <span class="n">key</span><span class="p">.</span><span class="n">ifindex</span> <span class="o">=</span> <span class="n">ifindex</span><span class="p">;</span>
-    <span class="n">key</span><span class="p">.</span><span class="n">targ_cpu</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="n">targ_cpu</span><span class="p">;</span>
-
-    <span class="n">__u64</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rps_record</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">val</span><span class="p">)</span>
-        <span class="n">__sync_fetch_and_add</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
-    <span class="k">else</span> <span class="p">{</span>
-        <span class="n">__u64</span> <span class="n">init_val</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
-        <span class="n">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rps_record</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">init_val</span><span class="p">,</span> <span class="n">BPF_NOEXIST</span><span class="p">);</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-
-<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;fexit/get_rps_cpu&#34;</span><span class="p">)</span>
-<span class="kt">int</span> <span class="n">BPF_PROG</span><span class="p">(</span><span class="n">get_rps_cpu</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">rps_dev_flow</span> <span class="o">**</span><span class="n">rflowp</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cpu</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">filter_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
-
-    <span class="n">__u32</span> <span class="n">ifindex</span> <span class="o">=</span> <span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">ifindex</span><span class="p">);</span>
-
-    <span class="n">handle_rps</span><span class="p">(</span><span class="n">ifindex</span><span class="p">,</span> <span class="n">cpu</span><span class="p">);</span>
-
-    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">rps_key</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">ifindex</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">curr_node_id</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">curr_cpu</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">targ_cpu</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="nf">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_HASH</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">rps_key</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u64</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">65536</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">rps_record</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">handle_rps</span><span class="p">(</span><span class="n">__u32</span> <span class="n">ifindex</span><span class="p">,</span> <span class="kt">int</span> <span class="n">targ_cpu</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">rps_key</span> <span class="n">key</span> <span class="o">=</span> <span class="p">{};</span>
+</span></span><span class="line"><span class="cl">    <span class="n">key</span><span class="p">.</span><span class="n">curr_node_id</span> <span class="o">=</span> <span class="nf">bpf_get_numa_node_id</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">    <span class="n">key</span><span class="p">.</span><span class="n">curr_cpu</span> <span class="o">=</span> <span class="nf">bpf_get_smp_processor_id</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">targ_cpu</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="n">targ_cpu</span> <span class="o">==</span> <span class="n">key</span><span class="p">.</span><span class="n">curr_cpu</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">key</span><span class="p">.</span><span class="n">ifindex</span> <span class="o">=</span> <span class="n">ifindex</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">key</span><span class="p">.</span><span class="n">targ_cpu</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="n">targ_cpu</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u64</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="nf">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rps_record</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">val</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">__sync_fetch_and_add</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__u64</span> <span class="n">init_val</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rps_record</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">init_val</span><span class="p">,</span> <span class="n">BPF_NOEXIST</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fexit/get_rps_cpu&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">get_rps_cpu</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">rps_dev_flow</span> <span class="o">**</span><span class="n">rflowp</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cpu</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">filter_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">ifindex</span> <span class="o">=</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">ifindex</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">handle_rps</span><span class="p">(</span><span class="n">ifindex</span><span class="p">,</span> <span class="n">cpu</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>如果使用 <code>kprobe/kretprobe</code>，对应的 C 代码如下：</p>
 <div class="highlight"><div class="chroma">
@@ -406,46 +404,46 @@
 </span><span class="lnt">39
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// handle_rps()
-</span><span class="c1"></span>
-<span class="k">struct</span> <span class="p">{</span>
-    <span class="n">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_HASH</span><span class="p">);</span>
-    <span class="n">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
-    <span class="n">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
-    <span class="n">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">4096</span><span class="p">);</span>
-<span class="p">}</span> <span class="n">kprobes</span> <span class="n">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
-
-<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/get_rps_cpu&#34;</span><span class="p">)</span>
-<span class="kt">int</span> <span class="n">k_get_rps_cpu</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="p">)</span><span class="n">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">filter_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
-
-    <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="p">)</span><span class="n">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
-    <span class="n">__u32</span> <span class="n">ifindex</span> <span class="o">=</span> <span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">ifindex</span><span class="p">);</span>
-    <span class="n">__u32</span> <span class="n">pid</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="n">bpf_get_current_pid_tgid</span><span class="p">();</span>
-
-    <span class="n">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">kprobes</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pid</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ifindex</span><span class="p">,</span> <span class="n">BPF_ANY</span><span class="p">);</span>
-
-    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;kretprobe/get_rps_cpu&#34;</span><span class="p">)</span>
-<span class="kt">int</span> <span class="n">kr_get_rps_cpu</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="kt">int</span> <span class="n">cpu</span> <span class="o">=</span> <span class="n">PT_REGS_RET</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
-    <span class="n">__u32</span> <span class="n">pid</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="n">bpf_get_current_pid_tgid</span><span class="p">();</span>
-
-    <span class="n">__u32</span> <span class="o">*</span><span class="n">ifindex</span> <span class="o">=</span> <span class="p">(</span><span class="n">typeof</span><span class="p">(</span><span class="n">ifindex</span><span class="p">))</span><span class="n">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">kprobes</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pid</span><span class="p">);</span>
-    <span class="k">if</span> <span class="p">(</span><span class="n">ifindex</span><span class="p">)</span>
-        <span class="n">handle_rps</span><span class="p">(</span><span class="o">*</span><span class="n">ifindex</span><span class="p">,</span> <span class="n">cpu</span><span class="p">);</span>
-
-    <span class="n">bpf_map_delete_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">kprobes</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pid</span><span class="p">);</span>
-
-    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// handle_rps()
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_HASH</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">4096</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">kprobes</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/get_rps_cpu&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">k_get_rps_cpu</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="p">)</span><span class="nf">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">filter_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="p">)</span><span class="nf">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">ifindex</span> <span class="o">=</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">ifindex</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">pid</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="nf">bpf_get_current_pid_tgid</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">kprobes</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pid</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ifindex</span><span class="p">,</span> <span class="n">BPF_ANY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kretprobe/get_rps_cpu&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">kr_get_rps_cpu</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">cpu</span> <span class="o">=</span> <span class="nf">PT_REGS_RET</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">pid</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="nf">bpf_get_current_pid_tgid</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="o">*</span><span class="n">ifindex</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">ifindex</span><span class="p">))</span><span class="nf">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">kprobes</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pid</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">ifindex</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">handle_rps</span><span class="p">(</span><span class="o">*</span><span class="n">ifindex</span><span class="p">,</span> <span class="n">cpu</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_map_delete_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">kprobes</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pid</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>对比这两段代码可知，trampoline 的写法更加简短优雅（且性能更好）。</p>
 <p>而对应的主要 Go 代码如下：</p>
@@ -475,29 +473,29 @@
 </span><span class="lnt">22
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="c1">//go:generate bpf2go -cc clang rps ./ebpf/rps.c -- -I./ebpf/headers -Wall -D__TARGET_ARCH_x86
-</span><span class="c1"></span>
-    <span class="kd">var</span> <span class="nx">obj</span> <span class="nx">rpsForHighVersionObjects</span>
-    <span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">spec</span><span class="p">.</span><span class="nf">LoadAndAssign</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">obj</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">ebpf</span><span class="p">.</span><span class="nx">CollectionOptions</span><span class="p">{</span>
-        <span class="nx">Programs</span><span class="p">:</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nx">ProgramOptions</span><span class="p">{</span>
-            <span class="nx">KernelTypes</span><span class="p">:</span> <span class="nx">btfSpec</span><span class="p">,</span>
-        <span class="p">},</span>
-    <span class="p">});</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
-        <span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to load bpf obj and bpf map: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
-    <span class="p">}</span>
-    <span class="k">defer</span> <span class="nx">obj</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
-
-    <span class="c1">// fentry/fexit 对应的是 link.AttachTracing
-</span><span class="c1"></span>    <span class="c1">// kprobe/kretprobe 对应的是 link.Kprobe/link.Kretprobe
-</span><span class="c1"></span>    <span class="k">if</span> <span class="nx">fexit</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">link</span><span class="p">.</span><span class="nf">AttachTracing</span><span class="p">(</span><span class="nx">link</span><span class="p">.</span><span class="nx">TracingOptions</span><span class="p">{</span>
-        <span class="nx">Program</span><span class="p">:</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">GetRpsCpu</span><span class="p">,</span>
-    <span class="p">});</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
-        <span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to attach fexit(get_rps_cpu)&#34;</span><span class="p">)</span>
-    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-        <span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Attached fexit(get_rps_cpu)&#34;</span><span class="p">)</span>
-        <span class="k">defer</span> <span class="nx">fexit</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
-    <span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="c1">//go:generate bpf2go -cc clang rps ./ebpf/rps.c -- -I./ebpf/headers -Wall -D__TARGET_ARCH_x86
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="kd">var</span> <span class="nx">obj</span> <span class="nx">rpsForHighVersionObjects</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">spec</span><span class="p">.</span><span class="nf">LoadAndAssign</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">obj</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">ebpf</span><span class="p">.</span><span class="nx">CollectionOptions</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Programs</span><span class="p">:</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nx">ProgramOptions</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">KernelTypes</span><span class="p">:</span> <span class="nx">btfSpec</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="p">});</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to load bpf obj and bpf map: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">defer</span> <span class="nx">obj</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// fentry/fexit 对应的是 link.AttachTracing
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="c1">// kprobe/kretprobe 对应的是 link.Kprobe/link.Kretprobe
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="nx">fexit</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">link</span><span class="p">.</span><span class="nf">AttachTracing</span><span class="p">(</span><span class="nx">link</span><span class="p">.</span><span class="nx">TracingOptions</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Program</span><span class="p">:</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">GetRpsCpu</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">});</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to attach fexit(get_rps_cpu)&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;Attached fexit(get_rps_cpu)&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">defer</span> <span class="nx">fexit</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="小结">小结</h2>
 <p>参考 <a href="https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md">BPF Features by Linux Kernel
@@ -613,9 +611,7 @@ Version</a>，一步一步地探索 eBPF 的特性。</p>
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

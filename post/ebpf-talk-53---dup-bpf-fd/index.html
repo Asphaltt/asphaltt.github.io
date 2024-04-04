@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 大佬教我 dup bpf-FD - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="上个星期在做 eBPF Talk: 实战经验之 bpf FD 泄漏分析 的时候，发现 GitHub cilium/ebpf 库不支持从 FD 获取 bpf link 的信息。于是，我提了个 Issue 来讨论这事： Issue link: get info from FD Issue：get" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-53---dup-bpf-fd/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 大佬教我 dup bpf-FD" />
+<meta property="og:description" content="上个星期在做 eBPF Talk: 实战经验之 bpf FD 泄漏分析 的时候，发现 GitHub cilium/ebpf 库不支持从 FD 获取 bpf link 的信息。于是，我提了个 Issue 来讨论这事： Issue link: get info from FD Issue：get" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-53---dup-bpf-fd/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-03-31T21:17:16+08:00" />
+<meta property="article:modified_time" content="2024-03-31T21:17:16+08:00" />
+<meta itemprop="name" content="eBPF Talk: 大佬教我 dup bpf-FD">
+<meta itemprop="description" content="上个星期在做 eBPF Talk: 实战经验之 bpf FD 泄漏分析 的时候，发现 GitHub cilium/ebpf 库不支持从 FD 获取 bpf link 的信息。于是，我提了个 Issue 来讨论这事： Issue link: get info from FD Issue：get"><meta itemprop="datePublished" content="2024-03-31T21:17:16+08:00" />
+<meta itemprop="dateModified" content="2024-03-31T21:17:16+08:00" />
+<meta itemprop="wordCount" content="1496">
+<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 大佬教我 dup bpf-FD"/>
+<meta name="twitter:description" content="上个星期在做 eBPF Talk: 实战经验之 bpf FD 泄漏分析 的时候，发现 GitHub cilium/ebpf 库不支持从 FD 获取 bpf link 的信息。于是，我提了个 Issue 来讨论这事： Issue link: get info from FD Issue：get"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 大佬教我 dup bpf-FD</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-03-31 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1496 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#issueget-link-info-from-fd">Issue：get link info from FD</a></li>
+        <li><a href="#syscalldupfd"><code>syscall.Dup(fd)</code></a></li>
+        <li><a href="#unixfcntlintfd-unixf_dupfd_cloexec-1"><code>unix.FcntlInt(fd, unix.F_DUPFD_CLOEXEC, 1)</code></a></li>
+        <li><a href="#内核源代码">内核源代码</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>上个星期在做 <a href="/post/ebpf-talk-51-bpf-fd-leak/">eBPF Talk: 实战经验之 bpf FD 泄漏分析</a> 的时候，发现 <a href="https://github.com/cilium/ebpf">GitHub cilium/ebpf</a> 库不支持从 FD 获取 bpf link 的信息。于是，我提了个 Issue 来讨论这事：</p>
+<ul>
+<li><a href="https://github.com/cilium/ebpf/issues/967">Issue link: get info from FD</a></li>
+</ul>
+<h2 id="issueget-link-info-from-fd">Issue：get link info from FD</h2>
+<ol>
+<li>我：提出 <code>GetLinkInfoFromFD()</code>。</li>
+<li>大佬：疑问为什么不是 <code>LoadLinkFromFD()</code>。</li>
+<li>我：不喜欢 <code>NewProgramFromFD()</code> 和 <code>NewMapFromFD()</code> 破坏原始 FD 的做法。</li>
+<li>我：并提出 <code>NewLinkFromFD()</code>，并在函数里使用 <code>syscall.Dup(fd)</code> 复刻 FD。</li>
+<li>大佬：好的，可以加 <code>NewLinkFromFD()</code>，但需要保持跟 <code>NewProgramFromFD()</code> 和 <code>NewMapFromFD()</code> 一样的语义。</li>
+<li>大佬：另，dup bpf-FD 应该用 <code>unix.FcntlInt(fd, unix.F_DUPFD_CLOEXEC, 1)</code>，而不是 <code>syscall.Dup(fd)</code>。</li>
+</ol>
+<p>好吧，知道需要 dup FD，但不知道需要用 <code>unix.FcntlInt(fd, unix.F_DUPFD_CLOEXEC, 1)</code> 而不是 <code>syscall.Dup(fd)</code>，受教了。</p>
+<p>提了 PR 来实现 <code>NewLinkFromFD()</code>，并同时提供了使用 <code>unix.FcntlInt(fd, unix.F_DUPFD_CLOEXEC, 1)</code> dup bpf-FD 后 <code>NewLinkFromFD()</code> 的单元测试：</p>
+<ul>
+<li><a href="https://github.com/cilium/ebpf/pull/971">PR link: new link from fd</a></li>
+</ul>
+<p>这两个系统调用之间有什么区别呢？</p>
+<h2 id="syscalldupfd"><code>syscall.Dup(fd)</code></h2>
+<p>这是 Go 对 <code>dup</code> 系统调用的封装。</p>
+<p>直接看下 <code>man 2 dup</code> 吧。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># man 2 dup</span>
+</span></span><span class="line"><span class="cl">DUP<span class="o">(</span>2<span class="o">)</span>                                              Linux Programmer<span class="err">&#39;</span>s Manual                                             DUP<span class="o">(</span>2<span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME
+</span></span><span class="line"><span class="cl">       dup, dup2, dup3 - duplicate a file descriptor
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">SYNOPSIS
+</span></span><span class="line"><span class="cl">       <span class="c1">#include &lt;unistd.h&gt;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">       int dup<span class="o">(</span>int oldfd<span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">       ...
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">DESCRIPTION
+</span></span><span class="line"><span class="cl">       The  dup<span class="o">()</span>  system call creates a copy of the file descriptor oldfd, using the lowest-numbered unused file descriptor <span class="k">for</span>
+</span></span><span class="line"><span class="cl">       the new descriptor.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">       After a successful <span class="k">return</span>, the old and new file descriptors may be used interchangeably.  They refer  to  the  same  open
+</span></span><span class="line"><span class="cl">       file description <span class="o">(</span>see open<span class="o">(</span>2<span class="o">))</span> and thus share file offset and file status flags<span class="p">;</span> <span class="k">for</span> example, <span class="k">if</span> the file offset is modi‐
+</span></span><span class="line"><span class="cl">       fied by using lseek<span class="o">(</span>2<span class="o">)</span> on one of the file descriptors, the offset is also changed <span class="k">for</span> the other.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">       The two file descriptors  <span class="k">do</span>  not  share  file  descriptor  flags  <span class="o">(</span>the  close-on-exec  flag<span class="o">)</span>.   The  close-on-exec  flag
+</span></span><span class="line"><span class="cl">       <span class="o">(</span>FD_CLOEXEC<span class="p">;</span> see fcntl<span class="o">(</span>2<span class="o">))</span> <span class="k">for</span> the duplicate descriptor is off.
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>dup</code> 系统调用会复制原始 FD，并用最小未使用的 FD 当作新 FD。</p>
+<p>而后，新旧 FD 可以交替使用。它们引用了相同的 <code>open(2)</code> 创建的 FD，并因此共享文件偏移、和文件状态标志。</p>
+<p>它们不共享 FD 标志（如 <code>close-on-exec</code>）。复刻出来的 FD 没有采用 <code>close-on-exec</code> 标志（<code>FD_CLOEXEC</code> 请看 <code>fcntl(2)</code>）。</p>
+<h2 id="unixfcntlintfd-unixf_dupfd_cloexec-1"><code>unix.FcntlInt(fd, unix.F_DUPFD_CLOEXEC, 1)</code></h2>
+<p>这是 Go 对 <code>fcntl</code> 系统调用的封装。</p>
+<p>直接看 <code>man 2 fcntl</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># man 2 fcntl</span>
+</span></span><span class="line"><span class="cl">FCNTL<span class="o">(</span>2<span class="o">)</span>                                            Linux Programmer<span class="err">&#39;</span>s Manual                                           FCNTL<span class="o">(</span>2<span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">NAME
+</span></span><span class="line"><span class="cl">       fcntl - manipulate file descriptor
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">SYNOPSIS
+</span></span><span class="line"><span class="cl">       <span class="c1">#include &lt;unistd.h&gt;</span>
+</span></span><span class="line"><span class="cl">       <span class="c1">#include &lt;fcntl.h&gt;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">       int fcntl<span class="o">(</span>int fd, int cmd, ... /* arg */ <span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">DESCRIPTION
+</span></span><span class="line"><span class="cl">       ...
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">   Duplicating a file descriptor
+</span></span><span class="line"><span class="cl">       F_DUPFD <span class="o">(</span>int<span class="o">)</span>
+</span></span><span class="line"><span class="cl">              Duplicate the file descriptor fd using the lowest-numbered available file descriptor greater than or equal to arg.
+</span></span><span class="line"><span class="cl">              This is different from dup2<span class="o">(</span>2<span class="o">)</span>, which uses exactly the file descriptor specified.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">              On success, the new file descriptor is returned.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">              See dup<span class="o">(</span>2<span class="o">)</span> <span class="k">for</span> further details.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">       F_DUPFD_CLOEXEC <span class="o">(</span>int<span class="p">;</span> since Linux 2.6.24<span class="o">)</span>
+</span></span><span class="line"><span class="cl">              As  <span class="k">for</span>  F_DUPFD,  but additionally <span class="nb">set</span> the close-on-exec flag <span class="k">for</span> the duplicate file descriptor.  Specifying this
+</span></span><span class="line"><span class="cl">              flag permits a program to avoid an additional fcntl<span class="o">()</span> F_SETFD operation to <span class="nb">set</span> the FD_CLOEXEC flag.  For an expla‐
+</span></span><span class="line"><span class="cl">              nation of why this flag is useful, see the description of O_CLOEXEC in open<span class="o">(</span>2<span class="o">)</span>.
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>unix.FcntlInt(fd, unix.F_DUPFD_CLOEXEC, 1)</code> 在复刻 FD 的同时，设置 <code>close-on-exec</code> 标志。</p>
+<p><code>O_CLOEXEC</code> in <code>open(2)</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># man 2 open</span>
+</span></span><span class="line"><span class="cl">       O_CLOEXEC <span class="o">(</span>since Linux 2.6.23<span class="o">)</span>
+</span></span><span class="line"><span class="cl">              Enable the close-on-exec flag <span class="k">for</span> the new file descriptor.  Specifying this flag permits a program to avoid  addi‐
+</span></span><span class="line"><span class="cl">              tional fcntl<span class="o">(</span>2<span class="o">)</span> F_SETFD operations to <span class="nb">set</span> the FD_CLOEXEC flag.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">              Note  that  the  use  of  this flag is essential in some multithreaded programs, because using a separate fcntl<span class="o">(</span>2<span class="o">)</span>
+</span></span><span class="line"><span class="cl">              F_SETFD operation to <span class="nb">set</span> the FD_CLOEXEC flag does not suffice to avoid race conditions where one  thread  opens  a
+</span></span><span class="line"><span class="cl">              file  descriptor and attempts to <span class="nb">set</span> its close-on-exec flag using fcntl<span class="o">(</span>2<span class="o">)</span> at the same <span class="nb">time</span> as another thread does
+</span></span><span class="line"><span class="cl">              a fork<span class="o">(</span>2<span class="o">)</span> plus execve<span class="o">(</span>2<span class="o">)</span>.  Depending on the order of execution, the race may lead to the file descriptor  returned
+</span></span><span class="line"><span class="cl">              by  open<span class="o">()</span>  being  unintentionally  leaked to the program executed by the child process created by fork<span class="o">(</span>2<span class="o">)</span>.  <span class="o">(</span>This
+</span></span><span class="line"><span class="cl">              kind of race is in principle possible <span class="k">for</span> any system call that creates a file descriptor whose close-on-exec  flag
+</span></span><span class="line"><span class="cl">              should  be set, and various other Linux system calls provide an equivalent of the O_CLOEXEC flag to deal with this
+</span></span><span class="line"><span class="cl">              problem.<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>该标志就是用来避免多线程场景下的一些问题；设置了该标志，就能避免竟态下的一些问题。</p>
+<h2 id="内核源代码">内核源代码</h2>
+<p>囫囵吞枣地看了文档，接下来囫囵吞枣地看下这两个系统调用的源代码吧。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/fs/file.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">SYSCALL_DEFINE1</span><span class="p">(</span><span class="n">dup</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span><span class="p">,</span> <span class="n">fildes</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="n">EBADF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">file</span> <span class="o">=</span> <span class="nf">fget_raw</span><span class="p">(</span><span class="n">fildes</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">file</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ret</span> <span class="o">=</span> <span class="nf">get_unused_fd_flags</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span> <span class="c1">// call alloc_fd() finally
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">fd_install</span><span class="p">(</span><span class="n">ret</span><span class="p">,</span> <span class="n">file</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">else</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">fput</span><span class="p">(</span><span class="n">file</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">f_dupfd</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">from</span><span class="p">,</span> <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">file</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="n">flags</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">nofile</span> <span class="o">=</span> <span class="nf">rlimit</span><span class="p">(</span><span class="n">RLIMIT_NOFILE</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">from</span> <span class="o">&gt;=</span> <span class="n">nofile</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">err</span> <span class="o">=</span> <span class="nf">alloc_fd</span><span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">nofile</span><span class="p">,</span> <span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">get_file</span><span class="p">(</span><span class="n">file</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">fd_install</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">file</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/fd/fcntl.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">long</span> <span class="nf">do_fcntl</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">cmd</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">arg</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">filp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="n">__user</span> <span class="o">*</span><span class="n">argp</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="n">__user</span> <span class="o">*</span><span class="p">)</span><span class="n">arg</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">flock</span> <span class="n">flock</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">long</span> <span class="n">err</span> <span class="o">=</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">switch</span> <span class="p">(</span><span class="n">cmd</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">F_DUPFD</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="nf">f_dupfd</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">filp</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">F_DUPFD_CLOEXEC</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="nf">f_dupfd</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="n">filp</span><span class="p">,</span> <span class="n">O_CLOEXEC</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">//...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>unix.FcntlInt(fd, unix.F_DUPFD_CLOEXEC, 1)</code> 和 <code>syscall.Dup(fd)</code> 的最终区别体现在 <code>alloc_fd()</code> 分配一个新 FD 的表现：</p>
+<ol>
+<li><code>unix.FcntlInt(fd, unix.F_DUPFD_CLOEXEC, 1)</code> 最终调 <code>alloc_fd(1, nofile, O_CLOEXEC)</code> 分配一个大于 1 且带有 <code>close-on-exec</code> 标志的 FD。</li>
+<li><code>syscall.Dup(fd)</code> 最终调 <code>alloc_fd(0, nofile, 0)</code> 分配一个大于 0 且不带 <code>close-on-exec</code> 标志的 FD。</li>
+</ol>
+<p>噢，发现最终真相：<strong>区别在于是否设置 <code>close-on-exec</code> 标志</strong>。</p>
+<h2 id="总结">总结</h2>
+<p>通过文档和内核源代码可知，dup bpf-FD 时这两种方式都是可行的（怪不得用 <code>syscall.Dup(fd)</code> 时没 panic）。</p>
+<p>不过，为了更安全，推荐使用 <code>unix.FcntlInt(fd, unix.F_DUPFD_CLOEXEC, 1)</code>。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-03-31
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-54---xdp-on-mellanox/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: XDP on Mellanox</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-52---eat-dog-food-of-pwru/">
+        <span class="next-text nav-default">eBPF Talk: pwru 自己挖坑自己填</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

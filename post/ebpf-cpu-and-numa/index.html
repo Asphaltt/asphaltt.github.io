@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-cpu-and-numa/" />
@@ -37,7 +37,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,13 +47,11 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-cpu-and-numa/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2022-10-31T19:26:29+08:00" />
 <meta property="article:modified_time" content="2022-10-31T19:26:29+08:00" />
-
 <meta itemprop="name" content="eBPF Talk: CPU and NUMA">
 <meta itemprop="description" content="在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一"><meta itemprop="datePublished" content="2022-10-31T19:26:29+08:00" />
 <meta itemprop="dateModified" content="2022-10-31T19:26:29+08:00" />
 <meta itemprop="wordCount" content="955">
-<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="eBPF Talk: CPU and NUMA"/>
+<meta itemprop="keywords" content="eBPF," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: CPU and NUMA"/>
 <meta name="twitter:description" content="在现代的服务器中，基本上 CPU 采用的都是多核 NUMA 架构。对于网络而言，一个网络包从物理网卡驱动出来之后，并到达对应的应用层 socket，最好都在同一"/>
 
 
@@ -196,16 +194,16 @@
 </span><span class="lnt">9
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt">       u32 bpf_get_smp_processor_id(void)
-
-              Description
-                     Get the SMP (symmetric multiprocessing) processor
-                     id. Note that all programs run with preemption
-                     disabled, which means that the SMP processor id is
-                     stable during all the execution of the program.
-
-              Return The SMP id of the processor running the program.
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">       u32 bpf_get_smp_processor_id(void)
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">              Description
+</span></span><span class="line"><span class="cl">                     Get the SMP (symmetric multiprocessing) processor
+</span></span><span class="line"><span class="cl">                     id. Note that all programs run with preemption
+</span></span><span class="line"><span class="cl">                     disabled, which means that the SMP processor id is
+</span></span><span class="line"><span class="cl">                     stable during all the execution of the program.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">              Return The SMP id of the processor running the program.
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>查看该函数的源代码，能够发现更多细节（更多有意思的地方）。</p>
 <div class="highlight"><div class="chroma">
@@ -259,54 +257,54 @@
 </span><span class="lnt">47
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// kernel/bpf/helpers.c
-</span><span class="c1"></span>
-<span class="n">BPF_CALL_0</span><span class="p">(</span><span class="n">bpf_get_smp_processor_id</span><span class="p">)</span>
-<span class="p">{</span>
-       <span class="k">return</span> <span class="n">smp_processor_id</span><span class="p">();</span>
-<span class="p">}</span>
-
-<span class="c1">// include/linux/smp.h
-</span><span class="c1"></span>
-<span class="cm">/**
-</span><span class="cm"> * raw_processor_id() - get the current (unstable) CPU id
-</span><span class="cm"> *
-</span><span class="cm"> * For then you know what you are doing and need an unstable
-</span><span class="cm"> * CPU id.
-</span><span class="cm"> */</span>
-
-<span class="cm">/**
-</span><span class="cm"> * smp_processor_id() - get the current (stable) CPU id
-</span><span class="cm"> *
-</span><span class="cm"> * This is the normal accessor to the CPU id and should be used
-</span><span class="cm"> * whenever possible.
-</span><span class="cm"> *
-</span><span class="cm"> * The CPU id is stable when:
-</span><span class="cm"> *
-</span><span class="cm"> *  - IRQs are disabled;
-</span><span class="cm"> *  - preemption is disabled;
-</span><span class="cm"> *  - the task is CPU affine.
-</span><span class="cm"> *
-</span><span class="cm"> * When CONFIG_DEBUG_PREEMPT; we verify these assumption and WARN
-</span><span class="cm"> * when smp_processor_id() is used when the CPU id is not stable.
-</span><span class="cm"> */</span>
-
-<span class="cm">/*
-</span><span class="cm"> * Allow the architecture to differentiate between a stable and unstable read.
-</span><span class="cm"> * For example, x86 uses an IRQ-safe asm-volatile read for the unstable but a
-</span><span class="cm"> * regular asm read for the stable.
-</span><span class="cm"> */</span>
-<span class="cp">#ifndef __smp_processor_id
-</span><span class="cp">#define __smp_processor_id(x) raw_smp_processor_id(x)
-</span><span class="cp">#endif
-</span><span class="cp"></span>
-<span class="cp">#ifdef CONFIG_DEBUG_PREEMPT
-</span><span class="cp"></span>  <span class="k">extern</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">debug_smp_processor_id</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
-<span class="cp"># define smp_processor_id() debug_smp_processor_id()
-</span><span class="cp">#else
-</span><span class="cp"># define smp_processor_id() __smp_processor_id()
-</span><span class="cp">#endif
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// kernel/bpf/helpers.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_CALL_0</span><span class="p">(</span><span class="n">bpf_get_smp_processor_id</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">       <span class="k">return</span> <span class="nf">smp_processor_id</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// include/linux/smp.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/**
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * raw_processor_id() - get the current (unstable) CPU id
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * For then you know what you are doing and need an unstable
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * CPU id.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cm">/**
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * smp_processor_id() - get the current (stable) CPU id
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * This is the normal accessor to the CPU id and should be used
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * whenever possible.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * The CPU id is stable when:
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  - IRQs are disabled;
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  - preemption is disabled;
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  - the task is CPU affine.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * When CONFIG_DEBUG_PREEMPT; we verify these assumption and WARN
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * when smp_processor_id() is used when the CPU id is not stable.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * Allow the architecture to differentiate between a stable and unstable read.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * For example, x86 uses an IRQ-safe asm-volatile read for the unstable but a
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * regular asm read for the stable.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#ifndef __smp_processor_id
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define __smp_processor_id(x) raw_smp_processor_id(x)
+</span></span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#ifdef CONFIG_DEBUG_PREEMPT
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>  <span class="k">extern</span> <span class="kt">unsigned</span> <span class="kt">int</span> <span class="nf">debug_smp_processor_id</span><span class="p">(</span><span class="kt">void</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="cp"># define smp_processor_id() debug_smp_processor_id()
+</span></span></span><span class="line"><span class="cl"><span class="cp">#else
+</span></span></span><span class="line"><span class="cl"><span class="cp"># define smp_processor_id() __smp_processor_id()
+</span></span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><p>由源代码可见，<code>bpf_get_smp_processor_id()</code> 并不保证获取到稳定的 CPU ID。</p>
 <h2 id="numa-bpf_get_numa_node_id">NUMA: bpf_get_numa_node_id</h2>
@@ -329,20 +327,20 @@
 </span><span class="lnt">13
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt">       long bpf_get_numa_node_id(void)
-
-              Description
-                     Return the id of the current NUMA node. The primary
-                     use case for this helper is the selection of
-                     sockets for the local NUMA node, when the program
-                     is attached to sockets using the
-                     SO_ATTACH_REUSEPORT_EBPF option (see also
-                     socket(7)), but the helper is also available to
-                     other eBPF program types, similarly to
-                     bpf_get_smp_processor_id().
-
-              Return The id of current NUMA node.
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">       long bpf_get_numa_node_id(void)
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">              Description
+</span></span><span class="line"><span class="cl">                     Return the id of the current NUMA node. The primary
+</span></span><span class="line"><span class="cl">                     use case for this helper is the selection of
+</span></span><span class="line"><span class="cl">                     sockets for the local NUMA node, when the program
+</span></span><span class="line"><span class="cl">                     is attached to sockets using the
+</span></span><span class="line"><span class="cl">                     SO_ATTACH_REUSEPORT_EBPF option (see also
+</span></span><span class="line"><span class="cl">                     socket(7)), but the helper is also available to
+</span></span><span class="line"><span class="cl">                     other eBPF program types, similarly to
+</span></span><span class="line"><span class="cl">                     bpf_get_smp_processor_id().
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">              Return The id of current NUMA node.
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>该函数的源代码：</p>
 <div class="highlight"><div class="chroma">
@@ -380,38 +378,38 @@
 </span><span class="lnt">31
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="c1">// kernel/bpf/helpers.c
-</span><span class="c1"></span>
-<span class="n">BPF_CALL_0</span><span class="p">(</span><span class="n">bpf_get_numa_node_id</span><span class="p">)</span>
-<span class="p">{</span>
-       <span class="k">return</span> <span class="n">numa_node_id</span><span class="p">();</span>
-<span class="p">}</span>
-
-<span class="c1">// include/linux/topology.h
-</span><span class="c1"></span>
-<span class="cp">#ifdef CONFIG_USE_PERCPU_NUMA_NODE_ID
-</span><span class="cp"></span><span class="n">DECLARE_PER_CPU</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span> <span class="n">numa_node</span><span class="p">);</span>
-
-<span class="cp">#ifndef numa_node_id
-</span><span class="cp"></span><span class="cm">/* Returns the number of the current Node. */</span>
-<span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">numa_node_id</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-<span class="p">{</span>
-       <span class="k">return</span> <span class="n">raw_cpu_read</span><span class="p">(</span><span class="n">numa_node</span><span class="p">);</span>
-<span class="p">}</span>
-<span class="cp">#endif
-</span><span class="cp"></span>
-<span class="cp">#else  </span><span class="cm">/* !CONFIG_USE_PERCPU_NUMA_NODE_ID */</span><span class="cp">
-</span><span class="cp"></span>
-<span class="cm">/* Returns the number of the current Node. */</span>
-<span class="cp">#ifndef numa_node_id
-</span><span class="cp"></span><span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">numa_node_id</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
-<span class="p">{</span>
-       <span class="k">return</span> <span class="n">cpu_to_node</span><span class="p">(</span><span class="n">raw_smp_processor_id</span><span class="p">());</span>
-<span class="p">}</span>
-<span class="cp">#endif
-</span><span class="cp"></span>
-<span class="cp">#endif </span><span class="cm">/* [!]CONFIG_USE_PERCPU_NUMA_NODE_ID */</span><span class="cp">
-</span></code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// kernel/bpf/helpers.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_CALL_0</span><span class="p">(</span><span class="n">bpf_get_numa_node_id</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">       <span class="k">return</span> <span class="nf">numa_node_id</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// include/linux/topology.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#ifdef CONFIG_USE_PERCPU_NUMA_NODE_ID
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="nf">DECLARE_PER_CPU</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span> <span class="n">numa_node</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#ifndef numa_node_id
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="cm">/* Returns the number of the current Node. */</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">numa_node_id</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">       <span class="k">return</span> <span class="nf">raw_cpu_read</span><span class="p">(</span><span class="n">numa_node</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#else  </span><span class="cm">/* !CONFIG_USE_PERCPU_NUMA_NODE_ID */</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/* Returns the number of the current Node. */</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#ifndef numa_node_id
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">numa_node_id</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">       <span class="k">return</span> <span class="nf">cpu_to_node</span><span class="p">(</span><span class="nf">raw_smp_processor_id</span><span class="p">());</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#endif </span><span class="cm">/* [!]CONFIG_USE_PERCPU_NUMA_NODE_ID */</span><span class="cp">
+</span></span></span></code></pre></td></tr></table>
 </div>
 </div><p>查看文件 <code>cat /boot/config-$(uname -r) | grep CONFIG_USE_PERCPU_NUMA_NODE_ID</code> 可以知道当前内核是否在编译的时候使用了 <code>CONFIG_USE_PERCPU_NUMA_NODE_ID</code> 选项。</p>
 <p>如果使用了该选项，则直接读取 <code>numa_node</code> 变量；否则，获取当前的 CPU ID，并查询 CPU ID 到 Node ID 之间的映射关系。</p>
@@ -528,9 +526,7 @@
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-bpf2bpf-functions-call/" />
@@ -37,7 +37,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,13 +47,11 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-bpf2bpf-functions-call/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2022-11-16T22:32:06+08:00" />
 <meta property="article:modified_time" content="2022-11-16T22:32:06+08:00" />
-
 <meta itemprop="name" content="eBPF Talk: bpf2bpf 特性简介">
 <meta itemprop="description" content="最近才了解到 eBPF 里有 bpf2bpf 这个特性，故特意学习了一番。 bpf2bpf 简介 bpf2bpf 特性要求 4.16 内核版本，参考 BPF Features by Linux Kernel Version。 在 bpf2bpf 特性出现之前，eBPF 程序都要"><meta itemprop="datePublished" content="2022-11-16T22:32:06+08:00" />
 <meta itemprop="dateModified" content="2022-11-16T22:32:06+08:00" />
 <meta itemprop="wordCount" content="1156">
-<meta itemprop="keywords" content="eBPF,bpf2bpf," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="eBPF Talk: bpf2bpf 特性简介"/>
+<meta itemprop="keywords" content="eBPF,bpf2bpf," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: bpf2bpf 特性简介"/>
 <meta name="twitter:description" content="最近才了解到 eBPF 里有 bpf2bpf 这个特性，故特意学习了一番。 bpf2bpf 简介 bpf2bpf 特性要求 4.16 内核版本，参考 BPF Features by Linux Kernel Version。 在 bpf2bpf 特性出现之前，eBPF 程序都要"/>
 
 
@@ -256,50 +254,50 @@
 </span><span class="lnt">43
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">event</span> <span class="p">{</span>
-    <span class="n">__be32</span> <span class="n">saddr</span><span class="p">,</span> <span class="n">daddr</span><span class="p">;</span>
-    <span class="n">__be16</span> <span class="n">sport</span><span class="p">,</span> <span class="n">dport</span><span class="p">;</span>
-<span class="p">}</span> <span class="n">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">))</span> <span class="n">event_t</span><span class="p">;</span>
-
-<span class="k">struct</span> <span class="p">{</span>
-    <span class="n">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PERF_EVENT_ARRAY</span><span class="p">);</span>
-<span class="p">}</span> <span class="n">events</span> <span class="n">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
-
-<span class="k">static</span> <span class="n">__noinline</span> <span class="kt">void</span>
-<span class="nf">handle_new_connection</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="n">event_t</span> <span class="n">ev</span> <span class="o">=</span> <span class="p">{};</span>
-
-    <span class="n">ev</span><span class="p">.</span><span class="n">saddr</span> <span class="o">=</span> <span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_rcv_saddr</span><span class="p">);</span>
-    <span class="n">ev</span><span class="p">.</span><span class="n">daddr</span> <span class="o">=</span> <span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_daddr</span><span class="p">);</span>
-    <span class="n">ev</span><span class="p">.</span><span class="n">sport</span> <span class="o">=</span> <span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_num</span><span class="p">);</span>
-    <span class="n">ev</span><span class="p">.</span><span class="n">dport</span> <span class="o">=</span> <span class="n">bpf_ntohs</span><span class="p">(</span><span class="n">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_dport</span><span class="p">));</span>
-
-    <span class="n">bpf_perf_event_output</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">events</span><span class="p">,</span> <span class="n">BPF_F_CURRENT_CPU</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ev</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ev</span><span class="p">));</span>
-<span class="p">}</span>
-
-<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/tcp_connect&#34;</span><span class="p">)</span>
-<span class="kt">int</span> <span class="n">k_tcp_connect</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">;</span>
-    <span class="n">sk</span> <span class="o">=</span> <span class="p">(</span><span class="n">typeof</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="n">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
-
-    <span class="n">handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">);</span>
-
-    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span>
-
-<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/inet_csk_complete_hashdance&#34;</span><span class="p">)</span>
-<span class="kt">int</span> <span class="n">k_icsk_complete_hashdance</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
-<span class="p">{</span>
-    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">;</span>
-    <span class="n">sk</span> <span class="o">=</span> <span class="p">(</span><span class="n">typeof</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="n">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
-
-    <span class="n">handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">);</span>
-
-    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">typedef</span> <span class="k">struct</span> <span class="n">event</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__be32</span> <span class="n">saddr</span><span class="p">,</span> <span class="n">daddr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__be16</span> <span class="n">sport</span><span class="p">,</span> <span class="n">dport</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="nf">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">))</span> <span class="kt">event_t</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PERF_EVENT_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">events</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">handle_new_connection</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">event_t</span> <span class="n">ev</span> <span class="o">=</span> <span class="p">{};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="p">.</span><span class="n">saddr</span> <span class="o">=</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_rcv_saddr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="p">.</span><span class="n">daddr</span> <span class="o">=</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_daddr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="p">.</span><span class="n">sport</span> <span class="o">=</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_num</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="p">.</span><span class="n">dport</span> <span class="o">=</span> <span class="nf">bpf_ntohs</span><span class="p">(</span><span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_dport</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_perf_event_output</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">events</span><span class="p">,</span> <span class="n">BPF_F_CURRENT_CPU</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ev</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ev</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/tcp_connect&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">k_tcp_connect</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sk</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="nf">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/inet_csk_complete_hashdance&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">k_icsk_complete_hashdance</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sk</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="nf">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>相比于 <code>always_inline</code> 的实现方式，<code>noinline</code> 的差别仅在于将 <code>__always_inline</code> 换成 <code>__noinline</code>，其它地方并无差异。</p>
 <p>效果如下：</p>
@@ -313,13 +311,13 @@
 </span><span class="lnt">6
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># ./bpf2bpf</span>
-2022/08/30 15:34:30 Attached kprobe<span class="o">(</span>tcp_connect<span class="o">)</span>
-2022/08/30 15:34:30 Attached kprobe<span class="o">(</span>inet_csk_complete_hashdance<span class="o">)</span>
-2022/08/30 15:34:30 Listening events...
-2022/08/30 15:34:34 new tcp connection: 149.28.12.x:22 -&gt; 118.200.y.45:56389
-2022/08/30 15:34:39 new tcp connection: 149.28.12.x:22 -&gt; 101.34.y.134:44702
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ./bpf2bpf</span>
+</span></span><span class="line"><span class="cl">2022/08/30 15:34:30 Attached kprobe<span class="o">(</span>tcp_connect<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2022/08/30 15:34:30 Attached kprobe<span class="o">(</span>inet_csk_complete_hashdance<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2022/08/30 15:34:30 Listening events...
+</span></span><span class="line"><span class="cl">2022/08/30 15:34:34 new tcp connection: 149.28.12.x:22 -&gt; 118.200.y.45:56389
+</span></span><span class="line"><span class="cl">2022/08/30 15:34:39 new tcp connection: 149.28.12.x:22 -&gt; 101.34.y.134:44702
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>Go 代码就不贴出来了；完整 demo 代码请查看 <a href="https://github.com/Asphaltt/learn-by-example/tree/main/ebpf-bpf2bpf">bpf2bpf example</a>。</p>
 <h2 id="小结">小结</h2>
@@ -434,9 +432,7 @@
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

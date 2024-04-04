@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/" />
@@ -39,7 +39,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,10 +47,8 @@
 <meta property="og:description" content="Run eBPF with Go, run eBPF in kernel space" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://le0nhwan9.github.io/" />
-
 <meta itemprop="name" content="LeonHwang&#39;s Blogs">
-<meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space"><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+<meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -143,232 +141,240 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/iptables-bpf-source-code-reading/">iptables-bpf 的实现原理分析</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-22---global-variables-in-action/">eBPF Talk: 全局变量实战指南</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2021-12-19 </span>
+      <span class="post-time"> 2023-05-21 </span>
       <div class="post-category">
-          <a href="/categories/iptables/"> iptables </a>
           <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 554 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一
-    </div>
-    <div class="read-more">
-      <a href="/post/iptables-bpf-source-code-reading/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/iptables-bpf/">该如此玩转 iptables-bpf</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-12-16 </span>
-      <div class="post-category">
-          <a href="/categories/iptables/"> iptables </a>
-          <a href="/categories/ebpf/"> eBPF </a>
-          </div>
-        <span class="more-meta"> 约 1280 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在看 iptables-nfqueue 源代码的时候，发现 iptables 有 bpf 特性，于是查了下 iptables-bpf 的资料。 使用iptables的bpf match来优化规则集-HiPAC/ipset/n+1模
-    </div>
-    <div class="read-more">
-      <a href="/post/iptables-bpf/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/go-functrace/">使用 functrace 排查 Go 函数卡顿问题</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-12-15 </span>
-      <div class="post-category">
-          <a href="/categories/go/"> Go </a>
-          </div>
-        <span class="more-meta"> 约 1069 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在验证 使用 Go 对接 iptables NFQUEUE 的例子 所使用的 go-nfqueue 第三方库 go-nfnetlink 的性能的时候，发现每秒只能处理 4 个网络包，遂使用 functrace 排查了起来。以下记录了排查过程。 排查过程 根据
-    </div>
-    <div class="read-more">
-      <a href="/post/go-functrace/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/iptables-nfqueue-usage/">iptables-nfqueue 的使用</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-12-12 </span>
-      <div class="post-category">
-          <a href="/categories/iptables/"> iptables </a>
-          </div>
-        <span class="more-meta"> 约 1620 字 </span>
+        <span class="more-meta"> 约 1677 字 </span>
         <span class="more-meta"> 预计阅读 4 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      本文主要翻译自 Using NFQUEUE and libnetfilter_queue，将 C 代码例子换成 Go 代码例子。 介绍 NFQUEUE 是一种 iptables 和 ip6tables 的目标（an iptables and ip6tables target），将
+      类似于常量的使用，如今在 eBPF 里也能够使用全局变量了。 使用例子 源代码：global-variable example 以 kprobe TCP 连接建立事件为例子，当有新的 TCP 连接时
     </div>
     <div class="read-more">
-      <a href="/post/iptables-nfqueue-usage/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-22---global-variables-in-action/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/iptables-nfqueue/">一文吃透 iptables-nfqueue</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-21---xdp-acl-optimisation/">eBPF Talk: 优化 XDP ACL</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2021-12-09 </span>
+      <span class="post-time"> 2023-05-21 </span>
       <div class="post-category">
-          <a href="/categories/iptables/"> iptables </a>
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 3152 字 </span>
-        <span class="more-meta"> 预计阅读 7 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      iptables 常用，iptables-nfqueue 少用。因需要深度理解 iptables-nfqueue，所以顺手撸了一遍 iptables-nfqueue 的源代码。 iptables-nfqueue ，aka NFQU
-    </div>
-    <div class="read-more">
-      <a href="/post/iptables-nfqueue/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/go-nfnetlink-example/">使用 Go 对接 iptables NFQUEUE 的例子</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-11-03 </span>
-      <div class="post-category">
-          <a href="/categories/iptables/"> iptables </a>
-          </div>
-        <span class="more-meta"> 约 584 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近在学习 iptables NFQUEUE 的时候，顺手使用 Go 语言写了一个例子。 源代码：github.com/Asphaltt/go-nfnetlink-example 例
-    </div>
-    <div class="read-more">
-      <a href="/post/go-nfnetlink-example/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/netlink-and-go/">netlink 是 Go 和内核模块之间优秀的通信兵</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-11-03 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 1070 字 </span>
+        <span class="more-meta"> 约 1476 字 </span>
         <span class="more-meta"> 预计阅读 3 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      netlink 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 ip 命令，就是使用 netlink 去跟内核进行
+      书接上回 ，本文讲解对高性能 XDP ACL 的开源项目 xdp_acl 的优化内容： 按需开启 eBPF 中的 debug 日志 动态调整 bitmap 大小 使用 PERCPU ARRAY 优化规则 bpf map 动态增删 ACL 规则的处理 以下代码片段
     </div>
     <div class="read-more">
-      <a href="/post/netlink-and-go/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-21---xdp-acl-optimisation/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/skbtracer/">skbtracer: Linux 内核网络包路径追踪利器</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-20---xdp-acl-again/">eBPF Talk: 再论高性能 eBPF ACL</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2021-11-02 </span>
+      <span class="post-time"> 2023-05-21 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 872 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
+        <span class="more-meta"> 约 1230 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      skbtracer 是基于 eBPF 技术的 skb 网络包路径追踪利器，基于 goebpf , libbpf-bootstrap (required Linux Kernel 4.15+ with CONFIG_DEBUG_INFO_BTF=y, Go 1.16+) 实现，参考 Python 版本 github.com/DavadDi/skbtracer。 skbtracer
+      因为近期又得搞基于 eBPF 的 ACL，所以再次研究基于 eBPF 的 ACL 的几篇论文和一个开源项目。 以前，我研究过 「eBPF技术实践：高性能ACL」，并实现了一个
     </div>
     <div class="read-more">
-      <a href="/post/skbtracer/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-20---xdp-acl-again/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-how-anti-synflood-works/">Linux 对抗 synflood 的实现</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-19---how-skbs-work/">eBPF Talk: SKB 工作原理【译】</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2021-05-19 </span>
+      <span class="post-time"> 2023-05-21 </span>
       <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1571 字 </span>
+        <span class="more-meta"> 约 2210 字 </span>
+        <span class="more-meta"> 预计阅读 5 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      翻译自 How SKBs work。 数据区域的布局 第一张图描述的是 SKB 数据区域的布局，以及几个 struct sk_buff 中的指针。 本文余下内容将讲解 SKB 数据区域的操作：通过修改这些指
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-19---how-skbs-work/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-18---another-side-of-bpf-helpers/">eBPF Talk: bpf helpers 的另一面</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1659 字 </span>
         <span class="more-meta"> 预计阅读 4 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      synflood 介绍 synflood 是一种 TCP 半连接攻击，会消耗尽服务器资源从而导致服务器拒绝服务。 参考搜狗百科：syn flood。 Linux 中对抗 synflood 的手段 Linux 中对抗 synflood 的主要手段是
+      本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，verifier 是怎么处理 bpf helpers 的。 书接上回 eBPF Talk: 揭秘 XDP 转发网络包，本文解答： 为什么 XDP
     </div>
     <div class="read-more">
-      <a href="/post/linux-how-anti-synflood-works/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-18---another-side-of-bpf-helpers/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-custom-netfilter-hook-experiment/">Linux 自定义 netfilter 钩子实验</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-17---xdp-redirect-packet/">eBPF Talk: 揭秘 XDP 转发网络包</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2021-04-19 </span>
+      <span class="post-time"> 2023-05-20 </span>
       <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 468 字 </span>
-        <span class="more-meta"> 预计阅读 1 分钟 </span>
+        <span class="more-meta"> 约 1354 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      学习了 Linux netfilter 钩子执行过程，接下来在内核模块里实现一个自定义的 netfilter 钩子。 netfilter 的网络包处理流程 下图比较详细地描述了 iptables 和 ebtables 的规则执行时机： 图片来源：wi
+      书接上回 eBPF Talk: 解密 XDP generic 模式，本文从源代码层面剖析 XDP 转发网络包的实现。 demo 按需将网络包从另一张网卡转发走。 1 2 3 4 5 6 7 8 9 static volatile const u32 REDIRECT_IFINDEX = 0xFFFFFFFF; SEC(&#34;xdp&#34;) int xdp_redirect(struct xdp_md
     </div>
     <div class="read-more">
-      <a href="/post/linux-custom-netfilter-hook-experiment/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-17---xdp-redirect-packet/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-16---xdp-generic-mode/">eBPF Talk: 解密 XDP generic 模式</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1270 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      近期又得搞 XDP 了，就顺手研究了下 XDP generic 模式的源代码。 XDP generic 模式的函数位置 已知，内核协议栈会对每个 skb 都执行一次 XDP generic 模式处理，当然是启用了 XDP generic 模式的情
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-16---xdp-generic-mode/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-15---useful-histogram/">eBPF Talk: 好用的 histogram</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 632 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近 eBPF 轮子造的多了后，发现需要用 histogram 的时候，要写的代码就一个模板，如下。 以下内容以 syscalldist 为例。 用于 histogram 的 C 代码 参考（抄袭） libbpf-tools 里 histogram 的实现，用于 histogram 的 C 代
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-15---useful-histogram/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-14---bpf2bpf-functions-call/">eBPF Talk: bpf2bpf 特性揭秘</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1770 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在 eBPF Talk: bpf2bpf 特性简介 中已介绍了 bpf2bpf 特性，同时有 demo 介绍该怎么使用该特性。 在该特性神秘面纱的背后，到底是怎样的呢？让我娓娓道来。 编译阶段 不懂编译器 clang 中
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-14---bpf2bpf-functions-call/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-13---bpf-map-new-born-in-cilium_ebpf/">eBPF Talk: cilium/ebpf 中 bpf map 的诞生</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 537 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在博客 eBPF Talk: 揭秘 BPF map 前生今世，已讲解了 bpf map 从定义到创建的整个过程。 不过博客中讲解的加载器是 C 语言的 libbpf。 在此，就讲解一下纯 Go 语言的加载
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-13---bpf-map-new-born-in-cilium_ebpf/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
@@ -434,9 +440,7 @@
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

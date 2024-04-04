@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/iptables-bpf/" />
@@ -37,7 +37,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,13 +47,11 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/iptables-bpf/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2021-12-16T23:26:45+08:00" />
 <meta property="article:modified_time" content="2021-12-16T23:26:45+08:00" />
-
 <meta itemprop="name" content="该如此玩转 iptables-bpf">
 <meta itemprop="description" content="在看 iptables-nfqueue 源代码的时候，发现 iptables 有 bpf 特性，于是查了下 iptables-bpf 的资料。 使用iptables的bpf match来优化规则集-HiPAC/ipset/n&#43;1模"><meta itemprop="datePublished" content="2021-12-16T23:26:45+08:00" />
 <meta itemprop="dateModified" content="2021-12-16T23:26:45+08:00" />
 <meta itemprop="wordCount" content="1280">
-<meta itemprop="keywords" content="iptables,iptables-bpf,eBPF," /><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="该如此玩转 iptables-bpf"/>
+<meta itemprop="keywords" content="iptables,iptables-bpf,eBPF," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="该如此玩转 iptables-bpf"/>
 <meta name="twitter:description" content="在看 iptables-nfqueue 源代码的时候，发现 iptables 有 bpf 特性，于是查了下 iptables-bpf 的资料。 使用iptables的bpf match来优化规则集-HiPAC/ipset/n&#43;1模"/>
 
 
@@ -207,21 +205,21 @@
 </span><span class="lnt">14
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt">bpf
-
-Match using Linux Socket Filter. Expects a path to an eBPF object or a cBPF program in decimal format.
-
---object-pinned path
-		Pass a path to a pinned eBPF object.
-
-Applications load eBPF programs into the kernel with the bpf() system call and BPF_PROG_LOAD command and can pin them in a virtual filesystem with BPF_OBJ_PIN. To use a pinned object in iptables, mount the bpf filesystem using
-
-		mount -t bpf bpffs ${BPF_MOUNT}
-
-then insert the filter in iptables by path:
-
-		iptables -A OUTPUT -m bpf --object-pinned ${BPF_MOUNT}/{PINNED_PATH} -j ACCEPT
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">bpf
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Match using Linux Socket Filter. Expects a path to an eBPF object or a cBPF program in decimal format.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">--object-pinned path
+</span></span><span class="line"><span class="cl">		Pass a path to a pinned eBPF object.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Applications load eBPF programs into the kernel with the bpf() system call and BPF_PROG_LOAD command and can pin them in a virtual filesystem with BPF_OBJ_PIN. To use a pinned object in iptables, mount the bpf filesystem using
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		mount -t bpf bpffs ${BPF_MOUNT}
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">then insert the filter in iptables by path:
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		iptables -A OUTPUT -m bpf --object-pinned ${BPF_MOUNT}/{PINNED_PATH} -j ACCEPT
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>这才是我想要的。编写一个 <code>socket</code> bpf 程序才是我在行的。</p>
 <blockquote>
@@ -254,28 +252,28 @@ then insert the filter in iptables by path:
 </span><span class="lnt">21
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="k">struct</span> <span class="p">{</span>
-	<span class="n">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_HASH</span><span class="p">);</span>
-	<span class="n">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
-	<span class="n">__type</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">u32</span><span class="p">);</span>
-	<span class="n">__type</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">u8</span><span class="p">);</span>
-<span class="p">}</span> <span class="n">filter_daddrs</span> <span class="n">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
-
-<span class="n">SEC</span><span class="p">(</span><span class="s">&#34;socket&#34;</span><span class="p">)</span>
-<span class="kt">int</span> <span class="n">filter_iptables</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span> <span class="p">{</span>
-	<span class="k">struct</span> <span class="n">iphdr</span> <span class="n">iph</span><span class="p">;</span>
-	<span class="n">u8</span> <span class="o">*</span><span class="n">filtered</span><span class="p">;</span>
-
-	<span class="k">if</span> <span class="p">(</span><span class="n">bpf_skb_load_bytes_relative</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">iph</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">iph</span><span class="p">),</span> <span class="n">BPF_HDR_START_NET</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
-		<span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
-
-	<span class="n">filtered</span> <span class="o">=</span> <span class="n">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">filter_daddrs</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">iph</span><span class="p">.</span><span class="n">daddr</span><span class="p">);</span>
-	<span class="k">if</span> <span class="p">(</span><span class="n">filtered</span> <span class="o">!=</span> <span class="nb">NULL</span> <span class="o">&amp;&amp;</span> <span class="o">*</span><span class="n">filtered</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
-		<span class="k">return</span> <span class="n">BPF_DROP</span><span class="p">;</span>
-
-	<span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_HASH</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">16</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="nf">__type</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">u32</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="nf">__type</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">u8</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">filter_daddrs</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;socket&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">filter_iptables</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">	<span class="k">struct</span> <span class="n">iphdr</span> <span class="n">iph</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">	<span class="n">u8</span> <span class="o">*</span><span class="n">filtered</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="p">(</span><span class="nf">bpf_skb_load_bytes_relative</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">iph</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">iph</span><span class="p">),</span> <span class="n">BPF_HDR_START_NET</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="n">filtered</span> <span class="o">=</span> <span class="nf">bpf_map_lookup_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">filter_daddrs</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">iph</span><span class="p">.</span><span class="n">daddr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="p">(</span><span class="n">filtered</span> <span class="o">!=</span> <span class="nb">NULL</span> <span class="o">&amp;&amp;</span> <span class="o">*</span><span class="n">filtered</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">return</span> <span class="n">BPF_DROP</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p><code>iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP</code> 里使用这个 bpf 程序，将 bpf map 里匹配到的目的地址的网络包都 drop 掉。效果如下：</p>
 <div class="highlight"><div class="chroma">
@@ -328,53 +326,53 @@ then insert the filter in iptables by path:
 </span><span class="lnt">46
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># ping -c4 223.5.5.5</span>
-PING 223.5.5.5 <span class="o">(</span>223.5.5.5<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
-<span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">167</span> ms
-<span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">159</span> ms
-<span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">3</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">1047</span> ms
-
---- 223.5.5.5 ping statistics ---
-<span class="m">4</span> packets transmitted, <span class="m">3</span> received, 25% packet loss, <span class="nb">time</span> 3081ms
-rtt min/avg/max/mdev <span class="o">=</span> 158.744/457.539/1047.019/416.838 ms, pipe <span class="m">2</span>
-
-<span class="c1"># make</span>
-clang -I./bpf/headers -O2 -g -target bpf -c bpf/iptables-bpf.c  -o iptables-bpf.elf
-go build -v -o iptables-bpf main.go
-
-<span class="c1"># make setup</span>
-bpftool prog load iptables-bpf.elf /sys/fs/bpf/iptbpf
-iptables -I OUTPUT -m bpf --object-pinned /sys/fs/bpf/iptbpf -j DROP
-
-<span class="c1"># make mapid</span>
-<span class="m">986</span>
-
-<span class="c1">#./iptables-bpf -m 986 -d 223.5.5.5</span>
-2021/12/16 15:18:49 223.5.5.5 can<span class="err">&#39;</span>t be pinged
-
-<span class="c1"># ping -c4 223.5.5.5</span>
-PING 223.5.5.5 <span class="o">(</span>223.5.5.5<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
-
---- 223.5.5.5 ping statistics ---
-<span class="m">4</span> packets transmitted, <span class="m">0</span> received, 100% packet loss, <span class="nb">time</span> 3065ms
-
-<span class="c1"># make clean</span>
-rm -f iptables-bpf.elf
-rm -f iptables-bpf
-iptables -D OUTPUT -m bpf --object-pinned /sys/fs/bpf/iptbpf -j DROP
-rm -f /sys/fs/bpf/iptbpf
-
-<span class="c1"># ping -c4 223.5.5.5</span>
-PING 223.5.5.5 <span class="o">(</span>223.5.5.5<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
-<span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">139</span> ms
-<span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">157</span> ms
-<span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">3</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">169</span> ms
-<span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">4</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">121</span> ms
-
---- 223.5.5.5 ping statistics ---
-<span class="m">4</span> packets transmitted, <span class="m">4</span> received, 0% packet loss, <span class="nb">time</span> 3087ms
-rtt min/avg/max/mdev <span class="o">=</span> 120.720/146.495/168.600/18.163 ms
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ping -c4 223.5.5.5</span>
+</span></span><span class="line"><span class="cl">PING 223.5.5.5 <span class="o">(</span>223.5.5.5<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">167</span> ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">159</span> ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">3</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">1047</span> ms
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">--- 223.5.5.5 ping statistics ---
+</span></span><span class="line"><span class="cl"><span class="m">4</span> packets transmitted, <span class="m">3</span> received, 25% packet loss, <span class="nb">time</span> 3081ms
+</span></span><span class="line"><span class="cl">rtt min/avg/max/mdev <span class="o">=</span> 158.744/457.539/1047.019/416.838 ms, pipe <span class="m">2</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># make</span>
+</span></span><span class="line"><span class="cl">clang -I./bpf/headers -O2 -g -target bpf -c bpf/iptables-bpf.c  -o iptables-bpf.elf
+</span></span><span class="line"><span class="cl">go build -v -o iptables-bpf main.go
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># make setup</span>
+</span></span><span class="line"><span class="cl">bpftool prog load iptables-bpf.elf /sys/fs/bpf/iptbpf
+</span></span><span class="line"><span class="cl">iptables -I OUTPUT -m bpf --object-pinned /sys/fs/bpf/iptbpf -j DROP
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># make mapid</span>
+</span></span><span class="line"><span class="cl"><span class="m">986</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#./iptables-bpf -m 986 -d 223.5.5.5</span>
+</span></span><span class="line"><span class="cl">2021/12/16 15:18:49 223.5.5.5 can<span class="err">&#39;</span>t be pinged
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ping -c4 223.5.5.5</span>
+</span></span><span class="line"><span class="cl">PING 223.5.5.5 <span class="o">(</span>223.5.5.5<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">--- 223.5.5.5 ping statistics ---
+</span></span><span class="line"><span class="cl"><span class="m">4</span> packets transmitted, <span class="m">0</span> received, 100% packet loss, <span class="nb">time</span> 3065ms
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># make clean</span>
+</span></span><span class="line"><span class="cl">rm -f iptables-bpf.elf
+</span></span><span class="line"><span class="cl">rm -f iptables-bpf
+</span></span><span class="line"><span class="cl">iptables -D OUTPUT -m bpf --object-pinned /sys/fs/bpf/iptbpf -j DROP
+</span></span><span class="line"><span class="cl">rm -f /sys/fs/bpf/iptbpf
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ping -c4 223.5.5.5</span>
+</span></span><span class="line"><span class="cl">PING 223.5.5.5 <span class="o">(</span>223.5.5.5<span class="o">)</span> 56<span class="o">(</span>84<span class="o">)</span> bytes of data.
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">139</span> ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">157</span> ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">3</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">169</span> ms
+</span></span><span class="line"><span class="cl"><span class="m">64</span> bytes from 223.5.5.5: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">4</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">63</span> <span class="nv">time</span><span class="o">=</span><span class="m">121</span> ms
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">--- 223.5.5.5 ping statistics ---
+</span></span><span class="line"><span class="cl"><span class="m">4</span> packets transmitted, <span class="m">4</span> received, 0% packet loss, <span class="nb">time</span> 3087ms
+</span></span><span class="line"><span class="cl">rtt min/avg/max/mdev <span class="o">=</span> 120.720/146.495/168.600/18.163 ms
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="管理-bpf-map">管理 bpf map</h2>
 <p>困难山头已经跨过，剩下个小山头。</p>
@@ -421,45 +419,45 @@ rtt min/avg/max/mdev <span class="o">=</span> 120.720/146.495/168.600/18.163 ms
 </span><span class="lnt">38
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
-
-	<span class="kd">var</span> <span class="nx">daddr</span> <span class="kt">string</span>
-	<span class="kd">var</span> <span class="nx">bpfMap</span> <span class="kt">int</span>
-	<span class="nx">flag</span><span class="p">.</span><span class="nf">StringVar</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">daddr</span><span class="p">,</span> <span class="s">&#34;d&#34;</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="s">&#34;ip addresses to drop, separated by &#39;,&#39;&#34;</span><span class="p">)</span>
-	<span class="nx">flag</span><span class="p">.</span><span class="nf">IntVar</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">bpfMap</span><span class="p">,</span> <span class="s">&#34;m&#34;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#34;the id of the bpf map(filter_daddrs)&#34;</span><span class="p">)</span>
-	<span class="nx">flag</span><span class="p">.</span><span class="nf">Parse</span><span class="p">()</span>
-
-	<span class="kd">var</span> <span class="nx">ips</span> <span class="p">[]</span><span class="nx">netaddr</span><span class="p">.</span><span class="nx">IP</span>
-	<span class="nx">addrs</span> <span class="o">:=</span> <span class="nx">strings</span><span class="p">.</span><span class="nf">FieldsFunc</span><span class="p">(</span><span class="nx">daddr</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">r</span> <span class="kt">rune</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">r</span> <span class="o">==</span> <span class="sc">&#39;,&#39;</span> <span class="p">})</span>
-	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">addr</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">addrs</span> <span class="p">{</span>
-		<span class="nx">ip</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">netaddr</span><span class="p">.</span><span class="nf">ParseIP</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span>
-		<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
-			<span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;%s is not a valid IPv4 address&#34;</span><span class="p">,</span> <span class="nx">ip</span><span class="p">)</span>
-		<span class="p">}</span>
-
-		<span class="nx">ips</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">ips</span><span class="p">,</span> <span class="nx">ip</span><span class="p">)</span>
-	<span class="p">}</span>
-	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nx">ips</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
-		<span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;no ip address(es) to be dropped&#34;</span><span class="p">)</span>
-	<span class="p">}</span>
-
-	<span class="nx">m</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nf">NewMapFromID</span><span class="p">(</span><span class="nx">ebpf</span><span class="p">.</span><span class="nf">MapID</span><span class="p">(</span><span class="nx">bpfMap</span><span class="p">))</span>
-	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
-		<span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;bpf map(%d) not found, err: %v&#34;</span><span class="p">,</span> <span class="nx">bpfMap</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
-	<span class="p">}</span>
-
-	<span class="nx">val</span> <span class="o">:=</span> <span class="nb">uint8</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">ip</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">ips</span> <span class="p">{</span>
-		<span class="nx">_ip</span> <span class="o">:=</span> <span class="nx">ip</span><span class="p">.</span><span class="nf">As4</span><span class="p">()</span>
-		<span class="nx">ipval</span> <span class="o">:=</span> <span class="nx">binary</span><span class="p">.</span><span class="nx">LittleEndian</span><span class="p">.</span><span class="nf">Uint32</span><span class="p">(</span><span class="nx">_ip</span><span class="p">[:])</span>
-		<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nf">Update</span><span class="p">(</span><span class="nx">ipval</span><span class="p">,</span> <span class="nx">val</span><span class="p">,</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nx">UpdateAny</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
-			<span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;failed to upsert data to bpf map(%d), err: %v&#34;</span><span class="p">,</span> <span class="nx">bpfMap</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
-		<span class="p">}</span>
-	<span class="p">}</span>
-
-	<span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;%s can&#39;t be pinged&#34;</span><span class="p">,</span> <span class="nx">daddr</span><span class="p">)</span>
-<span class="p">}</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="kd">var</span> <span class="nx">daddr</span> <span class="kt">string</span>
+</span></span><span class="line"><span class="cl">	<span class="kd">var</span> <span class="nx">bpfMap</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">flag</span><span class="p">.</span><span class="nf">StringVar</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">daddr</span><span class="p">,</span> <span class="s">&#34;d&#34;</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="s">&#34;ip addresses to drop, separated by &#39;,&#39;&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">flag</span><span class="p">.</span><span class="nf">IntVar</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">bpfMap</span><span class="p">,</span> <span class="s">&#34;m&#34;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#34;the id of the bpf map(filter_daddrs)&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">flag</span><span class="p">.</span><span class="nf">Parse</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="kd">var</span> <span class="nx">ips</span> <span class="p">[]</span><span class="nx">netaddr</span><span class="p">.</span><span class="nx">IP</span>
+</span></span><span class="line"><span class="cl">	<span class="nx">addrs</span> <span class="o">:=</span> <span class="nx">strings</span><span class="p">.</span><span class="nf">FieldsFunc</span><span class="p">(</span><span class="nx">daddr</span><span class="p">,</span> <span class="kd">func</span><span class="p">(</span><span class="nx">r</span> <span class="kt">rune</span><span class="p">)</span> <span class="kt">bool</span> <span class="p">{</span> <span class="k">return</span> <span class="nx">r</span> <span class="o">==</span> <span class="sc">&#39;,&#39;</span> <span class="p">})</span>
+</span></span><span class="line"><span class="cl">	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">addr</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">addrs</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">ip</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">netaddr</span><span class="p">.</span><span class="nf">ParseIP</span><span class="p">(</span><span class="nx">addr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;%s is not a valid IPv4 address&#34;</span><span class="p">,</span> <span class="nx">ip</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">		<span class="nx">ips</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">ips</span><span class="p">,</span> <span class="nx">ip</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nx">ips</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;no ip address(es) to be dropped&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="nx">m</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nf">NewMapFromID</span><span class="p">(</span><span class="nx">ebpf</span><span class="p">.</span><span class="nf">MapID</span><span class="p">(</span><span class="nx">bpfMap</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">	<span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;bpf map(%d) not found, err: %v&#34;</span><span class="p">,</span> <span class="nx">bpfMap</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="nx">val</span> <span class="o">:=</span> <span class="nb">uint8</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">	<span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">ip</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">ips</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">_ip</span> <span class="o">:=</span> <span class="nx">ip</span><span class="p">.</span><span class="nf">As4</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">		<span class="nx">ipval</span> <span class="o">:=</span> <span class="nx">binary</span><span class="p">.</span><span class="nx">LittleEndian</span><span class="p">.</span><span class="nf">Uint32</span><span class="p">(</span><span class="nx">_ip</span><span class="p">[:])</span>
+</span></span><span class="line"><span class="cl">		<span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nf">Update</span><span class="p">(</span><span class="nx">ipval</span><span class="p">,</span> <span class="nx">val</span><span class="p">,</span> <span class="nx">ebpf</span><span class="p">.</span><span class="nx">UpdateAny</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">			<span class="nx">log</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;failed to upsert data to bpf map(%d), err: %v&#34;</span><span class="p">,</span> <span class="nx">bpfMap</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">		<span class="p">}</span>
+</span></span><span class="line"><span class="cl">	<span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">	<span class="nx">log</span><span class="p">.</span><span class="nf">Printf</span><span class="p">(</span><span class="s">&#34;%s can&#39;t be pinged&#34;</span><span class="p">,</span> <span class="nx">daddr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><p>使用 Go 来管理 bpf map，将 <code>iptables-bpf</code> 的易用性提升了一个台阶。相比于单纯的 iptables 规则，<code>iptables-bpf</code> 给 iptables 带来了无与伦比的可编程性。</p>
 <h2 id="实验环境">实验环境</h2>
@@ -476,16 +474,16 @@ rtt min/avg/max/mdev <span class="o">=</span> 120.720/146.495/168.600/18.163 ms
 </span><span class="lnt">9
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="c1"># lsb_release -a</span>
-No LSB modules are available.
-Distributor ID: Ubuntu
-Description:    Ubuntu 21.04
-Release:        21.04
-Codename:       hirsute
-
-<span class="c1"># uname -a</span>
-Linux pagani 5.11.0-31-generic <span class="c1">#33-Ubuntu SMP Wed Aug 11 13:19:04 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># lsb_release -a</span>
+</span></span><span class="line"><span class="cl">No LSB modules are available.
+</span></span><span class="line"><span class="cl">Distributor ID: Ubuntu
+</span></span><span class="line"><span class="cl">Description:    Ubuntu 21.04
+</span></span><span class="line"><span class="cl">Release:        21.04
+</span></span><span class="line"><span class="cl">Codename:       hirsute
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># uname -a</span>
+</span></span><span class="line"><span class="cl">Linux pagani 5.11.0-31-generic <span class="c1">#33-Ubuntu SMP Wed Aug 11 13:19:04 UTC 2021 x86_64 x86_64 x86_64 GNU/Linux</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h3 id="iptables">iptables</h3>
 <p>有的 iptables 默认带有 bpf 特性，有的没带。如果没带，则在执行 <code>iptables -I OUTPUT -m bpf --object-pinned /sys/fs/bpf/iptbpf -j DROP</code> 的时候，提示 <code>iptables v1.6.1: No bpf header, kernel headers too old?</code>。需要重新编译 iptables。</p>
@@ -506,20 +504,20 @@ Linux pagani 5.11.0-31-generic <span class="c1">#33-Ubuntu SMP Wed Aug 11 13:19:
 </span><span class="lnt">13
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">git clone git://git.netfilter.org/iptables.git
-<span class="nb">cd</span> iptables
-bash autogen.sh
-apt install -y libpcap-dev <span class="c1"># bpf 依赖 libpcap</span>
-./configure --enable-bpf-compiler --disable-nftables <span class="c1"># disable nftables 是为了快速安装一个能用 bpf 的 iptables</span>
-<span class="c1"># 留意结果</span>
-Iptables Configuration:
-  ...
-  BPF utils support:                    yes
-
-make -j4
-make install
-<span class="c1"># 此时 iptables 已开启 bpf 特性</span>
-</code></pre></td></tr></table>
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">git clone git://git.netfilter.org/iptables.git
+</span></span><span class="line"><span class="cl"><span class="nb">cd</span> iptables
+</span></span><span class="line"><span class="cl">bash autogen.sh
+</span></span><span class="line"><span class="cl">apt install -y libpcap-dev <span class="c1"># bpf 依赖 libpcap</span>
+</span></span><span class="line"><span class="cl">./configure --enable-bpf-compiler --disable-nftables <span class="c1"># disable nftables 是为了快速安装一个能用 bpf 的 iptables</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 留意结果</span>
+</span></span><span class="line"><span class="cl">Iptables Configuration:
+</span></span><span class="line"><span class="cl">  ...
+</span></span><span class="line"><span class="cl">  BPF utils support:                    yes
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">make -j4
+</span></span><span class="line"><span class="cl">make install
+</span></span><span class="line"><span class="cl"><span class="c1"># 此时 iptables 已开启 bpf 特性</span>
+</span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="总结">总结</h2>
 <p>bpf 带给了 iptables 不少想象力，只是目前还没有释放出来。</p>
@@ -635,9 +633,7 @@ make install
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

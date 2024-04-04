@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.88.1 with theme even" />
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/" />
@@ -39,7 +39,7 @@
 
 <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 
-<link href="/sass/main.min.b5a744db6de49a86cadafb3b70f555ab443f83c307a483402259e94726b045ff.css" rel="stylesheet">
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
 
 
@@ -47,10 +47,8 @@
 <meta property="og:description" content="Run eBPF with Go, run eBPF in kernel space" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://le0nhwan9.github.io/" />
-
 <meta itemprop="name" content="LeonHwang&#39;s Blogs">
-<meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space"><meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+<meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -143,126 +141,35 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-how-netfilter-works/">Linux netfilter 钩子执行过程</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-map-source-code-reading-guide/">eBPF Talk: bpf map 源码导读</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2021-04-18 </span>
+      <span class="post-time"> 2023-01-04 </span>
       <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 975 字 </span>
+        <span class="more-meta"> 约 899 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      netfilter 框架是 Linux 网络子系统里的一个核心模块，iptables 就是基于 netfilter 框架实现的一个网络包处理工具。 netfilter 框架原理介绍 在内核里，每个网络命名空间（ne
+      eBPF map 有诸多类型。如果想要理解它们的实现，该如何去阅读它们的源代码呢？ 类型接口 在内核的源代码海洋中，接口的定义一般是：结构体的字段都是函数指针
     </div>
     <div class="read-more">
-      <a href="/post/linux-how-netfilter-works/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-map-source-code-reading-guide/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-show-socket-ip_transparent-option/">knetstat：查看 socket 的 IP_TRANSPARENT 选项</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/drgn-netdev_priv/">使用 drgn 查看网络设备的私有数据</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2021-02-12 </span>
+      <span class="post-time"> 2023-01-01 </span>
       <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 634 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在做 Linux 代理流量回放实验 的时候，因为遇到了问题，所以想看下 socket 的 IP_TRANSPARENT 选项是否设置了。该实验使用了 Linux 透明代理的功能，而 Linux 透明代理需要用户程序在使用 socket
-    </div>
-    <div class="read-more">
-      <a href="/post/linux-show-socket-ip_transparent-option/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-solve-policy-routing-problem/">Linux 策略路由导流到本地</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-01-23 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 1164 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在做 Linux 代理流量回放实验 时，因 ip route 配置失误导致实验失败；排查了一个星期，最终在阅读 Inline on a Linux router 博客时发现了配置失误的地方。 代理流量回放实验 在 namespace server
-    </div>
-    <div class="read-more">
-      <a href="/post/linux-solve-policy-routing-problem/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-replay-proxy-traffic-experiment/">Linux 代理流量回放实验</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-01-23 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 451 字 </span>
-        <span class="more-meta"> 预计阅读 1 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      代理流量回放方案 在 SOCKS5、TCP PROXY、Nginx 等代理中，如若需要对代理的流量还原成真实的 IP 网络包并发给网络审计设备，可以采取如
-    </div>
-    <div class="read-more">
-      <a href="/post/linux-replay-proxy-traffic-experiment/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-bridge-flood-experiment/">Linux bridge 强制泛洪实验</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-01-16 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 647 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在上一章 Linux bridge 泛洪 中介绍了 Linux bridge 强制泛洪的原理，接下来抓一下 bridge 泛洪出来的网络包。 环境准备 学习了 docker网络之namespace 、 docker
-    </div>
-    <div class="read-more">
-      <a href="/post/linux-bridge-flood-experiment/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-bridge-flood/">Linux bridge 泛洪</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-01-13 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
+          <a href="/categories/drgn/"> drgn </a>
           </div>
         <span class="more-meta"> 约 540 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
@@ -271,10 +178,202 @@
   
   <div class="post-content">
     <div class="post-summary">
-      在 Linux 中，bridge 是虚拟的二层网络设备。不同于 eth 或 ens 等真实的网络设备，bridge 能够让同一 Linux 系统内的其他网络设备连接起来；比如 docker 默认的网
+      这是 drgn 的一个使用例子。 最近在追踪一个 veth 网络设备的问题的时候，发现需要查看 veth 网络设备的 netdev_priv() 获取的私有数据。 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19
     </div>
     <div class="read-more">
-      <a href="/post/linux-bridge-flood/" class="read-more-link">阅读更多</a>
+      <a href="/post/drgn-netdev_priv/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-syscalldist/">eBPF Talk: syscalldist: raw tracepoint 实战</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-12-22 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 796 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      bcc/libbpf-tools 里有许多使用 bcc 实现的小工具。 咱们也来实现一个类似的工具吧。 raw tracepoint 不同于 tracepoint，raw tracepoint 的资料较少。 关于 eBPF 进行 raw tracepoint 的资料更少： bpf,
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-syscalldist/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-two-map-helpers/">eBPF Talk: 两个简单好用的 map 处理函数</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-12-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 460 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近在用 eBPF 造轮子的时候，发现其中一个处理函数；而后，自己有样学样地封装了另外一个函数。 bpf_map_lookup_or_try_init 函数名称有点长。 该函数是用来查询某个 key 对应的 valu
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-two-map-helpers/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-asm-and-insn/">eBPF Talk: 此汇编非彼汇编</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-12-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 689 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      此汇编：在 C 代码里使用的 asm volatile 汇编代码。 彼汇编：eBPF verifier、JIT、runtime VM 等地方使用的汇编指令。 在文章 BPF 尾调用简介 里，
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-asm-and-insn/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-tailcall-intro/">eBPF Talk: eBPF 尾调用简介</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-11-24 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1524 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在 bpf2bpf 特性简介 中提及到 bpf_tail_call()，我们就认真学习一下它吧。 bpf_tail_call 从 4.2 内核版本开始，eBPF 支持了尾调用特性。 该特性的主要特点是
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-tailcall-intro/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-bpf2bpf-functions-call/">eBPF Talk: bpf2bpf 特性简介</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-11-16 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1156 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近才了解到 eBPF 里有 bpf2bpf 这个特性，故特意学习了一番。 bpf2bpf 简介 bpf2bpf 特性要求 4.16 内核版本，参考 BPF Features by Linux Kernel Version。 在 bpf2bpf 特性出现之前，eBPF 程序都要
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-bpf2bpf-functions-call/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-a-bpf-map-story/">eBPF Talk: BPF map 趣事一则</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-11-13 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 588 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      有同事报告一个错误：lookup: cannot allocate memory，并请求如何解决。 lookup 项目中使用的 eBPF 库是 cilium/ebpf。查看一下 BPF map lookup 的源代码，如下
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-a-bpf-map-story/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-external-btf/">eBPF Talk: 为当前内核提供外部 BTF 文件</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-11-06 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 547 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近系统地学习了 eBPF CO-RE（Compile Once, Run Everywhere，一次编译，到处运行），其中包括了 BTF。 BTF，BPF Type Format，
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-external-btf/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-trampoline-better-than-kprobe/">eBPF Talk: 比 kprobe 更好的 trampoline</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-11-01 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1016 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-trampoline-better-than-kprobe/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
@@ -286,7 +385,10 @@
         <i class="iconfont icon-left"></i>
         <span class="prev-text">上一页</span>
       </a>
-    
+    <a class="next" href="/page/9/">
+        <span class="next-text">下一页</span>
+        <i class="iconfont icon-right"></i>
+      </a>
   </nav>
         </div>
         
@@ -337,9 +439,7 @@
 
 
 
-<script type="text/javascript" src="/js/main.min.c99b103c33d1539acf3025e1913697534542c4a5aa5af0ccc20475ed2863603b.js"></script>
-
-<script id="baidu_analytics">
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
   var _hmt = _hmt || [];
   (function() {
     if (window.location.hostname === 'localhost') return;

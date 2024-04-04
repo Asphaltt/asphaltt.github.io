@@ -3,62 +3,496 @@
   
   <url>
     <loc>https://le0nhwan9.github.io/categories/</loc>
-    <lastmod>2024-03-31T20:47:45+08:00</lastmod>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/tags/ebpf/</loc>
-    <lastmod>2024-03-31T20:47:45+08:00</lastmod>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/categories/ebpf/</loc>
-    <lastmod>2024-03-31T20:47:45+08:00</lastmod>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/categories/ebpf-talk/</loc>
-    <lastmod>2024-03-31T20:47:45+08:00</lastmod>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/</loc>
-    <lastmod>2024-03-31T20:47:45+08:00</lastmod>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-78---xdp-acl-tuplemerge-algo/</loc>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/</loc>
-    <lastmod>2024-03-31T20:47:45+08:00</lastmod>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/post/</loc>
-    <lastmod>2024-03-31T20:47:45+08:00</lastmod>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/tags/</loc>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/tuplemerge/</loc>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/xdp/</loc>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/xdp-acl/</loc>
+    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-77---ubuntu-23.04/</loc>
+    <lastmod>2024-04-03T23:18:57+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/ubuntu/</loc>
+    <lastmod>2024-04-03T23:18:57+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/bpf_timer/</loc>
+    <lastmod>2024-04-03T23:17:12+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-75---introduce-bpf_timer/</loc>
+    <lastmod>2024-04-03T23:17:12+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/bpf_iter/</loc>
+    <lastmod>2024-04-03T23:14:50+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-74---introduce-bpf_iter/</loc>
+    <lastmod>2024-04-03T23:14:50+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/linux/</loc>
+    <lastmod>2024-04-03T23:13:16+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/categories/linux/</loc>
+    <lastmod>2024-04-03T23:13:16+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/linux-networking-5---netdevsim/</loc>
+    <lastmod>2024-04-03T23:13:16+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/netdevsim/</loc>
+    <lastmod>2024-04-03T23:13:16+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/linux-networking-4---sequence-files/</loc>
+    <lastmod>2024-04-03T23:10:22+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/sequence-file/</loc>
+    <lastmod>2024-04-03T23:10:22+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/bpf-loop/</loc>
+    <lastmod>2024-04-03T23:06:44+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/bpf-verifier/</loc>
+    <lastmod>2024-04-03T23:06:44+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-73---verifier-finite-loop/</loc>
+    <lastmod>2024-04-03T23:06:44+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-72---challenge-verifier/</loc>
+    <lastmod>2024-04-03T23:04:08+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/binary-search/</loc>
+    <lastmod>2024-04-03T23:00:58+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-71---binary-search/</loc>
+    <lastmod>2024-04-03T23:00:58+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/bpf-prog/</loc>
+    <lastmod>2024-04-03T22:57:57+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/bpf-stats/</loc>
+    <lastmod>2024-04-03T22:57:57+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-70---bpf-prog-stats/</loc>
+    <lastmod>2024-04-03T22:57:57+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-69---packet-range-check/</loc>
+    <lastmod>2024-04-03T22:56:16+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/tc-bpf/</loc>
+    <lastmod>2024-04-03T22:56:16+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-68---xdp-shit-on-mellanox/</loc>
+    <lastmod>2024-04-03T22:54:12+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/mellanox/</loc>
+    <lastmod>2024-04-03T22:54:12+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/xdp-metadata/</loc>
+    <lastmod>2024-04-03T22:54:12+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-67---redirect-pkt-with-tc-bpf/</loc>
+    <lastmod>2024-04-03T22:50:26+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/bpf-modular/</loc>
+    <lastmod>2024-04-03T22:48:15+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/bpf-unittest/</loc>
+    <lastmod>2024-04-03T22:48:15+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-66---an-idea-about-bpf-prog-modules-and-their-unittests/</loc>
+    <lastmod>2024-04-03T22:48:15+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/freplace/</loc>
+    <lastmod>2024-04-03T22:48:15+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-65---write-unittest-for-xdp/</loc>
+    <lastmod>2024-04-03T22:46:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/af_xdp/</loc>
+    <lastmod>2024-04-03T22:44:30+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-64---metadata-from-xdp-to-af_xdp/</loc>
+    <lastmod>2024-04-03T22:44:30+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/bpf-helpers/</loc>
+    <lastmod>2024-04-03T22:40:29+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/bpf-map/</loc>
+    <lastmod>2024-04-03T22:40:29+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-63---helpers-for-bpf-map/</loc>
+    <lastmod>2024-04-03T22:40:29+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-62---verifier-core-in-3.18-kernel/</loc>
+    <lastmod>2024-04-01T23:30:37+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-61---cfg-check-in-3.18-kernel/</loc>
+    <lastmod>2024-04-01T23:28:13+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-60---introduce-spinlock/</loc>
+    <lastmod>2024-04-01T22:49:57+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/spinlock/</loc>
+    <lastmod>2024-04-01T22:49:57+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-59---stats-bpf-prog-correctly/</loc>
+    <lastmod>2024-04-01T22:49:01+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-58---complain-xdp-acl/</loc>
+    <lastmod>2024-04-01T22:46:20+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-57---kprobe.multi-and-fprobe/</loc>
+    <lastmod>2024-04-01T21:14:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/fprobe/</loc>
+    <lastmod>2024-04-01T21:14:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/kprobe.multi/</loc>
+    <lastmod>2024-04-01T21:14:35+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-56---latency-injection-with-af_xdp/</loc>
+    <lastmod>2024-03-31T23:50:45+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-55---xdp-on-veth/</loc>
+    <lastmod>2024-03-31T23:47:39+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/veth/</loc>
+    <lastmod>2024-03-31T23:47:39+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-54---xdp-on-mellanox/</loc>
+    <lastmod>2024-03-31T21:22:06+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-53---dup-bpf-fd/</loc>
+    <lastmod>2024-03-31T21:17:16+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-52---eat-dog-food-of-pwru/</loc>
+    <lastmod>2024-03-31T21:16:34+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/pwru/</loc>
+    <lastmod>2024-03-31T21:16:34+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-51---bpf-fd-leak/</loc>
+    <lastmod>2024-03-31T21:05:34+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-50---iptables-trace/</loc>
+    <lastmod>2024-03-31T21:05:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/iptables/</loc>
+    <lastmod>2024-03-31T21:05:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/iptables-trace/</loc>
+    <lastmod>2024-03-31T21:05:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-49---run-bpf-prog-in-kernel-module/</loc>
     <lastmod>2024-03-31T20:47:45+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-48-kprobe-nth-argument/</loc>
+    <loc>https://le0nhwan9.github.io/tags/kernel-module/</loc>
+    <lastmod>2024-03-31T20:47:45+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-48---kprobe-nth-argument/</loc>
     <lastmod>2024-03-29T23:56:03+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -79,7 +513,7 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-47-syscalldist-and-bpfsyscalldist/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-47---syscalldist-and-bpfsyscalldist/</loc>
     <lastmod>2024-03-29T23:55:06+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -93,7 +527,7 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-46---kprobe-ftrace-and-trampoline/</loc>
     <lastmod>2024-03-29T23:51:43+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -114,14 +548,7 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-45-skbtracer-iptables/</loc>
-    <lastmod>2024-03-29T23:46:26+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/tags/iptables/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-45---skbtracer-iptables/</loc>
     <lastmod>2024-03-29T23:46:26+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -135,7 +562,7 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-88---tailcall-shared-bpf-map/</loc>
     <lastmod>2023-08-22T22:27:28+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -149,21 +576,21 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-91-update-tailcall-bpf-map/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-91---update-tailcall-bpf-map/</loc>
     <lastmod>2023-08-22T22:27:23+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-90-dynamic-or-static-tailcall/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-90---dynamic-or-static-tailcall/</loc>
     <lastmod>2023-08-22T22:27:18+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-44-trampoline-stack-on-x86/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-44---trampoline-stack-on-x86/</loc>
     <lastmod>2023-05-23T23:02:47+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -177,35 +604,28 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-43-trampoline-on-x86/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-43---trampoline-on-x86/</loc>
     <lastmod>2023-05-23T22:55:23+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-42-trampoline-on-x86/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-42---trampoline-on-x86/</loc>
     <lastmod>2023-05-23T22:45:15+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-41-freplace-on-x86/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-41---freplace-on-x86/</loc>
     <lastmod>2023-05-23T22:31:24+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/tags/freplace/</loc>
-    <lastmod>2023-05-23T22:31:24+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-40-perilogue-on-x86/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-40---perilogue-on-x86/</loc>
     <lastmod>2023-05-23T22:25:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -219,7 +639,7 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-39-poke-on-x86/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-39---poke-on-x86/</loc>
     <lastmod>2023-05-23T22:22:24+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -233,42 +653,21 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-38-kernel-version/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-38---kernel-version/</loc>
     <lastmod>2023-05-23T22:18:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-37-loop/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-37---loop/</loc>
     <lastmod>2023-05-23T22:14:15+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/tags/loop/</loc>
-    <lastmod>2023-05-23T22:14:15+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/tags/af_xdp/</loc>
-    <lastmod>2023-05-23T22:09:09+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</loc>
-    <lastmod>2023-05-23T22:09:09+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/tags/xdp/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-36---xdp-redirect-to-af_xdp/</loc>
     <lastmod>2023-05-23T22:09:09+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -282,49 +681,35 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-35---bpf2bpf-and-tailcall-error/</loc>
     <lastmod>2023-05-23T22:06:44+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-34-af_xdp/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-34---af_xdp/</loc>
     <lastmod>2023-05-23T22:02:31+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-33-tailcall-on-x86/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-33---tailcall-on-x86/</loc>
     <lastmod>2023-05-23T21:48:41+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-32-tailcall-and-bpf2bpf/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-32---tailcall-and-bpf2bpf/</loc>
     <lastmod>2023-05-23T21:44:17+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/tags/bpf-map/</loc>
-    <lastmod>2023-05-21T23:38:54+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-31-global-variable-constant-variable-and-bpf-map/</loc>
-    <lastmod>2023-05-21T23:38:54+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/tags/%E5%85%A8%E5%B1%80%E5%8F%98%E9%87%8F/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-31---global-variable-constant-variable-and-bpf-map/</loc>
     <lastmod>2023-05-21T23:38:54+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -338,14 +723,14 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-30-veth-xdp-gro/</loc>
-    <lastmod>2023-05-21T23:33:35+08:00</lastmod>
+    <loc>https://le0nhwan9.github.io/tags/%E5%85%A8%E5%B1%80%E5%8F%98%E9%87%8F/</loc>
+    <lastmod>2023-05-21T23:38:54+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/tags/veth/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-30---veth-xdp-gro/</loc>
     <lastmod>2023-05-21T23:33:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -359,7 +744,7 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-29-failed-to-xdp-redirect/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-29---failed-to-xdp-redirect/</loc>
     <lastmod>2023-05-21T23:29:32+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -373,7 +758,7 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-28-xdp-on-veth/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-28---xdp-on-veth/</loc>
     <lastmod>2023-05-21T16:41:37+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -387,7 +772,7 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-27-xdp-metadata-in-action/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-27---xdp-metadata-in-action/</loc>
     <lastmod>2023-05-21T16:34:35+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -401,77 +786,63 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/tags/tc-bpf/</loc>
-    <lastmod>2023-05-21T16:34:35+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-26-iptables-in-bpf/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-26---iptables-in-bpf/</loc>
     <lastmod>2023-05-21T16:24:22+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/tags/xdp-acl/</loc>
-    <lastmod>2023-05-21T16:24:22+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-25-xdp-redirect-packet/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-25---xdp-redirect-packet/</loc>
     <lastmod>2023-05-21T16:22:07+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/tags/bpf-verifier/</loc>
+    <loc>https://le0nhwan9.github.io/tags/cilium/ebpf/</loc>
     <lastmod>2023-05-21T16:19:32+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-24-bpf-verifier-enospc/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-24---bpf-verifier-enospc/</loc>
     <lastmod>2023-05-21T16:19:32+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-23-a-concrete-usage-of-array-map/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-23---a-concrete-usage-of-array-map/</loc>
     <lastmod>2023-05-21T16:17:25+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-22-global-variables-in-action/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-22---global-variables-in-action/</loc>
     <lastmod>2023-05-21T16:12:19+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-21---xdp-acl-optimisation/</loc>
     <lastmod>2023-05-21T16:08:36+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-20-xdp-acl-again/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-20---xdp-acl-again/</loc>
     <lastmod>2023-05-21T16:03:32+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-19-how-skbs-work/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-19---how-skbs-work/</loc>
     <lastmod>2023-05-21T16:00:09+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -485,35 +856,28 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/tags/bpf-helpers/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-18---another-side-of-bpf-helpers/</loc>
     <lastmod>2023-05-20T17:48:25+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-18-another-side-of-bpf-helpers/</loc>
-    <lastmod>2023-05-20T17:48:25+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-17-xdp-redirect-packet/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-17---xdp-redirect-packet/</loc>
     <lastmod>2023-05-20T17:41:10+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-16-xdp-generic-mode/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-16---xdp-generic-mode/</loc>
     <lastmod>2023-05-20T17:37:39+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-15-useful-histogram/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-15---useful-histogram/</loc>
     <lastmod>2023-05-20T17:32:59+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -527,14 +891,14 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-14-bpf2bpf-functions-call/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-14---bpf2bpf-functions-call/</loc>
     <lastmod>2023-05-20T17:26:45+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/</loc>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-13---bpf-map-new-born-in-cilium_ebpf/</loc>
     <lastmod>2023-05-20T17:17:39+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -697,20 +1061,6 @@
   <url>
     <loc>https://le0nhwan9.github.io/tags/iptables-bpf/</loc>
     <lastmod>2022-04-01T21:14:32+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/tags/linux/</loc>
-    <lastmod>2022-01-22T14:03:18+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/categories/linux/</loc>
-    <lastmod>2022-01-22T14:03:18+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -970,12 +1320,6 @@
   <url>
     <loc>https://le0nhwan9.github.io/post/linux-bridge-flood/</loc>
     <lastmod>2021-01-13T23:39:25+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/tags/cilium/ebpf/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>

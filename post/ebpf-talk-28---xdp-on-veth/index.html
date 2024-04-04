@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 在 veth 上运行 XDP - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="veth 设备在 Linux 容器网络里被广泛使用，像其它网络设备一样都支持运行 XDP 程序。 与此同时，veth 设备还支持 driver 模式的 XDP 程序。 如果在往 veth 设备上挂载 XDP 程序时" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.124.1 with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-28---xdp-on-veth/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 在 veth 上运行 XDP" />
+<meta property="og:description" content="veth 设备在 Linux 容器网络里被广泛使用，像其它网络设备一样都支持运行 XDP 程序。 与此同时，veth 设备还支持 driver 模式的 XDP 程序。 如果在往 veth 设备上挂载 XDP 程序时" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-28---xdp-on-veth/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-05-21T16:41:37+08:00" />
+<meta property="article:modified_time" content="2023-05-21T16:41:37+08:00" />
+<meta itemprop="name" content="eBPF Talk: 在 veth 上运行 XDP">
+<meta itemprop="description" content="veth 设备在 Linux 容器网络里被广泛使用，像其它网络设备一样都支持运行 XDP 程序。 与此同时，veth 设备还支持 driver 模式的 XDP 程序。 如果在往 veth 设备上挂载 XDP 程序时"><meta itemprop="datePublished" content="2023-05-21T16:41:37+08:00" />
+<meta itemprop="dateModified" content="2023-05-21T16:41:37+08:00" />
+<meta itemprop="wordCount" content="1239">
+<meta itemprop="keywords" content="eBPF,XDP,veth,retsnoop,drgn," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 在 veth 上运行 XDP"/>
+<meta name="twitter:description" content="veth 设备在 Linux 容器网络里被广泛使用，像其它网络设备一样都支持运行 XDP 程序。 与此同时，veth 设备还支持 driver 模式的 XDP 程序。 如果在往 veth 设备上挂载 XDP 程序时"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 在 veth 上运行 XDP</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-21 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1239 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#问题背景">问题背景</a></li>
+        <li><a href="#问题排查">问题排查</a></li>
+        <li><a href="#问题解决">问题解决</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p><code>veth</code> 设备在 Linux 容器网络里被广泛使用，像其它网络设备一样都支持运行 XDP 程序。</p>
+<p>与此同时，<code>veth</code> 设备还支持 driver 模式的 XDP 程序。</p>
+<p>如果在往 <code>veth</code> 设备上挂载 XDP 程序时没有指定 XDP 运行模式，默认会优先采用 driver 模式。</p>
+<p>如果在往 <code>veth</code> 设备上挂载 driver 模式的 XDP 程序时，报告了 <code>No space left on device</code> 错误，会是什么原因呢？</p>
+<h2 id="问题背景">问题背景</h2>
+<p>因业务需求需要使用 <code>veth</code> 设备，而且需要往 <code>veth</code> 设备上挂载 XDP 程序。挂载 XDP 程序时需要指定使用 generic 模式。</p>
+<p>且为了更好的性能，需要给 <code>veth</code> 设备设置 RPS。</p>
+<h2 id="问题排查">问题排查</h2>
+<p>在用户态程序里，使用 <a href="https://github.com/cilium/ebpf"><code>cilium/ebpf</code></a> 库来挂载 XDP 程序。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="c1">// ${EBPF}/link/xdp.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// AttachXDP links an XDP BPF program to an XDP hook.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">AttachXDP</span><span class="p">(</span><span class="nx">opts</span> <span class="nx">XDPOptions</span><span class="p">)</span> <span class="p">(</span><span class="nx">Link</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nx">rawLink</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">AttachRawLink</span><span class="p">(</span><span class="nx">RawLinkOptions</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Program</span><span class="p">:</span> <span class="nx">opts</span><span class="p">.</span><span class="nx">Program</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Attach</span><span class="p">:</span>  <span class="nx">ebpf</span><span class="p">.</span><span class="nx">AttachXDP</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Target</span><span class="p">:</span>  <span class="nx">opts</span><span class="p">.</span><span class="nx">Interface</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Flags</span><span class="p">:</span>   <span class="nb">uint32</span><span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">Flags</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="p">})</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">rawLink</span><span class="p">,</span> <span class="nx">err</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// ${EBPF}/link/link.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// AttachRawLink creates a raw link.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">AttachRawLink</span><span class="p">(</span><span class="nx">opts</span> <span class="nx">RawLinkOptions</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">RawLink</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nx">attr</span> <span class="o">:=</span> <span class="nx">sys</span><span class="p">.</span><span class="nx">LinkCreateAttr</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">TargetFd</span><span class="p">:</span>    <span class="nb">uint32</span><span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">Target</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">ProgFd</span><span class="p">:</span>      <span class="nb">uint32</span><span class="p">(</span><span class="nx">progFd</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">AttachType</span><span class="p">:</span>  <span class="nx">sys</span><span class="p">.</span><span class="nf">AttachType</span><span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">Attach</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">TargetBtfId</span><span class="p">:</span> <span class="nb">uint32</span><span class="p">(</span><span class="nx">opts</span><span class="p">.</span><span class="nx">BTF</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Flags</span><span class="p">:</span>       <span class="nx">opts</span><span class="p">.</span><span class="nx">Flags</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">fd</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">sys</span><span class="p">.</span><span class="nf">LinkCreate</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">attr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;create link: %w&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="o">&amp;</span><span class="nx">RawLink</span><span class="p">{</span><span class="nx">fd</span><span class="p">,</span> <span class="s">&#34;&#34;</span><span class="p">},</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// ${EBPF}/internal/sys/types.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">LinkCreate</span><span class="p">(</span><span class="nx">attr</span> <span class="o">*</span><span class="nx">LinkCreateAttr</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">FD</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">fd</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">BPF</span><span class="p">(</span><span class="nx">BPF_LINK_CREATE</span><span class="p">,</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="nx">attr</span><span class="p">),</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nf">Sizeof</span><span class="p">(</span><span class="o">*</span><span class="nx">attr</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">err</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">NewFD</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nx">fd</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// ${EBPF}/internal/sys/syscall.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// BPF wraps SYS_BPF.
+</span></span></span><span class="line"><span class="cl"><span class="c1">//
+</span></span></span><span class="line"><span class="cl"><span class="c1">// Any pointers contained in attr must use the Pointer type from this package.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="kd">func</span> <span class="nf">BPF</span><span class="p">(</span><span class="nx">cmd</span> <span class="nx">Cmd</span><span class="p">,</span> <span class="nx">attr</span> <span class="nx">unsafe</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">,</span> <span class="nx">size</span> <span class="kt">uintptr</span><span class="p">)</span> <span class="p">(</span><span class="kt">uintptr</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">r1</span><span class="p">,</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">errNo</span> <span class="o">:=</span> <span class="nx">unix</span><span class="p">.</span><span class="nf">Syscall</span><span class="p">(</span><span class="nx">unix</span><span class="p">.</span><span class="nx">SYS_BPF</span><span class="p">,</span> <span class="nb">uintptr</span><span class="p">(</span><span class="nx">cmd</span><span class="p">),</span> <span class="nb">uintptr</span><span class="p">(</span><span class="nx">attr</span><span class="p">),</span> <span class="nx">size</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">runtime</span><span class="p">.</span><span class="nf">KeepAlive</span><span class="p">(</span><span class="nx">attr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">r1</span><span class="p">,</span> <span class="nx">err</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>AttachXDP()</code> 函数最终是调用 BPF 系统调用的 <code>BPF_LINK_CREATE</code> 命令。继续深入扒一下 BPF 系统调用的源代码。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="nf">BPF_CALL_3</span><span class="p">(</span><span class="n">bpf_sys_bpf</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">cmd</span><span class="p">,</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">u32</span><span class="p">,</span> <span class="n">attr_size</span><span class="p">)</span>   <span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">|--&gt;</span><span class="nf">__sys_bpf</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="nf">link_create</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|--&gt;</span><span class="nf">bpf_xdp_link_attach</span><span class="p">()</span>                                           <span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="o">|--&gt;</span><span class="nf">bpf_link_init</span><span class="p">()</span>                                             <span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="o">|--&gt;</span><span class="nf">bpf_link_prime</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">            <span class="o">|--&gt;</span><span class="nf">dev_xdp_attach_link</span><span class="p">()</span>                                       <span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="o">|--&gt;</span><span class="nf">bpf_link_settle</span><span class="p">()</span>                                           <span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>既然是 <code>AttachXDP()</code> 返回了 <code>No space left on device</code> 错误，那肯定是 <code>link_create()</code> 时返回了 <code>-ENOSPC</code> 错误码。</p>
+<p>是时候祭出屠龙刀 <a href="https://github.com/anakryiko/retsnoop"><code>retsnoop</code></a>，trace 一下 <code>link_create()</code> 函数里出错的地方。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Bash" data-lang="Bash"><span class="line"><span class="cl"><span class="c1"># ./retsnoop -T -e &#39;*sys_bpf&#39; -a &#39;bpf_link_*&#39; -a &#39;dev_xdp_*&#39;</span>
+</span></span><span class="line"><span class="cl">09:41:44.427064 -&gt; 09:41:44.427087 TID/PID 39601/38991 <span class="o">(</span>xxx/xxx<span class="o">)</span>:
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">FUNCTION CALL TRACE                     RESULT                DURATION
+</span></span><span class="line"><span class="cl">-------------------------------------   --------------------  --------
+</span></span><span class="line"><span class="cl">→ __x64_sys_bpf
+</span></span><span class="line"><span class="cl">    → __sys_bpf
+</span></span><span class="line"><span class="cl">        ↔ bpf_link_init                 <span class="o">[</span>void<span class="o">]</span>                 0.885us
+</span></span><span class="line"><span class="cl">        ↔ bpf_link_prime                <span class="o">[</span>0<span class="o">]</span>                    4.639us
+</span></span><span class="line"><span class="cl">        → dev_xdp_attach
+</span></span><span class="line"><span class="cl">            ↔ dev_xdp_install           <span class="o">[</span>-ENOSPC<span class="o">]</span>              1.162us
+</span></span><span class="line"><span class="cl">        ← dev_xdp_attach                <span class="o">[</span>-ENOSPC<span class="o">]</span>              8.162us
+</span></span><span class="line"><span class="cl">        → bpf_link_cleanup
+</span></span><span class="line"><span class="cl">            ↔ bpf_link_free_id.part.0   <span class="o">[</span>0xffffffff80000000<span class="o">]</span>   0.732us
+</span></span><span class="line"><span class="cl">        ← bpf_link_cleanup              <span class="o">[</span>void<span class="o">]</span>                 2.427us
+</span></span><span class="line"><span class="cl">    ← __sys_bpf                         <span class="o">[</span>-ENOSPC<span class="o">]</span>             29.009us
+</span></span><span class="line"><span class="cl">← __x64_sys_bpf                         <span class="o">[</span>-ENOSPC<span class="o">]</span>             31.859us
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                    entry_SYSCALL_64_after_hwframe+0x44
+</span></span><span class="line"><span class="cl">                    kretprobe_trampoline+0x0
+</span></span><span class="line"><span class="cl">                    kretprobe_trampoline+0x0
+</span></span><span class="line"><span class="cl">!   31us <span class="o">[</span>-ENOSPC<span class="o">]</span>  __x64_sys_bpf
+</span></span><span class="line"><span class="cl">!   29us <span class="o">[</span>-ENOSPC<span class="o">]</span>  __sys_bpf
+</span></span><span class="line"><span class="cl">!*   8us <span class="o">[</span>-ENOSPC<span class="o">]</span>  dev_xdp_attach
+</span></span><span class="line"><span class="cl">!*   1us <span class="o">[</span>-ENOSPC<span class="o">]</span>  dev_xdp_install
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>屠龙刀 <code>retsnoop</code> 已屠龙，是 <code>dev_xdp_attach()</code> 返回了 <code>-ENOSPC</code> 错误码。</p>
+<p>好了，接着看下 <code>dev_xdp_attach_link()</code> 会在什么情况下会返回 <code>-ENOSPC</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="nf">dev_xdp_attach_link</span><span class="p">()</span>                   <span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">|--&gt;</span><span class="nf">dev_xdp_attach</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="n">mode</span> <span class="o">=</span> <span class="nf">dev_xdp_mode</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>       <span class="k">static</span> <span class="k">enum</span> <span class="n">bpf_xdp_mode</span> <span class="nf">dev_xdp_mode</span><span class="p">(</span><span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span><span class="p">,</span> <span class="n">u32</span> <span class="n">flags</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>       <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>           <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">XDP_FLAGS_HW_MODE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>               <span class="k">return</span> <span class="n">XDP_MODE_HW</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>           <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">XDP_FLAGS_DRV_MODE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>               <span class="k">return</span> <span class="n">XDP_MODE_DRV</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>           <span class="k">if</span> <span class="p">(</span><span class="n">flags</span> <span class="o">&amp;</span> <span class="n">XDP_FLAGS_SKB_MODE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>               <span class="k">return</span> <span class="n">XDP_MODE_SKB</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>           <span class="k">return</span> <span class="n">dev</span><span class="o">-&gt;</span><span class="n">netdev_ops</span><span class="o">-&gt;</span><span class="n">ndo_bpf</span> <span class="o">?</span> <span class="nl">XDP_MODE_DRV</span> <span class="p">:</span> <span class="n">XDP_MODE_SKB</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>       <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="n">bpf_op</span> <span class="o">=</span> <span class="nf">dev_xdp_bpf_op</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">mode</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>       <span class="k">static</span> <span class="kt">bpf_op_t</span> <span class="nf">dev_xdp_bpf_op</span><span class="p">(</span><span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span><span class="p">,</span> <span class="k">enum</span> <span class="n">bpf_xdp_mode</span> <span class="n">mode</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>       <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>           <span class="k">switch</span> <span class="p">(</span><span class="n">mode</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>           <span class="k">case</span> <span class="nl">XDP_MODE_SKB</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>               <span class="k">return</span> <span class="n">generic_xdp_install</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>           <span class="k">case</span> <span class="nl">XDP_MODE_DRV</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>           <span class="k">case</span> <span class="nl">XDP_MODE_HW</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>               <span class="k">return</span> <span class="n">dev</span><span class="o">-&gt;</span><span class="n">netdev_ops</span><span class="o">-&gt;</span><span class="n">ndo_bpf</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>           <span class="k">default</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>               <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>           <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|</span>       <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="n">err</span> <span class="o">=</span> <span class="nf">dev_xdp_install</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">bpf_op</span><span class="p">,</span> <span class="n">extack</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">new_prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|--&gt;</span><span class="n">err</span> <span class="o">=</span> <span class="nf">bpf_op</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">xdp</span><span class="p">);</span>    <span class="c1">// 因为没有指定 XDP 模式，所以会调用 veth 设备的 ndo_bpf 函数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>       <span class="o">/</span>
+</span></span><span class="line"><span class="cl">      <span class="o">/</span>
+</span></span><span class="line"><span class="cl">     <span class="o">/</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="nf">veth_xdp</span><span class="p">()</span>                      <span class="c1">// ${KERNEL}/drivers/net/veth.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="o">|--&gt;</span><span class="nf">veth_xdp_set</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">real_num_rx_queues</span> <span class="o">&lt;</span> <span class="n">peer</span><span class="o">-&gt;</span><span class="n">real_num_tx_queues</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nf">NL_SET_ERR_MSG_MOD</span><span class="p">(</span><span class="n">extack</span><span class="p">,</span> <span class="s">&#34;XDP expects number of rx queues not less than peer tx queues&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">                <span class="n">err</span> <span class="o">=</span> <span class="o">-</span><span class="n">ENOSPC</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="k">goto</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>从源代码可以看出，因为当前 <code>veth</code> 设备的 <code>real_num_rx_queues</code> 小于对端 <code>veth</code> 设备的 <code>real_num_tx_queues</code>，所以才会出现 <code>No space left on device</code> 错误。</p>
+<p>如此，是时候祭出另一把屠龙刀 <a href="https://github.com/osandov/drgn"><code>drgn</code></a>，用来确认 <code>veth</code> 设备的 <code>real_num_tx_queues</code> 和 <code>real_num_tx_queues</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Python" data-lang="Python"><span class="line"><span class="cl"><span class="c1"># drgn</span>
+</span></span><span class="line"><span class="cl"><span class="n">drgn</span> <span class="mf">0.0.21</span> <span class="p">(</span><span class="n">using</span> <span class="n">Python</span> <span class="mf">3.10.6</span><span class="p">,</span> <span class="n">elfutils</span> <span class="mf">0.187</span><span class="p">,</span> <span class="k">with</span> <span class="n">libkdumpfile</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="n">For</span> <span class="n">help</span><span class="p">,</span> <span class="nb">type</span> <span class="n">help</span><span class="p">(</span><span class="n">drgn</span><span class="p">)</span><span class="o">.</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">drgn</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn</span> <span class="kn">import</span> <span class="n">NULL</span><span class="p">,</span> <span class="n">Object</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">container_of</span><span class="p">,</span> <span class="n">execscript</span><span class="p">,</span> <span class="n">offsetof</span><span class="p">,</span> <span class="n">reinterpret</span><span class="p">,</span> <span class="n">sizeof</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn.helpers.common</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn.helpers.linux</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="n">netdev_get_by_name</span><span class="p">(</span><span class="n">prog</span><span class="p">,</span> <span class="s2">&#34;veth_xxx0&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">real_num_rx_queues</span>
+</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="n">unsigned</span> <span class="nb">int</span><span class="p">)</span><span class="mi">14</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="n">netdev_get_by_name</span><span class="p">(</span><span class="n">prog</span><span class="p">,</span> <span class="s2">&#34;veth_yyy0&#34;</span><span class="p">)</span><span class="o">.</span><span class="n">real_num_tx_queues</span>
+</span></span><span class="line"><span class="cl"><span class="p">(</span><span class="n">unsigned</span> <span class="nb">int</span><span class="p">)</span><span class="mi">48</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>屠龙刀 <code>drgn</code> 也已屠龙，确认了的确是 <code>dev-&gt;real_num_rx_queues &lt; peer-&gt;real_num_tx_queues</code>。</p>
+<h2 id="问题解决">问题解决</h2>
+<p>其实，当看到 <code>dev_xdp_mode()</code> 函数时，我便察觉到了问题的根因：没有指定 generic 模式。</p>
+<p>所以，当指定 generic 模式挂载 XDP 程序时，就没有出现 <code>No space left on device</code> 错误了。</p>
+<h2 id="小结">小结</h2>
+<p><code>retsnoop</code> 和 <code>drgn</code> 两把屠龙刀一起用来排查内核网络问题，简直无敌。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2023-05-21
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/xdp/">XDP</a>
+      <a href="/%20tags/veth/">veth</a>
+      <a href="/%20tags/retsnoop/">retsnoop</a>
+      <a href="/%20tags/drgn/">drgn</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-29---failed-to-xdp-redirect/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: XDP 转发失败了</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-27---xdp-metadata-in-action/">
+        <span class="next-text nav-default">eBPF Talk: XDP metadata 实战指南</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

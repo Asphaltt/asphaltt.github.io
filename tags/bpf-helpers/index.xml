@@ -1,20 +1,26 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>bpf helpers on LeonHwang&#39;s Blogs</title>
+    <title>Bpf Helpers on LeonHwang&#39;s Blogs</title>
     <link>https://le0nhwan9.github.io/tags/bpf-helpers/</link>
-    <description>Recent content in bpf helpers on LeonHwang&#39;s Blogs</description>
+    <description>Recent content in Bpf Helpers on LeonHwang&#39;s Blogs</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh</language>
-    <lastBuildDate>Sat, 20 May 2023 17:48:25 +0800</lastBuildDate><atom:link href="https://le0nhwan9.github.io/tags/bpf-helpers/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 03 Apr 2024 22:40:29 +0800</lastBuildDate>
+    <atom:link href="https://le0nhwan9.github.io/tags/bpf-helpers/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: helpers for bpf map</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-63---helpers-for-bpf-map/</link>
+      <pubDate>Wed, 03 Apr 2024 22:40:29 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-63---helpers-for-bpf-map/</guid>
+      <description>通过学习 eBPF Talk: eBPF helpers 的另一面，我们知道 eBPF helpers 是通过 bpf_func_proto 结构体来实现的，不同的 helpers 函数对应不同的 bpf_func_proto；甚至，对于同一个 helpers 函数，不</description>
+    </item>
     <item>
       <title>eBPF Talk: bpf helpers 的另一面</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-18-another-side-of-bpf-helpers/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-18---another-side-of-bpf-helpers/</link>
       <pubDate>Sat, 20 May 2023 17:48:25 +0800</pubDate>
-      
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-18-another-side-of-bpf-helpers/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-18---another-side-of-bpf-helpers/</guid>
       <description>本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，verifier 是怎么处理 bpf helpers 的。 书接上回 eBPF Talk: 揭秘 XDP 转发网络包，本文解答： 为什么 XDP</description>
     </item>
-    
   </channel>
 </rss>

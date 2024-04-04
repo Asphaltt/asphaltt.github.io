@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Bpf_iter on LeonHwang&#39;s Blogs</title>
+    <link>https://le0nhwan9.github.io/tags/bpf_iter/</link>
+    <description>Recent content in Bpf_iter on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Wed, 03 Apr 2024 23:14:50 +0800</lastBuildDate>
+    <atom:link href="https://le0nhwan9.github.io/tags/bpf_iter/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: introduce bpf_iter</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-74---introduce-bpf_iter/</link>
+      <pubDate>Wed, 03 Apr 2024 23:14:50 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-74---introduce-bpf_iter/</guid>
+      <description>通过 Linux 网络: sequence file 的学习，我们知道在 Linux 里有不少地方都使用 sequence file 机制向用户态空间传递数据。 在 eBPF 的加持下，sequence file 机制迎来了更加灵活的实现</description>
+    </item>
+  </channel>
+</rss>

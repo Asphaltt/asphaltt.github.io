@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Bpf Prog on LeonHwang&#39;s Blogs</title>
+    <link>https://le0nhwan9.github.io/tags/bpf-prog/</link>
+    <description>Recent content in Bpf Prog on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh</language>
+    <lastBuildDate>Wed, 03 Apr 2024 22:57:57 +0800</lastBuildDate>
+    <atom:link href="https://le0nhwan9.github.io/tags/bpf-prog/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: bpf prog stats</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-70---bpf-prog-stats/</link>
+      <pubDate>Wed, 03 Apr 2024 22:57:57 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-70---bpf-prog-stats/</guid>
+      <description>根据以下两个 commit，可以看到，自 5.1 内核起，bpf prog 可以统计自己的运行情况了。 bpf: enable program stats 5.1 kernel. bpf: Sharing bpf runtime stats with BPF_ENABLE_STATS 5.8 kernel. bpf: Improve program stats run-time calculation 6.x kernel. stats 例子 以 bpf2bpf demo</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 正确地进行统计</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-59---stats-bpf-prog-correctly/</link>
+      <pubDate>Mon, 01 Apr 2024 22:49:01 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-59---stats-bpf-prog-correctly/</guid>
+      <description>在 bpf prog 里进行统计，该怎么做呢？ PERCPU bpf map 在 bpf prog 里使用 PERCPU bpf map 进行统计，在用户态应用程序里就可以读取该 bpf map 获取从而能够计算出最终的统计数据。 使用 PERCPU bpf</description>
+    </item>
+  </channel>
+</rss>
