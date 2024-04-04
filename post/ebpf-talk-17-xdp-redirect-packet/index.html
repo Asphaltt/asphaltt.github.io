@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 揭秘 XDP 转发网络包 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="书接上回 eBPF Talk: 解密 XDP generic 模式，本文从源代码层面剖析 XDP 转发网络包的实现。 demo 按需将网络包从另一张网卡转发走。 1 2 3 4 5 6 7 8 9 static volatile const u32 REDIRECT_IFINDEX = 0xFFFFFFFF; SEC(&amp;#34;xdp&amp;#34;) int xdp_redirect(struct xdp_md" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-17-xdp-redirect-packet/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 揭秘 XDP 转发网络包" />
+<meta property="og:description" content="书接上回 eBPF Talk: 解密 XDP generic 模式，本文从源代码层面剖析 XDP 转发网络包的实现。 demo 按需将网络包从另一张网卡转发走。 1 2 3 4 5 6 7 8 9 static volatile const u32 REDIRECT_IFINDEX = 0xFFFFFFFF; SEC(&#34;xdp&#34;) int xdp_redirect(struct xdp_md" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-17-xdp-redirect-packet/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-05-20T17:41:10+08:00" />
+<meta property="article:modified_time" content="2023-05-20T17:41:10+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 揭秘 XDP 转发网络包">
+  <meta itemprop="description" content="书接上回 eBPF Talk: 解密 XDP generic 模式，本文从源代码层面剖析 XDP 转发网络包的实现。 demo 按需将网络包从另一张网卡转发走。 1 2 3 4 5 6 7 8 9 static volatile const u32 REDIRECT_IFINDEX = 0xFFFFFFFF; SEC(&#34;xdp&#34;) int xdp_redirect(struct xdp_md">
+  <meta itemprop="datePublished" content="2023-05-20T17:41:10+08:00">
+  <meta itemprop="dateModified" content="2023-05-20T17:41:10+08:00">
+  <meta itemprop="wordCount" content="1354">
+  <meta itemprop="keywords" content="EBPF,XDP"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 揭秘 XDP 转发网络包"/>
+<meta name="twitter:description" content="书接上回 eBPF Talk: 解密 XDP generic 模式，本文从源代码层面剖析 XDP 转发网络包的实现。 demo 按需将网络包从另一张网卡转发走。 1 2 3 4 5 6 7 8 9 static volatile const u32 REDIRECT_IFINDEX = 0xFFFFFFFF; SEC(&#34;xdp&#34;) int xdp_redirect(struct xdp_md"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 揭秘 XDP 转发网络包</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1354 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#demo">demo</a></li>
+        <li><a href="#bpf_xdp_redirect"><code>bpf_xdp_redirect()</code></a></li>
+        <li><a href="#bpf_xdp_redirect-syscall"><code>bpf_xdp_redirect()</code> syscall</a></li>
+        <li><a href="#bpf_xdp_redirect_map"><code>bpf_xdp_redirect_map()</code></a></li>
+        <li><a href="#bpf_redirect"><strong>BPF_REDIRECT</strong></a></li>
+        <li><a href="#generic_xdp_tx"><code>generic_xdp_tx()</code></a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>书接上回 <a href="/post/ebpf-talk-16-xdp-generic-mode/">eBPF Talk: 解密 XDP generic 模式</a>，本文从源代码层面剖析 XDP 转发网络包的实现。</p>
+<h2 id="demo">demo</h2>
+<p>按需将网络包从另一张网卡转发走。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">static</span> <span class="k">volatile</span> <span class="k">const</span> <span class="n">u32</span> <span class="n">REDIRECT_IFINDEX</span> <span class="o">=</span> <span class="mh">0xFFFFFFFF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;xdp&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">xdp_redirect</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// filter skb
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">bpf_redirect</span><span class="p">(</span><span class="n">REDIRECT_IFINDEX</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中，<code>REDIRECT_IFINDEX</code> 常量需要用户应用程序重写成目标网口的 ifindex。</p>
+<h2 id="bpf_xdp_redirect"><code>bpf_xdp_redirect()</code></h2>
+<p>咦，为什么 XDP 具体的 <code>bpf_redirect()</code> 函数的实现是 <code>bpf_xdp_redirect()</code> 而不是 <code>bpf_redirect()</code> 呢？</p>
+<p>好问题，又有一个可以深入挖掘的地方。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/filter.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_func_proto</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="nf">xdp_func_proto</span><span class="p">(</span><span class="k">enum</span> <span class="n">bpf_func_id</span> <span class="n">func_id</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">switch</span> <span class="p">(</span><span class="n">func_id</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">case</span> <span class="nl">BPF_FUNC_redirect</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_redirect_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_redirect_map</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_redirect_map_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">default</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">bpf_sk_base_func_proto</span><span class="p">(</span><span class="n">func_id</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_func_proto</span> <span class="n">bpf_xdp_redirect_proto</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">func</span>           <span class="o">=</span> <span class="n">bpf_xdp_redirect</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">gpl_only</span>       <span class="o">=</span> <span class="nb">false</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">ret_type</span>       <span class="o">=</span> <span class="n">RET_INTEGER</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">arg1_type</span>      <span class="o">=</span> <span class="n">ARG_ANYTHING</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">arg2_type</span>      <span class="o">=</span> <span class="n">ARG_ANYTHING</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_func_proto</span> <span class="n">bpf_xdp_redirect_map_proto</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">func</span>           <span class="o">=</span> <span class="n">bpf_xdp_redirect_map</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">gpl_only</span>       <span class="o">=</span> <span class="nb">false</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">ret_type</span>       <span class="o">=</span> <span class="n">RET_INTEGER</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">arg1_type</span>      <span class="o">=</span> <span class="n">ARG_CONST_MAP_PTR</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">arg2_type</span>      <span class="o">=</span> <span class="n">ARG_ANYTHING</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">arg3_type</span>      <span class="o">=</span> <span class="n">ARG_ANYTHING</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>从如上代码片段可知，对于 XDP 程序而言，为 <code>bpf_redirect()</code> BPF 函数
+（<code>BPF_FUNC_redirect</code>）注册的函数是 <code>bpf_xdp_redirect()</code>。所以，不要被
+C 代码里的 <code>bpf_redirect()</code> 函数名称给欺骗了哦。</p>
+<h2 id="bpf_xdp_redirect-syscall"><code>bpf_xdp_redirect()</code> syscall</h2>
+<p>其源代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/filter.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_CALL_2</span><span class="p">(</span><span class="n">bpf_xdp_redirect</span><span class="p">,</span> <span class="n">u32</span><span class="p">,</span> <span class="n">ifindex</span><span class="p">,</span> <span class="n">u64</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_redirect_info</span> <span class="o">*</span><span class="n">ri</span> <span class="o">=</span> <span class="nf">this_cpu_ptr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bpf_redirect_info</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="n">flags</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">XDP_ABORTED</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_index</span> <span class="o">=</span> <span class="n">ifindex</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_value</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">WRITE_ONCE</span><span class="p">(</span><span class="n">ri</span><span class="o">-&gt;</span><span class="n">map</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">XDP_REDIRECT</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如上代码片段做了如下处理：</p>
+<ol>
+<li>取出每个 CPU 的 <code>struct bpf_redirect_info</code> 。</li>
+<li>将 ifindex 和 flags 保存到 <code>struct bpf_redirect_info</code> 中。</li>
+<li>返回 <code>XDP_REDIRECT</code> 。</li>
+</ol>
+<h2 id="bpf_xdp_redirect_map"><code>bpf_xdp_redirect_map()</code></h2>
+<p>其源代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/filter.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_CALL_3</span><span class="p">(</span><span class="n">bpf_xdp_redirect_map</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="p">,</span> <span class="n">map</span><span class="p">,</span> <span class="n">u32</span><span class="p">,</span> <span class="n">ifindex</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">       <span class="n">u64</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_redirect_info</span> <span class="o">*</span><span class="n">ri</span> <span class="o">=</span> <span class="nf">this_cpu_ptr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bpf_redirect_info</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_index</span> <span class="o">=</span> <span class="n">ifindex</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">WRITE_ONCE</span><span class="p">(</span><span class="n">ri</span><span class="o">-&gt;</span><span class="n">map</span><span class="p">,</span> <span class="n">map</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">XDP_REDIRECT</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>处理逻辑类似 <code>bpf_xdp_recirect()</code>，这里多了一步：保存 map 到 <code>struct bpf_redirect_info</code> 中。</p>
+<h2 id="bpf_redirect"><strong>BPF_REDIRECT</strong></h2>
+<p>此时再来看 <a href="/post/ebpf-talk-16-xdp-generic-mode/">eBPF Talk: 解密 XDP generic 模式</a> 中关于转发网络包的处理逻辑。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">do_xdp_generic</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">xdp_prog</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">xdp_prog</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">xdp_buff</span> <span class="n">xdp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">u32</span> <span class="n">act</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">act</span> <span class="o">=</span> <span class="nf">netif_receive_generic_xdp</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">xdp</span><span class="p">,</span> <span class="n">xdp_prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">act</span> <span class="o">!=</span> <span class="n">XDP_PASS</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">switch</span> <span class="p">(</span><span class="n">act</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">case</span> <span class="nl">XDP_REDIRECT</span><span class="p">:</span> <span class="c1">// 对 skb 进行转发处理
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="n">err</span> <span class="o">=</span> <span class="nf">xdp_do_generic_redirect</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                  <span class="o">&amp;</span><span class="n">xdp</span><span class="p">,</span> <span class="n">xdp_prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">                <span class="k">if</span> <span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">goto</span> <span class="n">out_redir</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">case</span> <span class="nl">XDP_TX</span><span class="p">:</span> <span class="c1">// 对 skb 进行发包处理
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="nf">generic_xdp_tx</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">xdp_prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">                <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">XDP_DROP</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nl">out_redir</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">kfree_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">XDP_DROP</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">xdp_do_generic_redirect_map</span><span class="p">(</span><span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                       <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                       <span class="k">struct</span> <span class="n">xdp_buff</span> <span class="o">*</span><span class="n">xdp</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                       <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">xdp_prog</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                       <span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_redirect_info</span> <span class="o">*</span><span class="n">ri</span> <span class="o">=</span> <span class="nf">this_cpu_ptr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bpf_redirect_info</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u32</span> <span class="n">index</span> <span class="o">=</span> <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_index</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">fwd</span> <span class="o">=</span> <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_value</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">err</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_value</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">WRITE_ONCE</span><span class="p">(</span><span class="n">ri</span><span class="o">-&gt;</span><span class="n">map</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">map_type</span> <span class="o">==</span> <span class="n">BPF_MAP_TYPE_DEVMAP</span> <span class="o">||</span>
+</span></span><span class="line"><span class="cl">        <span class="n">map</span><span class="o">-&gt;</span><span class="n">map_type</span> <span class="o">==</span> <span class="n">BPF_MAP_TYPE_DEVMAP_HASH</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">bpf_dtab_netdev</span> <span class="o">*</span><span class="n">dst</span> <span class="o">=</span> <span class="n">fwd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="nf">dev_map_generic_redirect</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="n">xdp_prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">            <span class="k">goto</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">map_type</span> <span class="o">==</span> <span class="n">BPF_MAP_TYPE_XSKMAP</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">xdp_sock</span> <span class="o">*</span><span class="n">xs</span> <span class="o">=</span> <span class="n">fwd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="nf">xsk_generic_rcv</span><span class="p">(</span><span class="n">xs</span><span class="p">,</span> <span class="n">xdp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">goto</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">consume_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* TODO: Handle BPF_MAP_TYPE_CPUMAP */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="o">-</span><span class="n">EBADRQC</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">goto</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nl">err</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">xdp_do_generic_redirect</span><span class="p">(</span><span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="k">struct</span> <span class="n">xdp_buff</span> <span class="o">*</span><span class="n">xdp</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">xdp_prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_redirect_info</span> <span class="o">*</span><span class="n">ri</span> <span class="o">=</span> <span class="nf">this_cpu_ptr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bpf_redirect_info</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span> <span class="o">=</span> <span class="nf">READ_ONCE</span><span class="p">(</span><span class="n">ri</span><span class="o">-&gt;</span><span class="n">map</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u32</span> <span class="n">index</span> <span class="o">=</span> <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_index</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">map</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">xdp_do_generic_redirect_map</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="n">xdp</span><span class="p">,</span> <span class="n">xdp_prog</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                           <span class="n">map</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_index</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">fwd</span> <span class="o">=</span> <span class="nf">dev_get_by_index_rcu</span><span class="p">(</span><span class="nf">dev_net</span><span class="p">(</span><span class="n">dev</span><span class="p">),</span> <span class="n">index</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">err</span> <span class="o">=</span> <span class="nf">xdp_ok_fwd_dev</span><span class="p">(</span><span class="n">fwd</span><span class="p">,</span> <span class="n">skb</span><span class="o">-&gt;</span><span class="n">len</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span> <span class="o">=</span> <span class="n">fwd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">generic_xdp_tx</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">xdp_prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="nl">err</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/devmap.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">dev_map_generic_redirect</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_dtab_netdev</span> <span class="o">*</span><span class="n">dst</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                 <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">xdp_prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">err</span> <span class="o">=</span> <span class="nf">xdp_ok_fwd_dev</span><span class="p">(</span><span class="n">dst</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">,</span> <span class="n">skb</span><span class="o">-&gt;</span><span class="n">len</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span> <span class="o">=</span> <span class="n">dst</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">generic_xdp_tx</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">xdp_prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中的 <code>BPF_MAP_TYPE_XSKMAP</code> 涉及 <a href="https://www.kernel.org/doc/html/v4.19/networking/af_xdp.html">AF_XDP</a>，先跳过吧。</p>
+<p>对于 XDP <code>bpf_redirect_map()</code> 中向另一张网卡转发网络包的处理逻辑跟 <code>bpf_redirect()</code> 类似，最终都会</p>
+<ol>
+<li>从每个 CPU 的 <code>struct bpf_redirect_info</code> 中获取目标 ifindex。</li>
+<li>重置 <code>struct bpf_redirect_info</code> 。</li>
+<li>检查能否从目标网卡发包出去。</li>
+<li>设置 <code>skb-&gt;dev</code> 为目标网卡设备。</li>
+<li>调用 <code>generic_xdp_tx()</code> 函数进行发包。</li>
+</ol>
+<blockquote>
+<p>对于 <code>XDP_TX</code> 的处理，不就是调用 <code>generic_xdp_tx()</code> 函数进行发包吗？哈哈。</p>
+</blockquote>
+<h2 id="generic_xdp_tx"><code>generic_xdp_tx()</code></h2>
+<p>其源代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/* When doing generic XDP we have to bypass the qdisc layer and the
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * network taps in order to match in-driver-XDP behavior.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">generic_xdp_tx</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">xdp_prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span> <span class="o">=</span> <span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">netdev_queue</span> <span class="o">*</span><span class="n">txq</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">bool</span> <span class="n">free_skb</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">cpu</span><span class="p">,</span> <span class="n">rc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">txq</span> <span class="o">=</span> <span class="nf">netdev_core_pick_tx</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">skb</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">cpu</span> <span class="o">=</span> <span class="nf">smp_processor_id</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">HARD_TX_LOCK</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">txq</span><span class="p">,</span> <span class="n">cpu</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nf">netif_xmit_stopped</span><span class="p">(</span><span class="n">txq</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">rc</span> <span class="o">=</span> <span class="nf">netdev_start_xmit</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">dev</span><span class="p">,</span> <span class="n">txq</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">dev_xmit_complete</span><span class="p">(</span><span class="n">rc</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">            <span class="n">free_skb</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">HARD_TX_UNLOCK</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">txq</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">free_skb</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">trace_xdp_exception</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">xdp_prog</span><span class="p">,</span> <span class="n">XDP_TX</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">kfree_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>该函数的处理逻辑：</p>
+<ol>
+<li>取出 <code>skb-&gt;dev</code>，<code>bpf_xdp_redirect()</code> 和 <code>bpf_xdp_redirect_map()</code> 都将 <code>skb-&gt;dev</code> 设置为目标网卡设备了。</li>
+<li>选择发包队列 <code>txq</code>。</li>
+<li>调用 <code>dev_xmit_start_xmit()</code> 进行发包。</li>
+</ol>
+<h2 id="小结">小结</h2>
+<p>至此，XDP 转发网络包的实现分析完毕。</p>
+<p>填了 XDP 转发网络包这坑后，又留了 <code>BPF_FUNC_xxx</code> 的坑；这真的是，知道的越多、未知的更多。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2023-05-20
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/xdp/">XDP</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-18-another-side-of-bpf-helpers/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: bpf helpers 的另一面</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-16-xdp-generic-mode/">
+        <span class="next-text nav-default">eBPF Talk: 解密 XDP generic 模式</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

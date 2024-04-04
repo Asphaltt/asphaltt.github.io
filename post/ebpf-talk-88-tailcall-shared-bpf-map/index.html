@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 共享的 tailcall PROG_ARRAY bpf map - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="在研究 eBPF Talk: trace tailcall 程序？NO！ 时，产生了疑惑： 静态 tailcall 使用的 PROG_ARRAY bpf map 能在多个进程之间共享吗？ TL;DR 能。且在更新 PROG_ARRAY bpf map 时，会更新静态 tailcall 的所有 bpf prog。 eBPF" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 共享的 tailcall PROG_ARRAY bpf map" />
+<meta property="og:description" content="在研究 eBPF Talk: trace tailcall 程序？NO！ 时，产生了疑惑： 静态 tailcall 使用的 PROG_ARRAY bpf map 能在多个进程之间共享吗？ TL;DR 能。且在更新 PROG_ARRAY bpf map 时，会更新静态 tailcall 的所有 bpf prog。 eBPF" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-08-22T22:27:28+08:00" />
+<meta property="article:modified_time" content="2023-08-22T22:27:28+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 共享的 tailcall PROG_ARRAY bpf map">
+  <meta itemprop="description" content="在研究 eBPF Talk: trace tailcall 程序？NO！ 时，产生了疑惑： 静态 tailcall 使用的 PROG_ARRAY bpf map 能在多个进程之间共享吗？ TL;DR 能。且在更新 PROG_ARRAY bpf map 时，会更新静态 tailcall 的所有 bpf prog。 eBPF">
+  <meta itemprop="datePublished" content="2023-08-22T22:27:28+08:00">
+  <meta itemprop="dateModified" content="2023-08-22T22:27:28+08:00">
+  <meta itemprop="wordCount" content="841">
+  <meta itemprop="keywords" content="EBPF,Tailcall"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 共享的 tailcall PROG_ARRAY bpf map"/>
+<meta name="twitter:description" content="在研究 eBPF Talk: trace tailcall 程序？NO！ 时，产生了疑惑： 静态 tailcall 使用的 PROG_ARRAY bpf map 能在多个进程之间共享吗？ TL;DR 能。且在更新 PROG_ARRAY bpf map 时，会更新静态 tailcall 的所有 bpf prog。 eBPF"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 共享的 tailcall PROG_ARRAY bpf map</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2023-08-22 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 841 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#设计-demo">设计 demo</a></li>
+        <li><a href="#demo-源代码">demo 源代码</a></li>
+        <li><a href="#demo-结论">demo 结论</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>在研究 <a href="https://mp.weixin.qq.com/s/Zx3SbBVVSp3CEMw6f5k9gw">eBPF Talk: trace tailcall 程序？NO！</a> 时，产生了疑惑：</p>
+<ol>
+<li>静态 <code>tailcall</code> 使用的 <strong>PROG_ARRAY</strong> bpf map 能在多个进程之间共享吗？</li>
+</ol>
+<p>TL;DR 能。且在更新 <strong>PROG_ARRAY</strong> bpf map 时，会更新静态 <code>tailcall</code> 的所有 bpf prog。</p>
+<ul>
+<li><a href="/post/ebpf-talk-90-dynamic-or-static-tailcall/">eBPF Talk: 动态或静态 tailcall</a></li>
+<li><a href="/post/ebpf-talk-91-update-tailcall-bpf-map/">eBPF Talk: 更新 tailcall PROG_ARRAY bpf map</a></li>
+</ul>
+<h2 id="设计-demo">设计 demo</h2>
+<p>为了验证上述疑惑，我设计了如下 demo：</p>
+<ol>
+<li>将 <code>tailcall</code> 的 <strong>PROG_ARRAY</strong> bpf map pin 到 <code>/sys/fs/bpf/tailcall-shared_progs</code>。</li>
+<li>在一个进程里更新该 <strong>PROG_ARRAY</strong> bpf map。</li>
+<li>在另一个进程里也更新该 <strong>PROG_ARRAY</strong> bpf map。</li>
+<li>尝试在 XDP 里使用该 <strong>PROG_ARRAY</strong> bpf map。</li>
+</ol>
+<p>demo 效果如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 在第一个终端里运行</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 在第一个进程里更新 **PROG_ARRAY** bpf map</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ./tailcall-shared -1</span>
+</span></span><span class="line"><span class="cl">2023/08/06 16:39:58 Prepared tailcall<span class="o">(</span>handle_new_connection1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/08/06 16:39:58 Attached kprobe<span class="o">(</span>tcp_connect<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/08/06 16:39:58 Listening events...
+</span></span><span class="line"><span class="cl">2023/08/06 16:40:03 new tcp connection: 192.168.64.2:36654 -&gt; 142.251.10.101:80 <span class="o">(</span>handle_new_connection1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/08/06 16:40:07 new tcp connection: 192.168.64.2:49594 -&gt; 74.125.130.102:80 <span class="o">(</span>handle_new_connection1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 在第二个终端里运行</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 在第二个进程里更新 **PROG_ARRAY** bpf map</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 此后，第一个终端里不会有新的 tcp 连接 log</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ./tailcall-shared -2</span>
+</span></span><span class="line"><span class="cl">2023/08/06 16:40:49 Prepared tailcall<span class="o">(</span>handle_new_connection2<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/08/06 16:40:49 Attached kprobe<span class="o">(</span>inet_csk_complete_hashdance<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/08/06 16:40:49 Listening events...
+</span></span><span class="line"><span class="cl">2023/08/06 16:40:52 new tcp connection: 192.168.64.2:46898 -&gt; 142.251.12.138:80 <span class="o">(</span>handle_new_connection2<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2023/08/06 16:40:53 new tcp connection: 192.168.64.2:44094 -&gt; 142.251.12.139:80 <span class="o">(</span>handle_new_connection2<span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># 在第三个终端里运行</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># 尝试在 XDP 里使用该 **PROG_ARRAY** bpf map</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ./tailcall-shared -x</span>
+</span></span><span class="line"><span class="cl">2023/08/06 16:41:22 Failed to load bpf xdp: field XdpEntry: program xdp_entry: load program: invalid argument
+</span></span><span class="line"><span class="cl">load program: invalid argument:
+</span></span><span class="line"><span class="cl">    processed <span class="m">11</span> insns <span class="o">(</span>limit 1000000<span class="o">)</span> max_states_per_insn <span class="m">0</span> total_states <span class="m">1</span> peak_states <span class="m">1</span> mark_read <span class="m">0</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="demo-源代码">demo 源代码</h2>
+<p>P.S. demo 源代码：<a href="https://github.com/Asphaltt/learn-by-example/tree/main/ebpf/tailcall-shared">GitHub - Asphaltt/learn-by-example</a></p>
+<p>使用的 bpf 代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PROG_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">progs</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PERCPU_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__type</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">__u32</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__type</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">__u64</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">socks</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/handle_new_connection1&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">handle_new_connection1</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">**</span><span class="n">skp</span> <span class="o">=</span> <span class="nf">bpf_map_lookup_and_delete</span><span class="p">(</span><span class="o">&amp;</span><span class="n">socks</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_printk</span><span class="p">(</span><span class="s">&#34;tcpconn, handle_new_connection1</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span> <span class="o">=</span> <span class="o">*</span><span class="n">skp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="n">PROBE_TYPE_FENTRY</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/handle_new_connection2&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">handle_new_connection2</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">**</span><span class="n">skp</span> <span class="o">=</span> <span class="nf">bpf_map_lookup_and_delete</span><span class="p">(</span><span class="o">&amp;</span><span class="n">socks</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">skp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_printk</span><span class="p">(</span><span class="s">&#34;tcpconn, handle_new_connection2</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span> <span class="o">=</span> <span class="o">*</span><span class="n">skp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sk</span><span class="p">,</span> <span class="n">PROBE_TYPE_FEXIT</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/tcp_connect&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">k_tcp_connect</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sk</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="nf">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">socks</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sk</span><span class="p">,</span> <span class="n">BPF_ANY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_tail_call_static</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">progs</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/inet_csk_complete_hashdance&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">k_icsk_complete_hashdance</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sk</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span><span class="nf">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">key</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_map_update_elem</span><span class="p">(</span><span class="o">&amp;</span><span class="n">socks</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">key</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">sk</span><span class="p">,</span> <span class="n">BPF_ANY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_tail_call_static</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">progs</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol>
+<li><code>kprobe</code> tcp 连接的两个关键函数。</li>
+<li>有两个用于更新 <strong>PROG_ARRAY</strong> bpf map 的 bpf prog。</li>
+</ol>
+<p>Go 的代码比较啰嗦，就不贴了，直接跳转原文去查看源代码吧。</p>
+<h2 id="demo-结论">demo 结论</h2>
+<p>通过 demo 验证了静态 <code>tailcall</code> 的 <strong>PROG_ARRAY</strong> bpf map 能在多个进程之间共享。</p>
+<p>即，在第二个进程更新 <strong>PROG_ARRAY</strong> bpf map 时，第一个进程里所使用的 bpf prog 也被更新了。</p>
+<p>通过 demo，印证了 <a href="/post/ebpf-talk-91-update-tailcall-bpf-map/">eBPF Talk: 更新 tailcall PROG_ARRAY bpf map</a> 所学到的知识。</p>
+<p>你也可以通过 <a href="/post/ebpf-talk-90-dynamic-or-static-tailcall/">eBPF Talk: 动态或静态 tailcall</a> 中 gdb 的方式查看 bpf prog 的汇编指令，来验证这一结论。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2023-08-22
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/tailcall/">tailcall</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-45-skbtracer-iptables/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: skbtracer-iptables</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-91-update-tailcall-bpf-map/">
+        <span class="next-text nav-default">eBPF Talk: 更新 tailcall PROG_ARRAY bpf map</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

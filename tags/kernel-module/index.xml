@@ -4,15 +4,15 @@
     <title>Kernel Module on LeonHwang&#39;s Blogs</title>
     <link>https://le0nhwan9.github.io/tags/kernel-module/</link>
     <description>Recent content in Kernel Module on LeonHwang&#39;s Blogs</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <lastBuildDate>Sun, 31 Mar 2024 20:47:45 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/kernel-module/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: 在内核模块里运行 bpf 程序</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-49---run-bpf-prog-in-kernel-module/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/</link>
       <pubDate>Sun, 31 Mar 2024 20:47:45 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-49---run-bpf-prog-in-kernel-module/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/</guid>
       <description>在 Linux 内核模块里把玩 bpf map P.S. 旧文一篇，请笑纳。 参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序源代码： iptables-bpf 内核模块源代码</description>
     </item>
   </channel>

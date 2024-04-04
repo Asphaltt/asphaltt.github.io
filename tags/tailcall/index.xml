@@ -4,50 +4,50 @@
     <title>Tailcall on LeonHwang&#39;s Blogs</title>
     <link>https://le0nhwan9.github.io/tags/tailcall/</link>
     <description>Recent content in Tailcall on LeonHwang&#39;s Blogs</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <lastBuildDate>Tue, 22 Aug 2023 22:27:28 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/tailcall/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: 共享的 tailcall PROG_ARRAY bpf map</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-88---tailcall-shared-bpf-map/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/</link>
       <pubDate>Tue, 22 Aug 2023 22:27:28 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-88---tailcall-shared-bpf-map/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/</guid>
       <description>在研究 eBPF Talk: trace tailcall 程序？NO！ 时，产生了疑惑： 静态 tailcall 使用的 PROG_ARRAY bpf map 能在多个进程之间共享吗？ TL;DR 能。且在更新 PROG_ARRAY bpf map 时，会更新静态 tailcall 的所有 bpf prog。 eBPF</description>
     </item>
     <item>
       <title>eBPF Talk: 更新 tailcall PROG_ARRAY bpf map</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-91---update-tailcall-bpf-map/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-91-update-tailcall-bpf-map/</link>
       <pubDate>Tue, 22 Aug 2023 22:27:23 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-91---update-tailcall-bpf-map/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-91-update-tailcall-bpf-map/</guid>
       <description>在上一集 eBPF Talk: 动态或静态 tailcall 中，我们知道了 tailcall 有动态和静态之分。 对于动态 tailcall 而言，更新 PROG_ARRAY bpf map 时就比较简单，只需要更新一下 array-&amp;gt;ptrs 数组即可。 但对于静态 tailcall 而言</description>
     </item>
     <item>
       <title>eBPF Talk: 动态或静态 tailcall</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-90---dynamic-or-static-tailcall/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-90-dynamic-or-static-tailcall/</link>
       <pubDate>Tue, 22 Aug 2023 22:27:18 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-90---dynamic-or-static-tailcall/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-90-dynamic-or-static-tailcall/</guid>
       <description>动态 tailcall？静态 tailcall？为什么 tailcall 会有动静之分呢？ 其实，就是看在使用 bpf_taill_call() 时，传入的 index 参数是常量还是变量。 动态 tailcall 在使用 bpf_tail_call() 时，传</description>
     </item>
     <item>
       <title>eBPF Talk: bpf2bpf &amp; tailcall 报错分析</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-35---bpf2bpf-and-tailcall-error/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</link>
       <pubDate>Tue, 23 May 2023 22:06:44 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-35---bpf2bpf-and-tailcall-error/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</guid>
       <description>终于要将 bpf2bpf &amp;amp; tailcall 的组合落地到项目中了。 不过，当头一棒的是：tail_calls are not allowed when call stack of previous frames is 256 bytes. Too large。 幸好学习过 eBPF Talk: tailcall on x86，</description>
     </item>
     <item>
       <title>eBPF Talk: tailcall on x86【汇编慎入】【译】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-33---tailcall-on-x86/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-33-tailcall-on-x86/</link>
       <pubDate>Tue, 23 May 2023 21:48:41 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-33---tailcall-on-x86/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-33-tailcall-on-x86/</guid>
       <description>本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf【译】 以下为译文。 最初我们学习编程的时候，我们就学</description>
     </item>
     <item>
       <title>eBPF Talk: tailcall 与 bpf2bpf【译】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-32---tailcall-and-bpf2bpf/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-32-tailcall-and-bpf2bpf/</link>
       <pubDate>Tue, 23 May 2023 21:44:17 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-32---tailcall-and-bpf2bpf/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-32-tailcall-and-bpf2bpf/</guid>
       <description>本文翻译自 Cilium 出品的 BPF and XDP Reference Guide，翻译了其中的 tailcall 和 bpf2bpf 部分。 tailcall：尾调用。 bpf2bpf：BPF 到 BPF 函数调用。 tailcall tailcall 可以看作允许</description>
     </item>
     <item>

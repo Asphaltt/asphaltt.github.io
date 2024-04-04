@@ -4,43 +4,43 @@
     <title>XDP ACL on LeonHwang&#39;s Blogs</title>
     <link>https://le0nhwan9.github.io/tags/xdp-acl/</link>
     <description>Recent content in XDP ACL on LeonHwang&#39;s Blogs</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <lastBuildDate>Wed, 03 Apr 2024 23:20:00 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/xdp-acl/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: XDP ACL 进阶之 TupleMerge</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-78---xdp-acl-tuplemerge-algo/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</link>
       <pubDate>Wed, 03 Apr 2024 23:20:00 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-78---xdp-acl-tuplemerge-algo/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</guid>
       <description>最近学习了网络包在线分类算法 TupleMerge，惊讶于其高效的查询和更新效率，比基于 bitmap 的算法更加节省内存、查询效率更高。本文将介绍 TupleMerge 算法的</description>
     </item>
     <item>
       <title>eBPF Talk: 不吐不快之 XDP ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-58---complain-xdp-acl/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-58-complain-xdp-acl/</link>
       <pubDate>Mon, 01 Apr 2024 22:46:20 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-58---complain-xdp-acl/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-58-complain-xdp-acl/</guid>
       <description>之前，在学习高性能 XDP ACL 的时候，挺开心的，一下子就掌握了前沿技术。 eBPF Talk: 优化 xdp_acl eBPF Talk: 再论高性能 eBPF ACL demo for 「eBPF 技术实践：高性能 ACL」 不过在项目</description>
     </item>
     <item>
       <title>eBPF Talk: 低性能 eBPF ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-26---iptables-in-bpf/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-26-iptables-in-bpf/</link>
       <pubDate>Sun, 21 May 2023 16:24:22 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-26---iptables-in-bpf/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-26-iptables-in-bpf/</guid>
       <description>eBPF Talk: 再论高性能 eBPF ACL 中的 ACL 规则匹配算法比较复杂，晦涩难懂；相对于 iptables 而言，该实现就比较难维护了。这就是为了性能而牺牲了可维护性。 所以，有没有类似</description>
     </item>
     <item>
       <title>eBPF Talk: 优化 XDP ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-21---xdp-acl-optimisation/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</link>
       <pubDate>Sun, 21 May 2023 16:08:36 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-21---xdp-acl-optimisation/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</guid>
       <description>书接上回 ，本文讲解对高性能 XDP ACL 的开源项目 xdp_acl 的优化内容： 按需开启 eBPF 中的 debug 日志 动态调整 bitmap 大小 使用 PERCPU ARRAY 优化规则 bpf map 动态增删 ACL 规则的处理 以下代码片段</description>
     </item>
     <item>
       <title>eBPF Talk: 再论高性能 eBPF ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-20---xdp-acl-again/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-20-xdp-acl-again/</link>
       <pubDate>Sun, 21 May 2023 16:03:32 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-20---xdp-acl-again/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-20-xdp-acl-again/</guid>
       <description>因为近期又得搞基于 eBPF 的 ACL，所以再次研究基于 eBPF 的 ACL 的几篇论文和一个开源项目。 以前，我研究过 「eBPF技术实践：高性能ACL」，并实现了一个</description>
     </item>
     <item>

@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: spinlock 详解 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="此 spinlock 指的是 eBPF 代码里使用的 struct bpf_spin_lock。 bpf: introduce bpf_spin_lock since kernel 5.1 从 eBPF Talk: 正确地进行统计 里学习到可以使用 spinlock 对统计进行保护。 spinlock 的用法就是那么简单" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-60-introduce-spinlock/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: spinlock 详解" />
+<meta property="og:description" content="此 spinlock 指的是 eBPF 代码里使用的 struct bpf_spin_lock。 bpf: introduce bpf_spin_lock since kernel 5.1 从 eBPF Talk: 正确地进行统计 里学习到可以使用 spinlock 对统计进行保护。 spinlock 的用法就是那么简单" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-60-introduce-spinlock/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-04-01T22:49:57+08:00" />
+<meta property="article:modified_time" content="2024-04-01T22:49:57+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: spinlock 详解">
+  <meta itemprop="description" content="此 spinlock 指的是 eBPF 代码里使用的 struct bpf_spin_lock。 bpf: introduce bpf_spin_lock since kernel 5.1 从 eBPF Talk: 正确地进行统计 里学习到可以使用 spinlock 对统计进行保护。 spinlock 的用法就是那么简单">
+  <meta itemprop="datePublished" content="2024-04-01T22:49:57+08:00">
+  <meta itemprop="dateModified" content="2024-04-01T22:49:57+08:00">
+  <meta itemprop="wordCount" content="1638">
+  <meta itemprop="keywords" content="EBPF,Spinlock"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: spinlock 详解"/>
+<meta name="twitter:description" content="此 spinlock 指的是 eBPF 代码里使用的 struct bpf_spin_lock。 bpf: introduce bpf_spin_lock since kernel 5.1 从 eBPF Talk: 正确地进行统计 里学习到可以使用 spinlock 对统计进行保护。 spinlock 的用法就是那么简单"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: spinlock 详解</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-01 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1638 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#1-禁止读写-spinlock-属性">1. 禁止读写 <code>spinlock</code> 属性</a></li>
+        <li><a href="#2-不使用-btf-时能使用-spinlock-吗">2. 不使用 BTF 时，能使用 <code>spinlock</code> 吗？</a></li>
+        <li><a href="#3-是否可以在-spinlock-里使用另一个-spinlock-呢">3. 是否可以在 <code>spinlock</code> 里使用另一个 <code>spinlock</code> 呢？</a></li>
+        <li><a href="#4-kprobe-里可以使用-spinlock-吗">4. <code>kprobe</code> 里可以使用 <code>spinlock</code> 吗？</a></li>
+        <li><a href="#spinlock-的限制与安全检查"><code>spinlock</code> 的限制与安全检查</a></li>
+        <li><a href="#小结">小结</a></li>
+        <li><a href="#附bpf_spin_lock-与-bpf_spin_unlock-的源代码">附：<code>bpf_spin_lock()</code> 与 <code>bpf_spin_unlock()</code> 的源代码</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>此 <code>spinlock</code> 指的是 eBPF 代码里使用的 <code>struct bpf_spin_lock</code>。</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/commit/d83525ca62cf8ebe3271d14c36fb900c294274a2">bpf: introduce bpf_spin_lock</a> since kernel 5.1</li>
+</ul>
+<p>从 <a href="/post/ebpf-talk-59-stats-bpf-prog-correctly/">eBPF Talk: 正确地进行统计</a> 里学习到可以使用 <code>spinlock</code> 对统计进行保护。</p>
+<p><code>spinlock</code> 的用法就是那么简单。</p>
+<p>但是，<code>spinlock</code> 真的那么简单吗？</p>
+<h2 id="1-禁止读写-spinlock-属性">1. 禁止读写 <code>spinlock</code> 属性</h2>
+<p>按照正常的用法，<code>spinlock</code> 属性就是用来 <code>bpf_spin_lock()</code> 和 <code>bpf_spin_unlock()</code> 的，不会再作它用。</p>
+<p>可是，如果在 eBPF 程序里对 <code>spinlock</code> 属性进行读写，会发生什么呢？</p>
+<p>答案是：在校验阶段报错 &ldquo;bpf_spin_lock cannot be accessed directly by load/store&rdquo;。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/verifier.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/* check read/write into a map element with possible variable offset */</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">check_map_access</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_verifier_env</span> <span class="o">*</span><span class="n">env</span><span class="p">,</span> <span class="n">u32</span> <span class="n">regno</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="kt">int</span> <span class="n">off</span><span class="p">,</span> <span class="kt">int</span> <span class="n">size</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">zero_size_allowed</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="k">enum</span> <span class="n">bpf_access_src</span> <span class="n">src</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">map_value_has_spin_lock</span><span class="p">(</span><span class="n">map</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">u32</span> <span class="n">lock</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">spin_lock_off</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* if any part of struct bpf_spin_lock can be touched by
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * load/store reject this program.
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * To check that [x1, x2) overlaps with [y1, y2)
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * it is sufficient to check x1 &lt; y2 &amp;&amp; y1 &lt; x2.
+</span></span></span><span class="line"><span class="cl"><span class="cm">         */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">reg</span><span class="o">-&gt;</span><span class="n">smin_value</span> <span class="o">+</span> <span class="n">off</span> <span class="o">&lt;</span> <span class="n">lock</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_spin_lock</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">             <span class="n">lock</span> <span class="o">&lt;</span> <span class="n">reg</span><span class="o">-&gt;</span><span class="n">umax_value</span> <span class="o">+</span> <span class="n">off</span> <span class="o">+</span> <span class="n">size</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">verbose</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s">&#34;bpf_spin_lock cannot be accessed directly by load/store</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="o">-</span><span class="n">EACCES</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2-不使用-btf-时能使用-spinlock-吗">2. 不使用 BTF 时，能使用 <code>spinlock</code> 吗？</h2>
+<p>不可以。</p>
+<p>BTF 信息用于校验阶段；在校验时，需要根据 BTF 信息计算 <code>struct bpf_spin_lock</code> 属性的 offset。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/verifier.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">process_spin_lock</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_verifier_env</span> <span class="o">*</span><span class="n">env</span><span class="p">,</span> <span class="kt">int</span> <span class="n">regno</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                 <span class="kt">bool</span> <span class="n">is_lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">btf</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">verbose</span><span class="p">(</span><span class="n">env</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="s">&#34;map &#39;%s&#39; has to have BTF in order to use bpf_spin_lock</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">map</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="3-是否可以在-spinlock-里使用另一个-spinlock-呢">3. 是否可以在 <code>spinlock</code> 里使用另一个 <code>spinlock</code> 呢？</h2>
+<p>不可以。</p>
+<p>为了预防死锁，当前版本里不允许使用多个 <code>spinlock</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/verifier.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">static</span> <span class="kt">int</span> <span class="nf">process_spin_lock</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_verifier_env</span> <span class="o">*</span><span class="n">env</span><span class="p">,</span> <span class="kt">int</span> <span class="n">regno</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                 <span class="kt">bool</span> <span class="n">is_lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">is_lock</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">active_spin_lock</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">verbose</span><span class="p">(</span><span class="n">env</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                <span class="s">&#34;Locking two bpf_spin_locks are not allowed</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="n">cur</span><span class="o">-&gt;</span><span class="n">active_spin_lock</span> <span class="o">=</span> <span class="n">reg</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="4-kprobe-里可以使用-spinlock-吗">4. <code>kprobe</code> 里可以使用 <code>spinlock</code> 吗？</h2>
+<p>不可以。</p>
+<p>因为无法充分检查 <code>kprobe</code> bpf prog 的抢占情况，所以目前不允许在 <code>kprobe</code> 里使用 <code>spinlock</code>。</p>
+<p>当前，以下 bpf prog 类型都不允许使用 <code>spinlock</code>。</p>
+<ul>
+<li>BPF_PROG_TYPE_SOCKET_FILTER</li>
+<li>BPF_PROG_TYPE_KPROBE</li>
+<li>BPF_PROG_TYPE_TRACEPOINT</li>
+<li>BPF_PROG_TYPE_PERF_EVENT</li>
+<li>BPF_PROG_TYPE_RAW_TRACEPOINT</li>
+<li>BPF_PROG_TYPE_RAW_TRACEPOINT_WRITABLE</li>
+<li>sleepable bpf prog（<code>fentry.s</code>/<code>fmod_ret.s</code>/<code>fexit.s</code>/<code>lsm.s</code>/<code>iter.s</code>）</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/verifier.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">bool</span> <span class="nf">is_tracing_prog_type</span><span class="p">(</span><span class="k">enum</span> <span class="n">bpf_prog_type</span> <span class="n">type</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">switch</span> <span class="p">(</span><span class="n">type</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_PROG_TYPE_KPROBE</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_PROG_TYPE_TRACEPOINT</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_PROG_TYPE_PERF_EVENT</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_PROG_TYPE_RAW_TRACEPOINT</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_PROG_TYPE_RAW_TRACEPOINT_WRITABLE</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">default</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">check_map_prog_compatibility</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_verifier_env</span> <span class="o">*</span><span class="n">env</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">enum</span> <span class="n">bpf_prog_type</span> <span class="n">prog_type</span> <span class="o">=</span> <span class="nf">resolve_prog_type</span><span class="p">(</span><span class="n">prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">map_value_has_spin_lock</span><span class="p">(</span><span class="n">map</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">prog_type</span> <span class="o">==</span> <span class="n">BPF_PROG_TYPE_SOCKET_FILTER</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">verbose</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s">&#34;socket filter progs cannot use bpf_spin_lock yet</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">is_tracing_prog_type</span><span class="p">(</span><span class="n">prog_type</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">verbose</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s">&#34;tracing progs cannot use bpf_spin_lock yet</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">sleepable</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">verbose</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s">&#34;sleepable progs cannot use bpf_spin_lock yet</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="spinlock-的限制与安全检查"><code>spinlock</code> 的限制与安全检查</h2>
+<p>P.S. 以下内容翻译自 &ldquo;bpf: introduce bpf_spin_lock&rdquo; 的 commit message。</p>
+<ul>
+<li><code>bpf_spin_lock</code> 只允许在 HASH 和 ARRAY maps 里使用。</li>
+<li>为了安全分析，BTF 信息是强制性带上的。</li>
+<li>bpf prog 里一次只能使用一个 <code>bpf_spin_lock</code>，因为多个会导致死锁。</li>
+<li>每个 map 元素只允许有一个 <code>struct bpf_spin_lock</code>。不过，允许 bpf prog 使用任意数量的 <code>bpf_spin_lock</code> 是非常非常容易实现的。</li>
+<li>当 <code>bpf_spin_lock</code> 使用时，不允许使用函数调用（包括 <code>bpf2bpf</code>、帮助函数）。</li>
+<li>bpf prog 必须在 return 前 <code>bpf_spin_unlock()</code>。</li>
+<li>bpf prog 可以通过 <code>bpf_spin_lock()</code>/<code>bpf_spin_unlock()</code> 访问 <code>struct bpf_spin_lock</code>。</li>
+<li>不允许读写 <code>struct bpf_spin_lock lock;</code> 属性。</li>
+<li>为了使用 <code>bpf_spin_lock()</code> 帮助函数，map value 的 BTF 信息必须是一个 struct，而且 <code>struct bpf_spin_lock anyname;</code> 属性需要在最外层。不允许将 <code>bpf_spin_lock</code> 内嵌到其它 struct 中。</li>
+<li>&ldquo;map_lookup&rdquo; 系统调用不能将 <code>bpf_spin_lock</code> 复制到用户态。</li>
+<li>&ldquo;map_update&rdquo; 系统调用和帮助函数不能更新 <code>bpf_spin_lock</code> 属性。</li>
+<li><code>bpf_spin_lock</code> 不能在栈上，也不能在网络包中。<code>bpf_spin_lock</code> 只能在 HASH 或者 ARRAY map value 中。</li>
+<li><code>bpf_spin_lock</code> 对 root 用户和所有程序类型开放。</li>
+<li>不允许在 map-in-map 的内层 map 里使用 <code>bpf_spin_lock</code>。</li>
+<li>在 <code>bpf_spin_lock</code> 临界区内不允许使用 &ldquo;ld_abs&rdquo;。</li>
+<li>因为缺乏抢占检查，不允许在 tracing 程序和 socket filter 程序中使用 <code>bpf_spin_lock</code>。</li>
+</ul>
+<h2 id="小结">小结</h2>
+<p>使用起来比较简单的东西，其背后往往比较复杂；<code>spinlock</code> 就是其中之一。</p>
+<h2 id="附bpf_spin_lock-与-bpf_spin_unlock-的源代码">附：<code>bpf_spin_lock()</code> 与 <code>bpf_spin_unlock()</code> 的源代码</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/helpers.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#if defined(CONFIG_QUEUED_SPINLOCKS) || defined(CONFIG_BPF_ARCH_SPINLOCK)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">__bpf_spin_lock</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_spin_lock</span> <span class="o">*</span><span class="n">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">arch_spinlock_t</span> <span class="o">*</span><span class="n">l</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">lock</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">union</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__u32</span> <span class="n">val</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">arch_spinlock_t</span> <span class="n">lock</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="n">u</span> <span class="o">=</span> <span class="p">{</span> <span class="p">.</span><span class="n">lock</span> <span class="o">=</span> <span class="n">__ARCH_SPIN_LOCK_UNLOCKED</span> <span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">compiletime_assert</span><span class="p">(</span><span class="n">u</span><span class="p">.</span><span class="n">val</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#34;__ARCH_SPIN_LOCK_UNLOCKED not 0&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">BUILD_BUG_ON</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">l</span><span class="p">)</span> <span class="o">!=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">BUILD_BUG_ON</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">lock</span><span class="p">)</span> <span class="o">!=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">arch_spin_lock</span><span class="p">(</span><span class="n">l</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">__bpf_spin_unlock</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_spin_lock</span> <span class="o">*</span><span class="n">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">arch_spinlock_t</span> <span class="o">*</span><span class="n">l</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">lock</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">arch_spin_unlock</span><span class="p">(</span><span class="n">l</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#else
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">__bpf_spin_lock</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_spin_lock</span> <span class="o">*</span><span class="n">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">atomic_t</span> <span class="o">*</span><span class="n">l</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">lock</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">BUILD_BUG_ON</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">l</span><span class="p">)</span> <span class="o">!=</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">lock</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="k">do</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">atomic_cond_read_relaxed</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="o">!</span><span class="n">VAL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="nf">atomic_xchg</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="mi">1</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">__bpf_spin_unlock</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_spin_lock</span> <span class="o">*</span><span class="n">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">atomic_t</span> <span class="o">*</span><span class="n">l</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">lock</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">atomic_set_release</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="nf">DEFINE_PER_CPU</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">,</span> <span class="n">irqsave_flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">__bpf_spin_lock_irqsave</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_spin_lock</span> <span class="o">*</span><span class="n">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">local_irq_save</span><span class="p">(</span><span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__bpf_spin_lock</span><span class="p">(</span><span class="n">lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__this_cpu_write</span><span class="p">(</span><span class="n">irqsave_flags</span><span class="p">,</span> <span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">notrace</span> <span class="nf">BPF_CALL_1</span><span class="p">(</span><span class="n">bpf_spin_lock</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_spin_lock</span> <span class="o">*</span><span class="p">,</span> <span class="n">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__bpf_spin_lock_irqsave</span><span class="p">(</span><span class="n">lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_func_proto</span> <span class="n">bpf_spin_lock_proto</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">func</span>        <span class="o">=</span> <span class="n">bpf_spin_lock</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">gpl_only</span>    <span class="o">=</span> <span class="nb">false</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">ret_type</span>    <span class="o">=</span> <span class="n">RET_VOID</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">arg1_type</span>   <span class="o">=</span> <span class="n">ARG_PTR_TO_SPIN_LOCK</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">__bpf_spin_unlock_irqrestore</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_spin_lock</span> <span class="o">*</span><span class="n">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">flags</span> <span class="o">=</span> <span class="nf">__this_cpu_read</span><span class="p">(</span><span class="n">irqsave_flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__bpf_spin_unlock</span><span class="p">(</span><span class="n">lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">local_irq_restore</span><span class="p">(</span><span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">notrace</span> <span class="nf">BPF_CALL_1</span><span class="p">(</span><span class="n">bpf_spin_unlock</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_spin_lock</span> <span class="o">*</span><span class="p">,</span> <span class="n">lock</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__bpf_spin_unlock_irqrestore</span><span class="p">(</span><span class="n">lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_func_proto</span> <span class="n">bpf_spin_unlock_proto</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">func</span>        <span class="o">=</span> <span class="n">bpf_spin_unlock</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">gpl_only</span>    <span class="o">=</span> <span class="nb">false</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">ret_type</span>    <span class="o">=</span> <span class="n">RET_VOID</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">arg1_type</span>   <span class="o">=</span> <span class="n">ARG_PTR_TO_SPIN_LOCK</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div>
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-04-01
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/spinlock/">spinlock</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-61-cfg-check-in-3.18-kernel/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 3.18 kernel 里的 CFG 检查</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-59-stats-bpf-prog-correctly/">
+        <span class="next-text nav-default">eBPF Talk: 正确地进行统计</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

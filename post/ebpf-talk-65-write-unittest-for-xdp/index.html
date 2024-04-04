@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 给 XDP 程序写 unittest - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="我们都知道写 unittest 是非常必要的，但是在 eBPF 程序里，该如何给 XDP 程序写 unittest 呢？ bpf: introduce BPF_PROG_TEST_RUN command since 4.12 kernel 在 4.12 内核中，引入了 BPF_PROG_TEST_RUN 命令，可以用来给 XDP 和 tc-bpf 等 eBPF 程序写 unit" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-65-write-unittest-for-xdp/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 给 XDP 程序写 unittest" />
+<meta property="og:description" content="我们都知道写 unittest 是非常必要的，但是在 eBPF 程序里，该如何给 XDP 程序写 unittest 呢？ bpf: introduce BPF_PROG_TEST_RUN command since 4.12 kernel 在 4.12 内核中，引入了 BPF_PROG_TEST_RUN 命令，可以用来给 XDP 和 tc-bpf 等 eBPF 程序写 unit" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-65-write-unittest-for-xdp/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-04-03T22:46:00+08:00" />
+<meta property="article:modified_time" content="2024-04-03T22:46:00+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 给 XDP 程序写 unittest">
+  <meta itemprop="description" content="我们都知道写 unittest 是非常必要的，但是在 eBPF 程序里，该如何给 XDP 程序写 unittest 呢？ bpf: introduce BPF_PROG_TEST_RUN command since 4.12 kernel 在 4.12 内核中，引入了 BPF_PROG_TEST_RUN 命令，可以用来给 XDP 和 tc-bpf 等 eBPF 程序写 unit">
+  <meta itemprop="datePublished" content="2024-04-03T22:46:00+08:00">
+  <meta itemprop="dateModified" content="2024-04-03T22:46:00+08:00">
+  <meta itemprop="wordCount" content="932">
+  <meta itemprop="keywords" content="EBPF,XDP,Bpf Unittest"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 给 XDP 程序写 unittest"/>
+<meta name="twitter:description" content="我们都知道写 unittest 是非常必要的，但是在 eBPF 程序里，该如何给 XDP 程序写 unittest 呢？ bpf: introduce BPF_PROG_TEST_RUN command since 4.12 kernel 在 4.12 内核中，引入了 BPF_PROG_TEST_RUN 命令，可以用来给 XDP 和 tc-bpf 等 eBPF 程序写 unit"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 给 XDP 程序写 unittest</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 932 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#ciliumebpf-里的-unittest-例子">cilium/ebpf 里的 unittest 例子</a></li>
+        <li><a href="#如何获取-xdp-程序里写入的-metadata">如何获取 XDP 程序里写入的 metadata？</a></li>
+        <li><a href="#在-unittest-里检查-metadata">在 unittest 里检查 metadata</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>我们都知道写 unittest 是非常必要的，但是在 eBPF 程序里，该如何给 XDP 程序写 unittest 呢？</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/commit/1cf1cae963c2e6032aebe1637e995bc2f5d330f4">bpf: introduce BPF_PROG_TEST_RUN command</a> since 4.12 kernel</li>
+</ul>
+<p>在 4.12 内核中，引入了 <code>BPF_PROG_TEST_RUN</code> 命令，可以用来给 XDP 和 tc-bpf 等 eBPF 程序写 unittest。</p>
+<p>如果给 <a href="/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/">eBPF Talk: 使用 metadata 将信息从 XDP 传给 AF_XDP</a> 写 unittest，该怎么写呢？</p>
+<h2 id="ciliumebpf-里的-unittest-例子">cilium/ebpf 里的 unittest 例子</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="c1">// https://github.com/cilium/ebpf/blob/master/prog_test.go#L93
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nx">buf</span> <span class="o">:=</span> <span class="nx">internal</span><span class="p">.</span><span class="nx">EmptyBPFContext</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">xdp</span> <span class="o">:=</span> <span class="nx">sys</span><span class="p">.</span><span class="nx">XdpMd</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Data</span><span class="p">:</span>    <span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">DataEnd</span><span class="p">:</span> <span class="nb">uint32</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="nx">buf</span><span class="p">)),</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">xdpOut</span> <span class="o">:=</span> <span class="nx">sys</span><span class="p">.</span><span class="nx">XdpMd</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">opts</span> <span class="o">:=</span> <span class="nx">RunOptions</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Data</span><span class="p">:</span>       <span class="nx">buf</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Context</span><span class="p">:</span>    <span class="nx">xdp</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">ContextOut</span><span class="p">:</span> <span class="o">&amp;</span><span class="nx">xdpOut</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">ret</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">prog</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">opts</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">testutils</span><span class="p">.</span><span class="nf">SkipIfNotSupported</span><span class="p">(</span><span class="nx">t</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">t</span><span class="p">.</span><span class="nf">Fatal</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">ret</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">t</span><span class="p">.</span><span class="nf">Error</span><span class="p">(</span><span class="s">&#34;Expected return value to be 0, got&#34;</span><span class="p">,</span> <span class="nx">ret</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因为 <a href="/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/">eBPF Talk: 使用 metadata 将信息从 XDP 传给 AF_XDP</a> 的 XDP 程序里涉及网络包内容的检查，以及使用了 XDP metadata，所以该例子并不足以指导我们写 unittest。</p>
+<h2 id="如何获取-xdp-程序里写入的-metadata">如何获取 XDP 程序里写入的 metadata？</h2>
+<p>先看一下 <code>RunOptions</code> 的定义：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">type</span> <span class="nx">RunOptions</span> <span class="kd">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Program&#39;s data input. Required field.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="c1">//
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="c1">// The kernel expects at least 14 bytes input for an ethernet header for
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="c1">// XDP and SKB programs.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">Data</span> <span class="p">[]</span><span class="kt">byte</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Program&#39;s data after Program has run. Caller must allocate. Optional field.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">DataOut</span> <span class="p">[]</span><span class="kt">byte</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中 <code>Data</code> 是提供给 XDP 程序处理的网络包内容，<code>DataOut</code> 是 XDP 程序处理后的网络包内容。</p>
+<p>metadata 是否在 <code>DataOut</code> 里呢？我们来看一下 <code>BPF_PROG_TEST_RUN</code> 命令的实现：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="nf">__sys_bpf</span><span class="p">()</span>                                 <span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">|--&gt;</span><span class="nf">bpf_prog_test_run</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="n">ret</span> <span class="o">=</span> <span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="nf">test_run</span><span class="p">(</span><span class="n">prog</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">uattr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">     \
+</span></span><span class="line"><span class="cl">      \
+</span></span><span class="line"><span class="cl">       \
+</span></span><span class="line"><span class="cl">        <span class="o">|--&gt;</span><span class="nf">bpf_prog_test_run_xdp</span><span class="p">()</span>         <span class="c1">// ${KERNEL}/net/bpf/test_run.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="o">|--&gt;</span><span class="n">ret</span> <span class="o">=</span> <span class="nf">bpf_test_finish</span><span class="p">(</span><span class="n">kattr</span><span class="p">,</span> <span class="n">uattr</span><span class="p">,</span> <span class="n">xdp</span><span class="p">.</span><span class="n">data_meta</span><span class="p">,</span> <span class="n">sinfo</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">retval</span><span class="p">,</span> <span class="n">duration</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">                <span class="o">|--&gt;</span><span class="nf">copy_to_user</span><span class="p">(</span><span class="n">data_out</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">len</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到，<code>BPF_PROG_TEST_RUN</code> 命令的实现，将包括 metadata 的整个网络包的内容拷贝到 <code>data_out</code> 里。</p>
+<h2 id="在-unittest-里检查-metadata">在 unittest 里检查 metadata</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">preparePacketData</span><span class="p">()</span> <span class="p">[]</span><span class="kt">byte</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">buf</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="mi">14</span><span class="o">+</span><span class="mi">20</span><span class="o">+</span><span class="mi">8</span><span class="p">)</span>     <span class="c1">// eth + iph + icmph
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">be</span><span class="p">.</span><span class="nf">PutUint16</span><span class="p">(</span><span class="nx">buf</span><span class="p">[</span><span class="mi">12</span><span class="p">:</span><span class="mi">14</span><span class="p">],</span> <span class="mh">0x0800</span><span class="p">)</span> <span class="c1">// ethertype = IPv4
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nx">iph</span> <span class="o">:=</span> <span class="nx">buf</span><span class="p">[</span><span class="mi">14</span><span class="p">:]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">iph</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">=</span> <span class="mh">0x45</span> <span class="c1">// version = 4, ihl = 5
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">iph</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span> <span class="p">=</span> <span class="mi">1</span>    <span class="c1">// protocol = ICMP
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nx">icmph</span> <span class="o">:=</span> <span class="nx">iph</span><span class="p">[</span><span class="mi">20</span><span class="p">:]</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">icmph</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">=</span> <span class="mi">8</span> <span class="c1">// type = ECHO
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">buf</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">TestXDPProgRun</span><span class="p">(</span><span class="nx">t</span> <span class="o">*</span><span class="nx">testing</span><span class="p">.</span><span class="nx">T</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">ifi</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">netlink</span><span class="p">.</span><span class="nf">LinkByName</span><span class="p">(</span><span class="s">&#34;lo&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">t</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to get device info: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">xsk</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">xdp</span><span class="p">.</span><span class="nf">NewSocket</span><span class="p">(</span><span class="nx">ifi</span><span class="p">.</span><span class="nf">Attrs</span><span class="p">().</span><span class="nx">Index</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">nil</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">t</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to new XDP socket: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">defer</span> <span class="nx">xsk</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kd">var</span> <span class="nx">obj</span> <span class="nx">xdpfnObjects</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">loadXdpfnObjects</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">obj</span><span class="p">,</span> <span class="kc">nil</span><span class="p">);</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">t</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to load XDP bpf obj: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">defer</span> <span class="nx">obj</span><span class="p">.</span><span class="nf">Close</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// Map is required to be populated before running the program for `bpf_redirect_map`.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">XdpSockets</span><span class="p">.</span><span class="nf">Put</span><span class="p">(</span><span class="nb">uint32</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="nb">uint32</span><span class="p">(</span><span class="nx">xsk</span><span class="p">.</span><span class="nf">FD</span><span class="p">()));</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">t</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to update XDP socket bpf map: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">data</span> <span class="o">:=</span> <span class="nf">preparePacketData</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">dataOut</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span><span class="o">+</span><span class="mi">4</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">act</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">obj</span><span class="p">.</span><span class="nx">XdpFn</span><span class="p">.</span><span class="nf">Run</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">ebpf</span><span class="p">.</span><span class="nx">RunOptions</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Data</span><span class="p">:</span>    <span class="nx">data</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">DataOut</span><span class="p">:</span> <span class="nx">dataOut</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">})</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">t</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Failed to run XDP bpf prog: %v&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">act</span> <span class="o">!=</span> <span class="mi">4</span> <span class="p">{</span> <span class="c1">// XDP_REDIRECT
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="nx">t</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Expected action %d, got %d&#34;</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="nx">act</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">lat</span> <span class="o">:=</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="kt">uint32</span><span class="p">)(</span><span class="nx">unsafe</span><span class="p">.</span><span class="nf">Pointer</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">dataOut</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">lat</span> <span class="o">!=</span> <span class="mi">200</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">t</span><span class="p">.</span><span class="nf">Fatalf</span><span class="p">(</span><span class="s">&#34;Expected latency %d, got %d&#34;</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="nx">lat</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在该代码片段里，需要注意的是：</p>
+<ol>
+<li><code>preparePacketData()</code> 准备好网络包内容。</li>
+<li>给 <code>xdp_sockets</code> bpf map 写入一个 XDP socket fd，否则 <code>bpf_redirect_map</code> 会报错，因为 <code>bpf_redirect_map()</code> 会查询 bpf map 里的值。</li>
+<li>XDP 程序的最终结果时 <code>XDP_REDIRECT</code>，并且将 latency 写入 metadata。</li>
+<li><code>DataOut</code> 起始内容是 metadata，后面是网络包内容。</li>
+</ol>
+<h2 id="小结">小结</h2>
+<p>本文介绍了如何给 XDP 程序写 unittest，以及如何在 unittest 里检查 XDP 程序写入的 metadata。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-04-03
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/xdp/">XDP</a>
+      <a href="/%20tags/bpf-unittest/">bpf unittest</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: eBPF 程序模块化与单测构想</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/">
+        <span class="next-text nav-default">eBPF Talk: 使用 metadata 将信息从 XDP 传给 AF_XDP</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

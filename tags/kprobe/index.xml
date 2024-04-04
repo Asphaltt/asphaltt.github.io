@@ -4,22 +4,22 @@
     <title>Kprobe on LeonHwang&#39;s Blogs</title>
     <link>https://le0nhwan9.github.io/tags/kprobe/</link>
     <description>Recent content in Kprobe on LeonHwang&#39;s Blogs</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <lastBuildDate>Fri, 29 Mar 2024 23:56:03 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/kprobe/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: kprobe 获取第 n 个参数</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-48---kprobe-nth-argument/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-48-kprobe-nth-argument/</link>
       <pubDate>Fri, 29 Mar 2024 23:56:03 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-48---kprobe-nth-argument/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-48-kprobe-nth-argument/</guid>
       <description>此次来填 eBPF Talk: skbtracer-iptables 中的坑了：在开发一个基于 eBPF 的 iptables TRACE 的替代工具。 不过，遇到的第一个纸老虎是 kprobe 中获取 nf_log_trace() 的诸多参数。 nf_log_trace() 且看下函数声明： 1 2 3 4 5 6 7 8</description>
     </item>
     <item>
       <title>eBPF Talk: kprobe, frace 与 trampoline</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-46---kprobe-ftrace-and-trampoline/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/</link>
       <pubDate>Fri, 29 Mar 2024 23:51:43 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-46---kprobe-ftrace-and-trampoline/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/</guid>
       <description>听闻 ftrace 也是基于 trampoline 实现的。而且，最近打算使用 kprobe 开发个工具，所以就将快速翻看了一下 ftrace 和 kprobe 的底层源代码。 P.S. 不介绍 ftrace 的使用，使用文档请看 ftrace - Function Tra</description>
     </item>
     <item>

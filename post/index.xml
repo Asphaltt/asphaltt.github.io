@@ -4,498 +4,505 @@
     <title>Posts on LeonHwang&#39;s Blogs</title>
     <link>https://le0nhwan9.github.io/post/</link>
     <description>Recent content in Posts on LeonHwang&#39;s Blogs</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 03 Apr 2024 23:20:00 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 04 Apr 2024 21:59:50 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>eBPF Talk: trace XDP 程序</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-79-trace-xdp-program/</link>
+      <pubDate>Thu, 04 Apr 2024 21:59:50 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-79-trace-xdp-program/</guid>
+      <description>在 XDP 程序运行起来后，特别是在生产环境中，有没有办法去观察它的运行情况呢？特别是 XDP 程序的最终结果。 将问题泛化一下，即有没有办法去 trace bpf 程序？ TL;DR 有</description>
+    </item>
+    <item>
       <title>eBPF Talk: XDP ACL 进阶之 TupleMerge</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-78---xdp-acl-tuplemerge-algo/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</link>
       <pubDate>Wed, 03 Apr 2024 23:20:00 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-78---xdp-acl-tuplemerge-algo/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</guid>
       <description>最近学习了网络包在线分类算法 TupleMerge，惊讶于其高效的查询和更新效率，比基于 bitmap 的算法更加节省内存、查询效率更高。本文将介绍 TupleMerge 算法的</description>
     </item>
     <item>
       <title>eBPF Talk: Ubuntu 23.04</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-77---ubuntu-23.04/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-77-ubuntu-23.04/</link>
       <pubDate>Wed, 03 Apr 2024 23:18:57 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-77---ubuntu-23.04/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-77-ubuntu-23.04/</guid>
       <description>Ubuntu 23.04 已在 4 月 20 日发布，可以到官网下载镜像安装到虚拟机，用来学习 eBPF。 Ubuntu 23.04 (Lunar Lobster) 使用的内核版本是 6.2.0-20-generic。 Ubuntu 23.04 的相关</description>
     </item>
     <item>
       <title>eBPF Talk: introduce bpf_timer</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-75---introduce-bpf_timer/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-75-introduce-bpf_timer/</link>
       <pubDate>Wed, 03 Apr 2024 23:17:12 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-75---introduce-bpf_timer/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-75-introduce-bpf_timer/</guid>
       <description>bpf_timer 是 eBPF 里基于 hrtimer 实现的定时器。 hrtimers - subsystem for high-resolution kernel timers LWN bpf: Introduce BPF timers. bpf: Introduce bpf timers. since 5.15 kernel bpf_timer 最初的需求是在 perf events bpf prog 中做定期采样；后来在 XDP 中可以用来做垃圾回收和健康检</description>
     </item>
     <item>
       <title>eBPF Talk: introduce bpf_iter</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-74---introduce-bpf_iter/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-74-introduce-bpf_iter/</link>
       <pubDate>Wed, 03 Apr 2024 23:14:50 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-74---introduce-bpf_iter/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-74-introduce-bpf_iter/</guid>
       <description>通过 Linux 网络: sequence file 的学习，我们知道在 Linux 里有不少地方都使用 sequence file 机制向用户态空间传递数据。 在 eBPF 的加持下，sequence file 机制迎来了更加灵活的实现</description>
     </item>
     <item>
       <title>Linux 网络: netdevsim</title>
-      <link>https://le0nhwan9.github.io/post/linux-networking-5---netdevsim/</link>
+      <link>https://le0nhwan9.github.io/post/linux-networking-5-netdevsim/</link>
       <pubDate>Wed, 03 Apr 2024 23:13:16 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/linux-networking-5---netdevsim/</guid>
+      <guid>https://le0nhwan9.github.io/post/linux-networking-5-netdevsim/</guid>
       <description>netdevsim，Netwoking Device Simulator，网络设备模拟器。 GitHub netdevsim netdevsim 就是用来模拟网络设备的，其实它是 Linux 里的一种网络设备驱动；可</description>
     </item>
     <item>
       <title>Linux 网络: sequence file</title>
-      <link>https://le0nhwan9.github.io/post/linux-networking-4---sequence-files/</link>
+      <link>https://le0nhwan9.github.io/post/linux-networking-4-sequence-files/</link>
       <pubDate>Wed, 03 Apr 2024 23:10:22 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/linux-networking-4---sequence-files/</guid>
+      <guid>https://le0nhwan9.github.io/post/linux-networking-4-sequence-files/</guid>
       <description>使用 ss、netstat 等命令查看 TCP 连接信息时，它们可能会从文件 /proc/net/tcp 读取 tcp socket 信息。 1 2 3 4 $ strace netstat -4 -t ... open(&amp;#34;/proc/net/tcp&amp;#34;, O_RDONLY) = 3 ... 而使用 file 命令查看 /proc/net/tcp 文件时，提示</description>
     </item>
     <item>
       <title>eBPF Talk: verifier 支持有限循环</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-73---verifier-finite-loop/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-73-verifier-finite-loop/</link>
       <pubDate>Wed, 03 Apr 2024 23:06:44 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-73---verifier-finite-loop/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-73-verifier-finite-loop/</guid>
       <description>verifier 支持有限循环后，我们不再需要 #pragma unroll 将 for 循环展开了，留给 clang 编译器决定即可。 bpf: introduce bounded loops since 5.3 kernel. 也就是，eBPF Talk: binary search 里的 __should_delay_sip() 函数里不再需要 #pragma clang loop unroll(full) 了。</description>
     </item>
     <item>
       <title>eBPF Talk: challenge verifier</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-72---challenge-verifier/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-72-challenge-verifier/</link>
       <pubDate>Wed, 03 Apr 2024 23:04:08 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-72---challenge-verifier/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-72-challenge-verifier/</guid>
       <description>在 eBPF Talk: binary search 中，我们使用一个朴素的 for 循环实现了一个二分查找的 eBPF 程序，但是，这个程序通不过 verifier，报错 &amp;ldquo;R3 unbounded memory access, make sure to bounds check any such acces</description>
     </item>
     <item>
       <title>eBPF Talk: binary search</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-71---binary-search/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-71-binary-search/</link>
       <pubDate>Wed, 03 Apr 2024 23:00:58 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-71---binary-search/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-71-binary-search/</guid>
       <description>其实，bpf 子系统里并没有一个叫 bpf_binary_search() 的 helper 函数。 但并不是说，在 eBPF 里就实现不了二分查找了。 小需求 怎么判断一个 IP 地址是否在某几个 CIDR 里？ 已知方法有二：</description>
     </item>
     <item>
       <title>eBPF Talk: bpf prog stats</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-70---bpf-prog-stats/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-70-bpf-prog-stats/</link>
       <pubDate>Wed, 03 Apr 2024 22:57:57 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-70---bpf-prog-stats/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-70-bpf-prog-stats/</guid>
       <description>根据以下两个 commit，可以看到，自 5.1 内核起，bpf prog 可以统计自己的运行情况了。 bpf: enable program stats 5.1 kernel. bpf: Sharing bpf runtime stats with BPF_ENABLE_STATS 5.8 kernel. bpf: Improve program stats run-time calculation 6.x kernel. stats 例子 以 bpf2bpf demo</description>
     </item>
     <item>
       <title>eBPF Talk: packet range check</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-69---packet-range-check/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-69-packet-range-check/</link>
       <pubDate>Wed, 03 Apr 2024 22:56:16 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-69---packet-range-check/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-69-packet-range-check/</guid>
       <description>在 XDP 或者 tc-bpf 中，经常要直接访问网络包内容；而在访问网络包内容之前，总是需要先检查访问的内容是否在 data_end 之内。 So，学习一下 packet range check 相关 commit 的历史；以史</description>
     </item>
     <item>
       <title>eBPF Talk: 踩坑 XDP on Mellanox</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-68---xdp-shit-on-mellanox/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-68-xdp-shit-on-mellanox/</link>
       <pubDate>Wed, 03 Apr 2024 22:54:12 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-68---xdp-shit-on-mellanox/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-68-xdp-shit-on-mellanox/</guid>
       <description>对 XDP 了解得越多，对 XDP 的信心越是膨胀。最近在 XDP on Mellanox 上踩了个坑，让我对 XDP 的认识又有了新的提升：就是需要保持对技术的敬畏之心，不要过于自信。 P.S. Mellanox 网</description>
     </item>
     <item>
       <title>eBPF Talk: tc-bpf 转发网络包</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-67---redirect-pkt-with-tc-bpf/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-67-redirect-pkt-with-tc-bpf/</link>
       <pubDate>Wed, 03 Apr 2024 22:50:26 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-67---redirect-pkt-with-tc-bpf/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-67-redirect-pkt-with-tc-bpf/</guid>
       <description>在 tc-bpf 里转发网络包，跟 XDP 里转发网络包有什么不同呢？ eBPF Talk: XDP 转发失败了 eBPF Talk: 揭秘 XDP 转发网络包 eBPF Talk: 揭秘 XDP 转发网络包【续】 呃，其实还是那个奇葩的需求，不</description>
     </item>
     <item>
       <title>eBPF Talk: eBPF 程序模块化与单测构想</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-66---an-idea-about-bpf-prog-modules-and-their-unittests/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/</link>
       <pubDate>Wed, 03 Apr 2024 22:48:15 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-66---an-idea-about-bpf-prog-modules-and-their-unittests/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/</guid>
       <description>我们来复习一下以下两篇文章： eBPF Talk: freplace on x86【汇编慎入】 eBPF Talk: 给 XDP 程序写 unittest 一个构想：使用 replace 实现 eBPF 程序的模块化，使用 BPF_PROG_TEST_RUN 对 eBPF 程序模块进行单测。 eBPF 程序</description>
     </item>
     <item>
       <title>eBPF Talk: 给 XDP 程序写 unittest</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-65---write-unittest-for-xdp/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-65-write-unittest-for-xdp/</link>
       <pubDate>Wed, 03 Apr 2024 22:46:00 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-65---write-unittest-for-xdp/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-65-write-unittest-for-xdp/</guid>
       <description>我们都知道写 unittest 是非常必要的，但是在 eBPF 程序里，该如何给 XDP 程序写 unittest 呢？ bpf: introduce BPF_PROG_TEST_RUN command since 4.12 kernel 在 4.12 内核中，引入了 BPF_PROG_TEST_RUN 命令，可以用来给 XDP 和 tc-bpf 等 eBPF 程序写 unit</description>
     </item>
     <item>
       <title>eBPF Talk: 使用 metadata 将信息从 XDP 传给 AF_XDP</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-64---metadata-from-xdp-to-af_xdp/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/</link>
       <pubDate>Wed, 03 Apr 2024 22:44:30 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-64---metadata-from-xdp-to-af_xdp/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/</guid>
       <description>学习了 XDP metadata 和 AF_XDP，是否可以使用 metadata 将信息从 XDP 传给 AF_XDP 呢？ eBPF Talk: XDP metadata 实战指南 eBPF Talk: 使用 AF_XDP 注入延时 TL;DR 答案是可以的，复制网络包内容时将 metadata 一起进行复</description>
     </item>
     <item>
       <title>eBPF Talk: helpers for bpf map</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-63---helpers-for-bpf-map/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-63-helpers-for-bpf-map/</link>
       <pubDate>Wed, 03 Apr 2024 22:40:29 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-63---helpers-for-bpf-map/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-63-helpers-for-bpf-map/</guid>
       <description>通过学习 eBPF Talk: eBPF helpers 的另一面，我们知道 eBPF helpers 是通过 bpf_func_proto 结构体来实现的，不同的 helpers 函数对应不同的 bpf_func_proto；甚至，对于同一个 helpers 函数，不</description>
     </item>
     <item>
       <title>eBPF Talk: 3.18 kernel 里的 verifier 核心内容</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-62---verifier-core-in-3.18-kernel/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-62-verifier-core-in-3.18-kernel/</link>
       <pubDate>Mon, 01 Apr 2024 23:30:37 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-62---verifier-core-in-3.18-kernel/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-62-verifier-core-in-3.18-kernel/</guid>
       <description>在 eBPF Talk: 3.18 kernel 里的 CFG 检查 里，我们学习了如何检查 bpf prog 的控制流程图（CFG，Control Flow Graph）是不是一个有向无环图（DAG，Directe</description>
     </item>
     <item>
       <title>eBPF Talk: 3.18 kernel 里的 CFG 检查</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-61---cfg-check-in-3.18-kernel/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-61-cfg-check-in-3.18-kernel/</link>
       <pubDate>Mon, 01 Apr 2024 23:28:13 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-61---cfg-check-in-3.18-kernel/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-61-cfg-check-in-3.18-kernel/</guid>
       <description>为了克服对 bpf verifier 的恐惧，打算从 verifier.c 最初的 commit 开始学习 verifier；这是因为最初版本的 verifier 并不复杂。相对而言，理解起来会容易一些。 bpf: verifier (add branch/goto checks) 在该 commit</description>
     </item>
     <item>
       <title>eBPF Talk: spinlock 详解</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-60---introduce-spinlock/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-60-introduce-spinlock/</link>
       <pubDate>Mon, 01 Apr 2024 22:49:57 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-60---introduce-spinlock/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-60-introduce-spinlock/</guid>
       <description>此 spinlock 指的是 eBPF 代码里使用的 struct bpf_spin_lock。 bpf: introduce bpf_spin_lock since kernel 5.1 从 eBPF Talk: 正确地进行统计 里学习到可以使用 spinlock 对统计进行保护。 spinlock 的用法就是那么简单</description>
     </item>
     <item>
       <title>eBPF Talk: 正确地进行统计</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-59---stats-bpf-prog-correctly/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-59-stats-bpf-prog-correctly/</link>
       <pubDate>Mon, 01 Apr 2024 22:49:01 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-59---stats-bpf-prog-correctly/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-59-stats-bpf-prog-correctly/</guid>
       <description>在 bpf prog 里进行统计，该怎么做呢？ PERCPU bpf map 在 bpf prog 里使用 PERCPU bpf map 进行统计，在用户态应用程序里就可以读取该 bpf map 获取从而能够计算出最终的统计数据。 使用 PERCPU bpf</description>
     </item>
     <item>
       <title>eBPF Talk: 不吐不快之 XDP ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-58---complain-xdp-acl/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-58-complain-xdp-acl/</link>
       <pubDate>Mon, 01 Apr 2024 22:46:20 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-58---complain-xdp-acl/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-58-complain-xdp-acl/</guid>
       <description>之前，在学习高性能 XDP ACL 的时候，挺开心的，一下子就掌握了前沿技术。 eBPF Talk: 优化 xdp_acl eBPF Talk: 再论高性能 eBPF ACL demo for 「eBPF 技术实践：高性能 ACL」 不过在项目</description>
     </item>
     <item>
       <title>eBPF Talk: kprobe.multi 与 fprobe</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-57---kprobe.multi-and-fprobe/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-57-kprobe.multi-and-fprobe/</link>
       <pubDate>Mon, 01 Apr 2024 21:14:35 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-57---kprobe.multi-and-fprobe/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-57-kprobe.multi-and-fprobe/</guid>
       <description>在『eBPF Talk 读者群』里讨论起 kfuncs、kprobe、fentry/fexit 等，聊到 kprobe.multi 与 fprobe；我立刻学习了一下 kprobe.multi 和 fprobe</description>
     </item>
     <item>
       <title>eBPF Talk: 使用 AF_XDP 注入延时</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-56---latency-injection-with-af_xdp/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-56-latency-injection-with-af_xdp/</link>
       <pubDate>Sun, 31 Mar 2024 23:50:45 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-56---latency-injection-with-af_xdp/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-56-latency-injection-with-af_xdp/</guid>
       <description>学习了 AF_XDP 后，一时手痒弄了个 ping-latency-injector。 eBPF Talk: 使用 AF_XDP 加速网络【译】 eBPF Talk: XDP redirect to AF_XDP ping-latency-injector 它可以用来混淆使用 ping 实现的网络距</description>
     </item>
     <item>
       <title>eBPF Talk: XDP on veth</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-55---xdp-on-veth/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-55-xdp-on-veth/</link>
       <pubDate>Sun, 31 Mar 2024 23:47:39 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-55---xdp-on-veth/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-55-xdp-on-veth/</guid>
       <description>veth 是一种虚拟网络设备，并支持在驱动里运行 XDP 程序。 eBPF Talk: XDP on Mellanox 与 Mellanox 物理网卡对比，veth 上运行 XDP 程序有和区别呢？ ndo_xdp on veth 这是将 XDP 程序下发到 veth 驱动里</description>
     </item>
     <item>
       <title>eBPF Talk: XDP on Mellanox</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-54---xdp-on-mellanox/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-54-xdp-on-mellanox/</link>
       <pubDate>Sun, 31 Mar 2024 21:22:06 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-54---xdp-on-mellanox/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-54-xdp-on-mellanox/</guid>
       <description>为了更高的性能，需要将 XDP 程序下沉到网卡驱动里去运行。 因为服务器使用的物理网卡是 Mellanox，所以就研究一下 Mellanox 驱动里是怎么运行 XDP 程序的。 XDP</description>
     </item>
     <item>
       <title>eBPF Talk: 大佬教我 dup bpf-FD</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-53---dup-bpf-fd/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-53-dup-bpf-fd/</link>
       <pubDate>Sun, 31 Mar 2024 21:17:16 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-53---dup-bpf-fd/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-53-dup-bpf-fd/</guid>
       <description>上个星期在做 eBPF Talk: 实战经验之 bpf FD 泄漏分析 的时候，发现 GitHub cilium/ebpf 库不支持从 FD 获取 bpf link 的信息。于是，我提了个 Issue 来讨论这事： Issue link: get info from FD Issue：get</description>
     </item>
     <item>
       <title>eBPF Talk: pwru 自己挖坑自己填</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-52---eat-dog-food-of-pwru/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-52-eat-dog-food-of-pwru/</link>
       <pubDate>Sun, 31 Mar 2024 21:16:34 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-52---eat-dog-food-of-pwru/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-52-eat-dog-food-of-pwru/</guid>
       <description>当遇上 cilium/pwru 时，我便放弃维护自己的 skbtracer 了。 挖坑 之前，学习了 eBPF Talk: 全局变量实战指南，就打算在开源项目 GitHub cilium/pwru 上一展身手： PR bpf: make config as a constant 2023 年 2 月 4 日提了 PR</description>
     </item>
     <item>
       <title>eBPF Talk: 实战经验之 bpf FD 泄漏分析</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-51---bpf-fd-leak/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-51-bpf-fd-leak/</link>
       <pubDate>Sun, 31 Mar 2024 21:05:34 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-51---bpf-fd-leak/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-51-bpf-fd-leak/</guid>
       <description>不经意间，基于 XDP 的网关已写了 1w 行 Go 代码；特别是其中 ACL 模块较为复杂。 因而，担心因复杂性而带来的一些资源管理隐患，特别是不好管理的 FD 资源，专门打</description>
     </item>
     <item>
       <title>eBPF Talk: iptables-trace</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-50---iptables-trace/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-50-iptables-trace/</link>
       <pubDate>Sun, 31 Mar 2024 21:05:00 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-50---iptables-trace/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-50-iptables-trace/</guid>
       <description>填坑 eBPF Talk: skbtracer-iptables 中的 One more thing. 源代码：GitHub iptables-trace 前置知识： eBPF Talk: skbtracer-iptables eBPF Talk: 在内核模块里运行 bpf 程序 kprobes in kernel module 因为 eBPF 不支持修改 skb-&amp;gt;nf_trace 字段和 struct pt_regs（出于安</description>
     </item>
     <item>
       <title>eBPF Talk: 在内核模块里运行 bpf 程序</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-49---run-bpf-prog-in-kernel-module/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/</link>
       <pubDate>Sun, 31 Mar 2024 20:47:45 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-49---run-bpf-prog-in-kernel-module/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/</guid>
       <description>在 Linux 内核模块里把玩 bpf map P.S. 旧文一篇，请笑纳。 参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序源代码： iptables-bpf 内核模块源代码</description>
     </item>
     <item>
       <title>eBPF Talk: kprobe 获取第 n 个参数</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-48---kprobe-nth-argument/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-48-kprobe-nth-argument/</link>
       <pubDate>Fri, 29 Mar 2024 23:56:03 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-48---kprobe-nth-argument/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-48-kprobe-nth-argument/</guid>
       <description>此次来填 eBPF Talk: skbtracer-iptables 中的坑了：在开发一个基于 eBPF 的 iptables TRACE 的替代工具。 不过，遇到的第一个纸老虎是 kprobe 中获取 nf_log_trace() 的诸多参数。 nf_log_trace() 且看下函数声明： 1 2 3 4 5 6 7 8</description>
     </item>
     <item>
       <title>eBPF Talk: syscalldist 与 bpfsyscalldist</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-47---syscalldist-and-bpfsyscalldist/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-47-syscalldist-and-bpfsyscalldist/</link>
       <pubDate>Fri, 29 Mar 2024 23:55:06 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-47---syscalldist-and-bpfsyscalldist/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-47-syscalldist-and-bpfsyscalldist/</guid>
       <description>因为 XDP ACL 需要不断操作数据面的 XDP，担心 Go 代码逻辑会导致一些性能问题，所以参考 syscalldist 开发了一个专门针对 BPF 系统调用的 bpfsyscalldist。</description>
     </item>
     <item>
       <title>eBPF Talk: kprobe, frace 与 trampoline</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-46---kprobe-ftrace-and-trampoline/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/</link>
       <pubDate>Fri, 29 Mar 2024 23:51:43 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-46---kprobe-ftrace-and-trampoline/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/</guid>
       <description>听闻 ftrace 也是基于 trampoline 实现的。而且，最近打算使用 kprobe 开发个工具，所以就将快速翻看了一下 ftrace 和 kprobe 的底层源代码。 P.S. 不介绍 ftrace 的使用，使用文档请看 ftrace - Function Tra</description>
     </item>
     <item>
       <title>eBPF Talk: skbtracer-iptables</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-45---skbtracer-iptables/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-45-skbtracer-iptables/</link>
       <pubDate>Fri, 29 Mar 2024 23:46:26 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-45---skbtracer-iptables/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-45-skbtracer-iptables/</guid>
       <description>可还曾记得 skbtracer 内核网络包跟踪工具？ skbtracer: Linux 内核网络包路径追踪利器，Go 语言版本 这是我刚学习 eBPF 不久就开发的工具，不过更多时候是向 skbtracer 和 pwru 这两个网络包跟</description>
     </item>
     <item>
       <title>eBPF Talk: 共享的 tailcall PROG_ARRAY bpf map</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-88---tailcall-shared-bpf-map/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/</link>
       <pubDate>Tue, 22 Aug 2023 22:27:28 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-88---tailcall-shared-bpf-map/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/</guid>
       <description>在研究 eBPF Talk: trace tailcall 程序？NO！ 时，产生了疑惑： 静态 tailcall 使用的 PROG_ARRAY bpf map 能在多个进程之间共享吗？ TL;DR 能。且在更新 PROG_ARRAY bpf map 时，会更新静态 tailcall 的所有 bpf prog。 eBPF</description>
     </item>
     <item>
       <title>eBPF Talk: 更新 tailcall PROG_ARRAY bpf map</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-91---update-tailcall-bpf-map/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-91-update-tailcall-bpf-map/</link>
       <pubDate>Tue, 22 Aug 2023 22:27:23 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-91---update-tailcall-bpf-map/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-91-update-tailcall-bpf-map/</guid>
       <description>在上一集 eBPF Talk: 动态或静态 tailcall 中，我们知道了 tailcall 有动态和静态之分。 对于动态 tailcall 而言，更新 PROG_ARRAY bpf map 时就比较简单，只需要更新一下 array-&amp;gt;ptrs 数组即可。 但对于静态 tailcall 而言</description>
     </item>
     <item>
       <title>eBPF Talk: 动态或静态 tailcall</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-90---dynamic-or-static-tailcall/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-90-dynamic-or-static-tailcall/</link>
       <pubDate>Tue, 22 Aug 2023 22:27:18 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-90---dynamic-or-static-tailcall/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-90-dynamic-or-static-tailcall/</guid>
       <description>动态 tailcall？静态 tailcall？为什么 tailcall 会有动静之分呢？ 其实，就是看在使用 bpf_taill_call() 时，传入的 index 参数是常量还是变量。 动态 tailcall 在使用 bpf_tail_call() 时，传</description>
     </item>
     <item>
       <title>eBPF Talk: trampoline stack on x86【汇编慎入】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-44---trampoline-stack-on-x86/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-44-trampoline-stack-on-x86/</link>
       <pubDate>Tue, 23 May 2023 23:02:47 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-44---trampoline-stack-on-x86/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-44-trampoline-stack-on-x86/</guid>
       <description>前面学习了 trampoline 的工作原理： eBPF Talk: trampoline on x86【汇编慎入】 eBPF Talk: trampoline on x86【续】【汇编慎入】 继续深入学习 trampoline 底层实现，回答以下 2 个问题： fentry bpf prog 是如何获取</description>
     </item>
     <item>
       <title>eBPF Talk: trampoline on x86【续】【汇编慎入】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-43---trampoline-on-x86/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-43-trampoline-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:55:23 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-43---trampoline-on-x86/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-43-trampoline-on-x86/</guid>
       <description>书接上回，使用 fexit 的时候，为什么在 ret 前增加 add $0x8,%rsp 指令就能跳过执行原来的函数？ eBPF Talk: trampoline on x86【汇编慎入】 call 学习一下几条常用指令： call %N: 相当于 push %eip + mov</description>
     </item>
     <item>
       <title>eBPF Talk: trampoline on x86【汇编慎入】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-42---trampoline-on-x86/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-42-trampoline-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:45:15 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-42---trampoline-on-x86/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-42-trampoline-on-x86/</guid>
       <description>类似 freplace，trampoline 是对 prologue 进行 poke 的另一个应用。 eBPF Talk: freplace on x86【汇编慎入】 TL;DR 类似 freplace，trampoline 是</description>
     </item>
     <item>
       <title>eBPF Talk: freplace on x86【汇编慎入】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-41---freplace-on-x86/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-41-freplace-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:31:24 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-41---freplace-on-x86/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-41-freplace-on-x86/</guid>
       <description>freplace 技术便是对 prologue 进行 poke 的简单应用。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 TL;DR 究竟有多简单呢？就是将 prologue 里的第一条 nop 指令替换成 jmp 指令；</description>
     </item>
     <item>
       <title>eBPF Talk: perilogue on x86【汇编慎入】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-40---perilogue-on-x86/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-40-perilogue-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:25:35 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-40---perilogue-on-x86/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-40-perilogue-on-x86/</guid>
       <description>perilogue 是个缝合单词，由 prologue 和 epilogue 缝合组成。 而 prologue 和 epilogue 是 函数调用规约 中的术语。 prologue: 函数整体指令中最开始的几条指令。 epilogue: 函数整体指令中最末尾的几条指令。 perilogue: 函数</description>
     </item>
     <item>
       <title>eBPF Talk: poke on x86【汇编慎入】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-39---poke-on-x86/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-39-poke-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:22:24 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-39---poke-on-x86/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-39-poke-on-x86/</guid>
       <description>小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。 TL;DR 在 x86 架构平台上的指令插桩&amp;amp;补丁的步骤如下： 在需要的地方预</description>
     </item>
     <item>
       <title>eBPF Talk: 学习经验之确认 kernel version</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-38---kernel-version/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-38-kernel-version/</link>
       <pubDate>Tue, 23 May 2023 22:18:00 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-38---kernel-version/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-38-kernel-version/</guid>
       <description>当我们想要在项目特定版本内核中落地某个 eBPF 特性时，需要确认该版本内核是否支持该 eBPF 特性。 与此同时，也想知道，该 eBPF 特性最低要求哪个版本的内核。 前置</description>
     </item>
     <item>
       <title>eBPF Talk: 实战经验之 loop</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-37---loop/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-37-loop/</link>
       <pubDate>Tue, 23 May 2023 22:14:15 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-37---loop/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-37-loop/</guid>
       <description>最近刚好打算使用 for 遍历 CIDR 数组的方式替换性能较差的 LPM trie bpf map，就顺便总结一下 loop 相关经验。 在 eBPF 中，出于性能、安全考虑，并不支持无限循环。这并不</description>
     </item>
     <item>
       <title>eBPF Talk: XDP redirect to AF_XDP</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-36---xdp-redirect-to-af_xdp/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</link>
       <pubDate>Tue, 23 May 2023 22:09:09 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-36---xdp-redirect-to-af_xdp/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</guid>
       <description>通过学习 eBPF Talk: AF_XDP，我们掌握了 AF_XDP 的那些基础知识。 提问：对于如下高性能场景，在网卡收到网络包后，该网络包会被哪个 AF_XDP socket 处理呢？ 该网卡独占一</description>
     </item>
     <item>
       <title>eBPF Talk: bpf2bpf &amp; tailcall 报错分析</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-35---bpf2bpf-and-tailcall-error/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</link>
       <pubDate>Tue, 23 May 2023 22:06:44 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-35---bpf2bpf-and-tailcall-error/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</guid>
       <description>终于要将 bpf2bpf &amp;amp; tailcall 的组合落地到项目中了。 不过，当头一棒的是：tail_calls are not allowed when call stack of previous frames is 256 bytes. Too large。 幸好学习过 eBPF Talk: tailcall on x86，</description>
     </item>
     <item>
       <title>eBPF Talk: 使用 AF_XDP 加速网络【译】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-34---af_xdp/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-34-af_xdp/</link>
       <pubDate>Tue, 23 May 2023 22:02:31 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-34---af_xdp/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-34-af_xdp/</guid>
       <description>本文翻译自 2018 年的 LWN: Accelerating networking with AF_XDP。 以下为译文。 Linux 网络栈不缺乏特性，且对于大部分使用场景都有不错的性能表现。不过，随着网络的高速发展，对网</description>
     </item>
     <item>
       <title>eBPF Talk: tailcall on x86【汇编慎入】【译】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-33---tailcall-on-x86/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-33-tailcall-on-x86/</link>
       <pubDate>Tue, 23 May 2023 21:48:41 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-33---tailcall-on-x86/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-33-tailcall-on-x86/</guid>
       <description>本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf【译】 以下为译文。 最初我们学习编程的时候，我们就学</description>
     </item>
     <item>
       <title>eBPF Talk: tailcall 与 bpf2bpf【译】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-32---tailcall-and-bpf2bpf/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-32-tailcall-and-bpf2bpf/</link>
       <pubDate>Tue, 23 May 2023 21:44:17 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-32---tailcall-and-bpf2bpf/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-32-tailcall-and-bpf2bpf/</guid>
       <description>本文翻译自 Cilium 出品的 BPF and XDP Reference Guide，翻译了其中的 tailcall 和 bpf2bpf 部分。 tailcall：尾调用。 bpf2bpf：BPF 到 BPF 函数调用。 tailcall tailcall 可以看作允许</description>
     </item>
     <item>
       <title>eBPF Talk: 全局变量、常量与 bpf map</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-31---global-variable-constant-variable-and-bpf-map/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-31-global-variable-constant-variable-and-bpf-map/</link>
       <pubDate>Sun, 21 May 2023 23:38:54 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-31---global-variable-constant-variable-and-bpf-map/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-31-global-variable-constant-variable-and-bpf-map/</guid>
       <description>全局变量的用法请参考 eBPF Talk: 全局变量实战指南。 常量的使用例子请参考 为 eBPF 程序注入黑魔法。 有同事提了个问题：在 eBPF 运行的时候是怎么访问它们的内存的呢？</description>
     </item>
     <item>
       <title>eBPF Talk: veth, XDP, GRO ?</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-30---veth-xdp-gro/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-30-veth-xdp-gro/</link>
       <pubDate>Sun, 21 May 2023 23:33:35 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-30---veth-xdp-gro/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-30-veth-xdp-gro/</guid>
       <description>书接上回 eBPF Talk: XDP 转发失败了，今回讲解为什么从物理网卡的驱动模式 XDP 程序 xdp_redirect() 到 veth 设备时一定要开启对端设备的 GRO 功能？ 网络包 xdp_redirect() 转发到哪里去？ 简单而言，网</description>
     </item>
     <item>
       <title>eBPF Talk: XDP 转发失败了</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-29---failed-to-xdp-redirect/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-29-failed-to-xdp-redirect/</link>
       <pubDate>Sun, 21 May 2023 23:29:32 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-29---failed-to-xdp-redirect/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-29-failed-to-xdp-redirect/</guid>
       <description>奇葩场景遇到个奇葩问题。 为了更好的性能，就将 XDP 程序挂载到网卡驱动里。但有个业务需求，在 XDP 程序里将需要延迟的流量转发到 veth 设备。所以，就直接在 XDP</description>
     </item>
     <item>
       <title>eBPF Talk: 在 veth 上运行 XDP</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-28---xdp-on-veth/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-28-xdp-on-veth/</link>
       <pubDate>Sun, 21 May 2023 16:41:37 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-28---xdp-on-veth/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-28-xdp-on-veth/</guid>
       <description>veth 设备在 Linux 容器网络里被广泛使用，像其它网络设备一样都支持运行 XDP 程序。 与此同时，veth 设备还支持 driver 模式的 XDP 程序。 如果在往 veth 设备上挂载 XDP 程序时</description>
     </item>
     <item>
       <title>eBPF Talk: XDP metadata 实战指南</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-27---xdp-metadata-in-action/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-27-xdp-metadata-in-action/</link>
       <pubDate>Sun, 21 May 2023 16:34:35 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-27---xdp-metadata-in-action/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-27-xdp-metadata-in-action/</guid>
       <description>最近需要在两个 XDP 程序之间传递一个最简单的信息，原本想着使用使用一个 bpf map 来传递。经过同事提醒，有 XDP metadata 可以用来传递简单信息，我便解锁了 XDP metadata 技术。</description>
     </item>
     <item>
       <title>eBPF Talk: 低性能 eBPF ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-26---iptables-in-bpf/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-26-iptables-in-bpf/</link>
       <pubDate>Sun, 21 May 2023 16:24:22 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-26---iptables-in-bpf/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-26-iptables-in-bpf/</guid>
       <description>eBPF Talk: 再论高性能 eBPF ACL 中的 ACL 规则匹配算法比较复杂，晦涩难懂；相对于 iptables 而言，该实现就比较难维护了。这就是为了性能而牺牲了可维护性。 所以，有没有类似</description>
     </item>
     <item>
       <title>eBPF Talk: 揭秘 XDP 转发网络包【续】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-25---xdp-redirect-packet/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-25-xdp-redirect-packet/</link>
       <pubDate>Sun, 21 May 2023 16:22:07 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-25---xdp-redirect-packet/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-25-xdp-redirect-packet/</guid>
       <description>书接 eBPF Talk: 揭秘 XDP 转发网络包 未竟的内容，看看最后 generic_xdp_tx() 函数中的发包详情。 1 2 3 4 5 6 // ${KERNEL}/net/core/dev.c generic_xdp_tx() |--&amp;gt;netdev_start_xmit() |--&amp;gt;__netdev_start_xmit() |--&amp;gt;ops-&amp;gt;ndo_start_xmit(skb, dev); 由以上函数调用栈可知，XDP_REDIRECT 和 XDP_TX</description>
     </item>
     <item>
       <title>eBPF Talk: bpf verifier 报告 ENOSPC</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-24---bpf-verifier-enospc/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-24-bpf-verifier-enospc/</link>
       <pubDate>Sun, 21 May 2023 16:19:32 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-24---bpf-verifier-enospc/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-24-bpf-verifier-enospc/</guid>
       <description>今天遇到个不常见的问题：在往内核装载 bpf 程序时，bpf verifier 报告错误： 1 failed to load bpf with bitmap size 8: failed to load bpf obj and bpf maps: field Acl: program acl: load program: no space left on device: 578: R0=map_value(id=0,off=0,ks=8,vs=64,imm=0) R1_w=map_ptr(id=0,off=0,ks=4,vs=4,imm=0) R2_w=fp-4 R3_w=invP1 R4=invP(id=69 (3524 line(s) omitted) 觉</description>
     </item>
     <item>
       <title>eBPF Talk: 一个 ARRAY bpf map 的使用细节</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-23---a-concrete-usage-of-array-map/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-23-a-concrete-usage-of-array-map/</link>
       <pubDate>Sun, 21 May 2023 16:17:25 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-23---a-concrete-usage-of-array-map/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-23-a-concrete-usage-of-array-map/</guid>
       <description>创建 bpf map 时，出现了如下错误： 1 failed to load bpf: failed to create map: invalid argument 看下需要创建的 bpf map： 1 2 3 4 5 6 struct { __uint(type, BPF_MAP_TYPE_ARRAY); __type(key, __u8); __type(value, bitmap); __uint(max_entries, PROTO_MAX_ENTRIES); } acl_protocol SEC(&amp;#34;.maps&amp;#34;); 想着，需要处理的 protocol 也就 TCP</description>
     </item>
     <item>
       <title>eBPF Talk: 全局变量实战指南</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-22---global-variables-in-action/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-22-global-variables-in-action/</link>
       <pubDate>Sun, 21 May 2023 16:12:19 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-22---global-variables-in-action/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-22-global-variables-in-action/</guid>
       <description>类似于常量的使用，如今在 eBPF 里也能够使用全局变量了。 使用例子 源代码：global-variable example 以 kprobe TCP 连接建立事件为例子，当有新的 TCP 连接时</description>
     </item>
     <item>
       <title>eBPF Talk: 优化 XDP ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-21---xdp-acl-optimisation/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</link>
       <pubDate>Sun, 21 May 2023 16:08:36 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-21---xdp-acl-optimisation/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</guid>
       <description>书接上回 ，本文讲解对高性能 XDP ACL 的开源项目 xdp_acl 的优化内容： 按需开启 eBPF 中的 debug 日志 动态调整 bitmap 大小 使用 PERCPU ARRAY 优化规则 bpf map 动态增删 ACL 规则的处理 以下代码片段</description>
     </item>
     <item>
       <title>eBPF Talk: 再论高性能 eBPF ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-20---xdp-acl-again/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-20-xdp-acl-again/</link>
       <pubDate>Sun, 21 May 2023 16:03:32 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-20---xdp-acl-again/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-20-xdp-acl-again/</guid>
       <description>因为近期又得搞基于 eBPF 的 ACL，所以再次研究基于 eBPF 的 ACL 的几篇论文和一个开源项目。 以前，我研究过 「eBPF技术实践：高性能ACL」，并实现了一个</description>
     </item>
     <item>
       <title>eBPF Talk: SKB 工作原理【译】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-19---how-skbs-work/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-19-how-skbs-work/</link>
       <pubDate>Sun, 21 May 2023 16:00:09 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-19---how-skbs-work/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-19-how-skbs-work/</guid>
       <description>翻译自 How SKBs work。 数据区域的布局 第一张图描述的是 SKB 数据区域的布局，以及几个 struct sk_buff 中的指针。 本文余下内容将讲解 SKB 数据区域的操作：通过修改这些指</description>
     </item>
     <item>
       <title>eBPF Talk: bpf helpers 的另一面</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-18---another-side-of-bpf-helpers/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-18-another-side-of-bpf-helpers/</link>
       <pubDate>Sat, 20 May 2023 17:48:25 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-18---another-side-of-bpf-helpers/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-18-another-side-of-bpf-helpers/</guid>
       <description>本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，verifier 是怎么处理 bpf helpers 的。 书接上回 eBPF Talk: 揭秘 XDP 转发网络包，本文解答： 为什么 XDP</description>
     </item>
     <item>
       <title>eBPF Talk: 揭秘 XDP 转发网络包</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-17---xdp-redirect-packet/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-17-xdp-redirect-packet/</link>
       <pubDate>Sat, 20 May 2023 17:41:10 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-17---xdp-redirect-packet/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-17-xdp-redirect-packet/</guid>
       <description>书接上回 eBPF Talk: 解密 XDP generic 模式，本文从源代码层面剖析 XDP 转发网络包的实现。 demo 按需将网络包从另一张网卡转发走。 1 2 3 4 5 6 7 8 9 static volatile const u32 REDIRECT_IFINDEX = 0xFFFFFFFF; SEC(&amp;#34;xdp&amp;#34;) int xdp_redirect(struct xdp_md</description>
     </item>
     <item>
       <title>eBPF Talk: 解密 XDP generic 模式</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-16---xdp-generic-mode/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-16-xdp-generic-mode/</link>
       <pubDate>Sat, 20 May 2023 17:37:39 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-16---xdp-generic-mode/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-16-xdp-generic-mode/</guid>
       <description>近期又得搞 XDP 了，就顺手研究了下 XDP generic 模式的源代码。 XDP generic 模式的函数位置 已知，内核协议栈会对每个 skb 都执行一次 XDP generic 模式处理，当然是启用了 XDP generic 模式的情</description>
     </item>
     <item>
       <title>eBPF Talk: 好用的 histogram</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-15---useful-histogram/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-15-useful-histogram/</link>
       <pubDate>Sat, 20 May 2023 17:32:59 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-15---useful-histogram/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-15-useful-histogram/</guid>
       <description>最近 eBPF 轮子造的多了后，发现需要用 histogram 的时候，要写的代码就一个模板，如下。 以下内容以 syscalldist 为例。 用于 histogram 的 C 代码 参考（抄袭） libbpf-tools 里 histogram 的实现，用于 histogram 的 C 代</description>
     </item>
     <item>
       <title>eBPF Talk: bpf2bpf 特性揭秘</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-14---bpf2bpf-functions-call/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-14-bpf2bpf-functions-call/</link>
       <pubDate>Sat, 20 May 2023 17:26:45 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-14---bpf2bpf-functions-call/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-14-bpf2bpf-functions-call/</guid>
       <description>在 eBPF Talk: bpf2bpf 特性简介 中已介绍了 bpf2bpf 特性，同时有 demo 介绍该怎么使用该特性。 在该特性神秘面纱的背后，到底是怎样的呢？让我娓娓道来。 编译阶段 不懂编译器 clang 中</description>
     </item>
     <item>
       <title>eBPF Talk: cilium/ebpf 中 bpf map 的诞生</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-13---bpf-map-new-born-in-cilium_ebpf/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/</link>
       <pubDate>Sat, 20 May 2023 17:17:39 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-13---bpf-map-new-born-in-cilium_ebpf/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-13-bpf-map-new-born-in-cilium_ebpf/</guid>
       <description>在博客 eBPF Talk: 揭秘 BPF map 前生今世，已讲解了 bpf map 从定义到创建的整个过程。 不过博客中讲解的加载器是 C 语言的 libbpf。 在此，就讲解一下纯 Go 语言的加载</description>
     </item>
     <item>

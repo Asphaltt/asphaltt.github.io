@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: tailcall on x86【汇编慎入】【译】 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf【译】 以下为译文。 最初我们学习编程的时候，我们就学" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-33-tailcall-on-x86/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: tailcall on x86【汇编慎入】【译】" />
+<meta property="og:description" content="本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf【译】 以下为译文。 最初我们学习编程的时候，我们就学" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-33-tailcall-on-x86/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-05-23T21:48:41+08:00" />
+<meta property="article:modified_time" content="2023-05-23T21:48:41+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: tailcall on x86【汇编慎入】【译】">
+  <meta itemprop="description" content="本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf【译】 以下为译文。 最初我们学习编程的时候，我们就学">
+  <meta itemprop="datePublished" content="2023-05-23T21:48:41+08:00">
+  <meta itemprop="dateModified" content="2023-05-23T21:48:41+08:00">
+  <meta itemprop="wordCount" content="5190">
+  <meta itemprop="keywords" content="EBPF,Tailcall,Bpf2bpf,X86"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: tailcall on x86【汇编慎入】【译】"/>
+<meta name="twitter:description" content="本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf【译】 以下为译文。 最初我们学习编程的时候，我们就学"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: tailcall on x86【汇编慎入】【译】</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 5190 字 </span>
+      <span class="more-meta"> 预计阅读 11 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#call-指令哪里去了"><code>call</code> 指令哪里去了？</a></li>
+        <li><a href="#bpf-tailcall">BPF <code>tailcall</code></a></li>
+        <li><a href="#尾调用是尾调用是尾调用">尾调用是尾调用是尾调用</a></li>
+        <li><a href="#x86-64-上的-tailcall">x86-64 上的 <code>tailcall</code></a></li>
+        <li><a href="#混合使用-bpf2bpf-和-tailcall">混合使用 <code>bpf2bpf</code> 和 <code>tailcall</code></a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>本文翻译自 <a href="https://blog.cloudflare.com/assembly-within-bpf-tail-calls-on-x86-and-arm/">Assembly within! BPF tail calls on x86 and ARM</a>，翻译了其中 <code>tailcall</code> 与 x86 部分，略过 arm 部分。</p>
+<ul>
+<li><a href="/post/ebpf-talk-32-tailcall-and-bpf2bpf/">eBPF Talk: tailcall 与 bpf2bpf【译】</a></li>
+</ul>
+<p>以下为译文。</p>
+<hr>
+<p>最初我们学习编程的时候，我们就学习了 <a href="https://ocw.mit.edu/courses/6-00sc-introduction-to-computer-science-and-programming-spring-2011/resources/lecture-6-recursion/">递归</a>。较于其它东西，如带有重复代码的顺序结构，递归非常便于计算。例如著名的 <a href="https://en.wikipedia.org/wiki/Fibonacci_number">Fibonacci 数</a> - <em>Fn = Fn-1 + Fn-2</em>。</p>
+<p><img src="/eBPF_Talk_33_tailcall_on_x86_1.png" alt=""></p>
+<p>后来，随着深入多线程编程，我们学到了一个事实：调用帧的 <a href="https://textbook.cs161.org/memory-safety/x86.html#26-stack-pushing-and-popping">栈空间</a> 是有限的。因而有两种使用递归计算 Fibonacci 数的办法：</p>
+<p>1，okay 的办法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// fib_okay.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdint.h&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">uint64_t</span> <span class="nf">fib</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="nf">fib</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="nf">fib</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>2，cool 的办法：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// fib_cool.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;stdint.h&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">uint64_t</span> <span class="nf">fib_tail</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">n</span><span class="p">,</span> <span class="kt">uint64_t</span> <span class="n">a</span><span class="p">,</span> <span class="kt">uint64_t</span> <span class="n">b</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">a</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">b</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="nf">fib_tail</span><span class="p">(</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">uint64_t</span> <span class="nf">fib</span><span class="p">(</span><span class="kt">uint64_t</span> <span class="n">n</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="nf">fib_tail</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如果我们能看下编译器生成的机器码，cool 的办法下翻译出一段漂亮且紧凑的指令序列：</p>
+<blockquote>
+<p>声明：本文有较多的汇编。我们将看到 x86-64、arm64 和 BPF 架构的汇编代码。如果需要指导，我推荐如下资料：x86-64 Igor Zhirkov 写的 <a href="https://github.com/Apress/low-level-programming">Low-Level Programming</a>，arm64 Stephen Smith 写的 <a href="https://github.com/Apress/programming-with-64-bit-ARM-assembly-language">Programming with 64-Bit ARM Assembly Language</a>，BPF 的请看 <a href="https://docs.kernel.org/bpf/instruction-set.html">Linux kernel document</a>。</p>
+</blockquote>
+<p><img src="/eBPF_Talk_33_tailcall_on_x86_2.png" alt=""></p>
+<p>而 okay 的办法就令人失望了，它导致了 <a href="https://github.com/cloudflare/cloudflare-blog/blob/master/2022-10-bpf-tail-call/fib_okay.x86-64.disasm">更多的指令</a>。它简直是一团 <a href="https://en.wikipedia.org/wiki/Basic_block">basic blocks</a> 意大利面条。</p>
+<p><img src="/eBPF_Talk_33_tailcall_on_x86_3.png" alt=""></p>
+<p>但更重要的是，它并没有避免掉 <a href="https://textbook.cs161.org/memory-safety/x86.html#29-x86-function-call-in-assembly">x86 call 指令</a>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Bash" data-lang="Bash"><span class="line"><span class="cl">$ objdump -d fib_okay.o <span class="p">|</span> grep call
+</span></span><span class="line"><span class="cl"> 10c:   e8 <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span>          call   <span class="m">111</span> &lt;fib+0x111&gt;
+</span></span><span class="line"><span class="cl">$ objdump -d fib_cool.o <span class="p">|</span> grep call
+</span></span><span class="line"><span class="cl">$
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这就导致一个重要结果：随着 <code>fib</code> 递归地调用自己，栈就一直增长。我们可以通过 <a href="https://github.com/cloudflare/cloudflare-blog/blob/master/2022-10-bpf-tail-call/trace_rsp.gdb">调试器</a> 观测到它。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Bash" data-lang="Bash"><span class="line"><span class="cl">$ gdb --quiet --batch --command<span class="o">=</span>trace_rsp.gdb --args ./fib_okay <span class="m">6</span>
+</span></span><span class="line"><span class="cl">Breakpoint <span class="m">1</span> at 0x401188: file fib_okay.c, line 3.
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Thread debugging using libthread_db enabled<span class="o">]</span>
+</span></span><span class="line"><span class="cl">Using host libthread_db library <span class="s2">&#34;/lib64/libthread_db.so.1&#34;</span>.
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 6, %rsp <span class="o">=</span> 0xffffd920
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 5, %rsp <span class="o">=</span> 0xffffd900
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 4, %rsp <span class="o">=</span> 0xffffd8e0
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 3, %rsp <span class="o">=</span> 0xffffd8c0
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 2, %rsp <span class="o">=</span> 0xffffd8a0
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 1, %rsp <span class="o">=</span> 0xffffd880
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 1, %rsp <span class="o">=</span> 0xffffd8c0
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 2, %rsp <span class="o">=</span> 0xffffd8e0
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 1, %rsp <span class="o">=</span> 0xffffd8c0
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 3, %rsp <span class="o">=</span> 0xffffd900
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 2, %rsp <span class="o">=</span> 0xffffd8e0
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 1, %rsp <span class="o">=</span> 0xffffd8c0
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 1, %rsp <span class="o">=</span> 0xffffd900
+</span></span><span class="line"><span class="cl"><span class="m">13</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Inferior <span class="m">1</span> <span class="o">(</span>process 50904<span class="o">)</span> exited normally<span class="o">]</span>
+</span></span><span class="line"><span class="cl">$
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>然而 cool 的办法下则没有使用栈。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Bash" data-lang="Bash"><span class="line"><span class="cl">$ gdb --quiet --batch --command<span class="o">=</span>trace_rsp.gdb --args ./fib_cool <span class="m">6</span>
+</span></span><span class="line"><span class="cl">Breakpoint <span class="m">1</span> at 0x40118a: file fib_cool.c, line 13.
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Thread debugging using libthread_db enabled<span class="o">]</span>
+</span></span><span class="line"><span class="cl">Using host libthread_db library <span class="s2">&#34;/lib64/libthread_db.so.1&#34;</span>.
+</span></span><span class="line"><span class="cl"><span class="nv">n</span> <span class="o">=</span> 6, %rsp <span class="o">=</span> 0xffffd938
+</span></span><span class="line"><span class="cl"><span class="m">13</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>Inferior <span class="m">1</span> <span class="o">(</span>process 50949<span class="o">)</span> exited normally<span class="o">]</span>
+</span></span><span class="line"><span class="cl">$
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="call-指令哪里去了"><code>call</code> 指令哪里去了？</h2>
+<p>聪明的编译器将函数体里最后的函数调用转换成了一个常规跳转（<code>regular jump</code>）。为什么允许这么做呢？</p>
+<p>我们谈论的是函数体里最后一条指令。只要返回（<code>return</code>）了，调用者栈帧就会被销毁。所以，当我们复用它当作被调用者的 <a href="https://eli.thegreenplace.net/2011/02/04/where-the-top-of-the-stack-is-on-x86/">栈帧</a> 时，为什么还要保留它呢？</p>
+<p>这个优化，即 <a href="https://en.wikipedia.org/wiki/Tail_call#In_assembly">尾调用消除</a>，令我们在 Fibonacci cool 办法实现中不需要用到函数调用。有且仅有一个调用去消除 - 就是最后那个。</p>
+<p>一旦应用，调用变跳转（循环）。如果汇编不是你的第二语言，使用 <a href="https://ghidra-sre.org/">Ghidra</a> 反编译查看 fib_cool.o 对象文件去查看这种转变：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">long</span> <span class="nf">fib</span><span class="p">(</span><span class="n">ulong</span> <span class="n">param_1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">long</span> <span class="n">lVar1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">long</span> <span class="n">lVar2</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="kt">long</span> <span class="n">lVar3</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">  <span class="k">if</span> <span class="p">(</span><span class="n">param_1</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lVar3</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lVar3</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">lVar2</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">do</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="n">lVar1</span> <span class="o">=</span> <span class="n">lVar3</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="n">param_1</span> <span class="o">=</span> <span class="n">param_1</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="n">lVar3</span> <span class="o">=</span> <span class="n">lVar2</span> <span class="o">+</span> <span class="n">lVar1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      <span class="n">lVar2</span> <span class="o">=</span> <span class="n">lVar1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="n">param_1</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="k">return</span> <span class="n">lVar3</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这就是我们想要的。不仅生成的机器码更短，也因不用调用而变得更快（对比 okay 办法下的 <a href="https://github.com/cloudflare/cloudflare-blog/blob/master/2022-10-bpf-tail-call/fib_okay_50.perf.txt#L85">profile</a>）。</p>
+<p>不过我不是 <a href="https://github.com/dendibakh/perf-ninja">性能隐者</a>，且本文不是关于编译器优化的。所以为什么我要告诉你这些呢？</p>
+<p><img src="/eBPF_Talk_33_tailcall_on_x86_4.jpeg" alt="Alex Dunkel (Maky), CC BY-SA 3.0, via Wikimedia Commons"></p>
+<h2 id="bpf-tailcall">BPF <code>tailcall</code></h2>
+<p>尾调用消除的概念以它自己的方式进入到 BPF 世界，尽管不是你可能预期的方式。对，当使用 <code>-target bpf</code> 时，LLVM 编译器在构建时消除了末尾的函数调用。这个转换发生在 <a href="https://en.wikipedia.org/wiki/Intermediate_representation">IR</a> 层面，所以它不涉及编译器后端。这能够节省你几个 <a href="https://docs.cilium.io/en/stable/bpf/#bpf-to-bpf-calls">bpf2bpf 函数调用</a>，你可以看看 BPF 汇编里的 <code>call -N</code> 指令。</p>
+<p>然而，当我们在 BPF 语境里讨论 <code>tailcall</code> 时，我们通常会想到其它一些东西。且这是一个 BPF JIT 编译器内置的专为 <a href="https://docs.cilium.io/en/stable/bpf/#tail-calls">串联 BPF 程序</a> 而生的机制。</p>
+<p>我们第一次接触 <code>tailcall</code> 是在构建我们的 <a href="https://legacy.netdevconf.info/0x13/session.html?talk-XDP-based-DDoS-mitigation">基于 XDP 的网络包处理流水线</a> 的时候。多得它，我们才能够将处理逻辑拆分成多个 XDP 程序；每个程序只做一件事。</p>
+<p><img src="/eBPF_Talk_33_tailcall_on_x86_5.png" alt="Slide from “XDP based DDoS Mitigation” talk by Arthur Fabre"></p>
+<blockquote>
+<p><a href="https://legacy.netdevconf.info/0x13/session.html?talk-XDP-based-DDoS-mitigation">XDP based DDoS Mitigation</a></p>
+</blockquote>
+<p>自那时起我们就一直使用 <code>tailcall</code>。但它们有它们的税收。直到最近，同样的 XDP 程序，在arm64 上就不能同时使用 <code>tailcall</code> 和 <code>bpf2bpf</code> 了。</p>
+<p>为什么？在得到答案之前，让我们深挖一下 <code>tailcall</code> 如何运转的。</p>
+<h2 id="尾调用是尾调用是尾调用">尾调用是尾调用是尾调用</h2>
+<p>BPF 通过 BPF 代码里调用的 <a href="https://elixir.bootlin.com/linux/v5.15.63/source/include/uapi/linux/bpf.h#L1712">bpf_tail_call()</a> 揭示了 <code>tailcall</code> 机制。所以，我们不能直接知道会调用哪个 BPF 程序。不过，我们传给它一个持有 BPF 程序引用的 BPF map（一个容器、BPF_MAP_TYPE_PROG_ARRAY），和一个索引。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="kt">long</span> <span class="nf">bpf_tail_call</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">prog_array_map</span><span class="p">,</span> <span class="n">u32</span> <span class="n">index</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">       <span class="n">Description</span>
+</span></span><span class="line"><span class="cl">              <span class="n">This</span>  <span class="n">special</span>  <span class="n">helper</span> <span class="n">is</span> <span class="n">used</span> <span class="n">to</span> <span class="n">trigger</span> <span class="n">a</span> <span class="s">&#34;tail call&#34;</span><span class="p">,</span> <span class="n">or</span>
+</span></span><span class="line"><span class="cl">              <span class="n">in</span> <span class="n">other</span> <span class="n">words</span><span class="p">,</span> <span class="n">to</span> <span class="n">jump</span> <span class="n">into</span>  <span class="n">another</span>  <span class="n">eBPF</span>  <span class="n">program</span><span class="p">.</span>  <span class="n">The</span>
+</span></span><span class="line"><span class="cl">              <span class="n">same</span>  <span class="n">stack</span> <span class="n">frame</span> <span class="n">is</span> <span class="nf">used</span> <span class="p">(</span><span class="n">but</span> <span class="n">values</span> <span class="n">on</span> <span class="n">stack</span> <span class="n">and</span> <span class="n">in</span> <span class="n">reg</span><span class="err">‐</span>
+</span></span><span class="line"><span class="cl">              <span class="n">isters</span> <span class="k">for</span> <span class="n">the</span> <span class="n">caller</span> <span class="n">are</span> <span class="n">not</span> <span class="n">accessible</span> <span class="n">to</span>  <span class="n">the</span>  <span class="n">callee</span><span class="p">).</span>
+</span></span><span class="line"><span class="cl">              <span class="n">This</span>  <span class="n">mechanism</span>  <span class="n">allows</span>  <span class="k">for</span>  <span class="n">program</span> <span class="n">chaining</span><span class="p">,</span> <span class="n">either</span> <span class="k">for</span>
+</span></span><span class="line"><span class="cl">              <span class="n">raising</span> <span class="n">the</span> <span class="n">maximum</span> <span class="n">number</span> <span class="n">of</span> <span class="n">available</span> <span class="n">eBPF</span> <span class="n">instructions</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">              <span class="n">or</span>  <span class="n">to</span>  <span class="n">execute</span>  <span class="n">given</span> <span class="n">programs</span> <span class="n">in</span> <span class="n">conditional</span> <span class="n">blocks</span><span class="p">.</span> <span class="n">For</span>
+</span></span><span class="line"><span class="cl">              <span class="n">security</span> <span class="n">reasons</span><span class="p">,</span> <span class="n">there</span> <span class="n">is</span> <span class="n">an</span> <span class="n">upper</span> <span class="n">limit</span> <span class="n">to</span> <span class="n">the</span> <span class="n">number</span> <span class="n">of</span>
+</span></span><span class="line"><span class="cl">              <span class="n">successive</span> <span class="n">tail</span> <span class="n">calls</span> <span class="n">that</span> <span class="n">can</span> <span class="n">be</span> <span class="n">performed</span><span class="p">.</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><a href="https://man7.org/linux/man-pages/man7/bpf-helpers.7.html">bpf-helpers(7) man page</a></p>
+<p>第一眼看去，这看着有点想 <a href="https://man7.org/linux/man-pages/man2/execve.2.html">execve(2) 系统调用</a>。它很容易被误解为在当前程序上下文里去执行新程序的方式。Cilium 项目出品的 <a href="https://docs.cilium.io/en/stable/bpf/#tail-calls">BPF and XDP Reference Guide</a> 文档里指出：</p>
+<blockquote>
+<p><code>tailcall</code> 可以看作允许一个 BPF 程序调用另一个程序的机制，而且该调用无需返回原程序。这样的调用并不像常规的函数调用，它实际由一个长跳转（<code>long jump</code>）来实现，并复用同一个栈帧（<code>stack frame</code>）。</p>
+</blockquote>
+<p>但是，一旦将 <a href="https://docs.cilium.io/en/stable/bpf/#bpf-to-bpf-calls">BPF 函数调用</a> 混起来使用，<code>tailcall</code> 机制其实就是尾调用消除的一种实现，而不是程序替换的程序：</p>
+<blockquote>
+<p>在真正进入目标程序之前，<code>tailcall</code> 会释放它所在的栈帧。如上图，如果在子函数内进行 <code>tailcall</code>，当 <code>func2</code> 程序执行时会使用函数（<code>func1</code>）栈帧。一旦最后的函数（<code>func3</code>）结束，前面所有的栈帧都会被释放掉，并将控制权给回到 BPF 程序调用者的调用者。</p>
+</blockquote>
+<p>唉，来个语法上的小惊喜。看下 <a href="https://github.com/cloudflare/cloudflare-blog/blob/master/2022-10-bpf-tail-call/tail_call_ex3.bpf.c">下面一段使用 bpf_tail_call() 的 BPF 代码</a>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PROG_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">bar</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tc&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">serve_drink</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span> <span class="n">__unused</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mh">0xcafe</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">bring_order</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_tail_call</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">bar</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mh">0xf00d</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tc&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">server1</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">bring_order</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tc&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">server2</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__attribute__</span><span class="p">((</span><span class="n">musttail</span><span class="p">))</span> <span class="k">return</span> <span class="nf">bring_order</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>上面有两个看着没什么区别的 BPF 程序 - <code>server1()</code> 和 <code>server2()</code>.它们都调用同一个 BPF 函数 <code>bring_order()</code>。该函数尾调用了 <code>serve_drink()</code> 程序，假设 <code>[bar[0]</code> map 条目指向它。</p>
+<p>它们的返回值都一样吗？答案如下 - 不，他们没有。<code>server1</code>返回 🍔，而 <code>server2</code> 发挥 ☕。为什么会这样？</p>
+<p>需要注意的第一个东西（<code>first thing</code>）是 <code>tailcall</code> 释放（<code>unwind</code>）的仅是当前函数栈帧。函数里的 <code>bpf_tail_call()</code> 代码从未执行，即使指定的尾调用成功了（map 条目存在，且未触及尾调用限制）。</p>
+<p>当尾调用结束，控制权回到了发起尾调用的调用者函数手上。应用到我们的例子上，两个程序的控制流都是 <code>serverX() --&gt; bring_order() --&gt; bpf_tail_call() --&gt; serve_drink() -return-&gt; serverX()</code>。</p>
+<p>需要注意的第二个东西是，编译器并不知道 <code>bpf_tail_call()</code> 会改变控制流。因此，无知的编译器优化了代码：<code>tailcall</code> 之后会继续执行。</p>
+<p><img src="/eBPF_Talk_33_tailcall_on_x86_6.png" alt=""></p>
+<blockquote>
+<p><code>server1()</code> 和 <code>server2()</code> 的调用图（<code>call graph</code>）都一样，但因构建时（<code>build time</code>）优化而返回值不一样。</p>
+</blockquote>
+<p>在这个例子里，编译器认为采用从 <code>bring_order()</code> 返回给 <code>server1()</code> 的常量是没问题的。如果没有检查 <a href="https://github.com/cloudflare/cloudflare-blog/blob/master/2022-10-bpf-tail-call/tail_call_ex3.bpf.disasm">生成的 BPF 汇编</a>，可能会带给我们惊喜。</p>
+<p>我们可以 <a href="https://clang.llvm.org/docs/AttributeReference.html#musttail">强行令编译器 musttail</a> 去尾调用 <code>bring_order()</code>。通过这种方式，我们可以保证无论 <code>bring_order()</code> 返回什么都被当作 <code>server2()</code> 程序结果。</p>
+<p>🛈 一般规则：为了最小惊喜结果，当调用一个包含 <code>tailcall</code> 的函数时，使用 <a href="https://clang.llvm.org/docs/AttributeReference.html#musttail">musttail 属性</a>。</p>
+<p><code>bpf_tail_call()</code> 底层是如何工作的？是时候深挖了。</p>
+<p><img src="/eBPF_Talk_33_tailcall_on_x86_7.jpeg" alt="Public Domain image"></p>
+<h2 id="x86-64-上的-tailcall">x86-64 上的 <code>tailcall</code></h2>
+<p>在 x86-64 BPF JIT 编译之后，<code>bpf_tail_call()</code> 会被翻译成什么呢？x86-64 上的实现是如何确保不会永远地坠入 <code>tailcall</code> 循环的？</p>
+<p>为了解密，我们需要先拼凑几个东西。</p>
+<p>第一个是 BPF JIT 编译器源代码，<a href="https://elixir.bootlin.com/linux/v5.19.12/source/arch/x86/net/bpf_jit_comp.c">arch/x86/net/bpf_jit_comp.c</a>。源代码里有不少有用的注释。我们只需关心 JIT 里的以下调用链：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">do_jit</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="o">|--&gt;</span><span class="nf">emit_prologue</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="o">|--&gt;</span><span class="nf">push_callee_regs</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">insn_cnt</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">,</span> <span class="n">insn</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="k">switch</span> <span class="p">(</span><span class="n">insn</span><span class="o">-&gt;</span><span class="n">code</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">      <span class="k">case</span> <span class="n">BPF_JMP</span> <span class="o">|</span> <span class="nl">BPF_CALL</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* emit function call */</span>
+</span></span><span class="line"><span class="cl">      <span class="k">case</span> <span class="n">BPF_JMP</span> <span class="o">|</span> <span class="nl">BPF_TAIL_CALL</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">emit_bpf_tail_call_direct</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">      <span class="k">case</span> <span class="n">BPF_JMP</span> <span class="o">|</span> <span class="nl">BPF_EXIT</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* emit epilogue */</span>
+</span></span><span class="line"><span class="cl">      <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>有时是很难从编译器源代码中构想生成的指令流。因此，我们需要观察 JIT 编译器的输入（BPF 指令）和输出（x86-64 指令）。</p>
+<p>我们可以使用 <code>bpftool prog dump</code> 来观察已加载（<code>loaded</code>） BPF 程序的 BPF 指令和 x86-64 指令。然而，首先我们必须填充用于尾调用跳表（<code>jump table</code>）的 BPF map。否则，我们可能看不到尾调用跳转。</p>
+<p>这是因为 <a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=428d5df1fa4f28daf622c48dd19da35585c9053c">某次优化</a>：当加载时已知程序数组索引时，就使用指令补丁（<code>instruction patching</code>）。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Bash" data-lang="Bash"><span class="line"><span class="cl"><span class="c1"># bpftool prog loadall ./tail_call_ex1.o /sys/fs/bpf pinmaps /sys/fs/bpf</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># bpftool map update pinned /sys/fs/bpf/jmp_table key 0 0 0 0 value pinned /sys/fs/bpf/target_prog</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># bpftool prog dump xlated pinned /sys/fs/bpf/entry_prog</span>
+</span></span><span class="line"><span class="cl">int entry_prog<span class="o">(</span>struct __sk_buff * skb<span class="o">)</span>:
+</span></span><span class="line"><span class="cl"><span class="p">;</span> bpf_tail_call<span class="o">(</span>skb, <span class="p">&amp;</span>jmp_table, 0<span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">   0: <span class="o">(</span>18<span class="o">)</span> <span class="nv">r2</span> <span class="o">=</span> map<span class="o">[</span>id:24<span class="o">]</span>
+</span></span><span class="line"><span class="cl">   2: <span class="o">(</span>b7<span class="o">)</span> <span class="nv">r3</span> <span class="o">=</span> <span class="m">0</span>
+</span></span><span class="line"><span class="cl">   3: <span class="o">(</span>85<span class="o">)</span> call bpf_tail_call#12
+</span></span><span class="line"><span class="cl"><span class="p">;</span> <span class="k">return</span> 0xf00d<span class="p">;</span>
+</span></span><span class="line"><span class="cl">   4: <span class="o">(</span>b7<span class="o">)</span> <span class="nv">r0</span> <span class="o">=</span> <span class="m">61453</span>
+</span></span><span class="line"><span class="cl">   5: <span class="o">(</span>95<span class="o">)</span> <span class="nb">exit</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># bpftool prog dump jited pinned /sys/fs/bpf/entry_prog</span>
+</span></span><span class="line"><span class="cl">int entry_prog<span class="o">(</span>struct __sk_buff * skb<span class="o">)</span>:
+</span></span><span class="line"><span class="cl">bpf_prog_4f697d723aa87765_entry_prog:
+</span></span><span class="line"><span class="cl"><span class="p">;</span> bpf_tail_call<span class="o">(</span>skb, <span class="p">&amp;</span>jmp_table, 0<span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">   0:   nopl   0x0<span class="o">(</span>%rax,%rax,1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">   5:   xor    %eax,%eax
+</span></span><span class="line"><span class="cl">   7:   push   %rbp
+</span></span><span class="line"><span class="cl">   8:   mov    %rsp,%rbp
+</span></span><span class="line"><span class="cl">   b:   push   %rax
+</span></span><span class="line"><span class="cl">   c:   movabs <span class="nv">$0</span>xffff888102764800,%rsi
+</span></span><span class="line"><span class="cl">  16:   xor    %edx,%edx
+</span></span><span class="line"><span class="cl">  18:   mov    -0x4<span class="o">(</span>%rbp<span class="o">)</span>,%eax
+</span></span><span class="line"><span class="cl">  1e:   cmp    <span class="nv">$0</span>x21,%eax
+</span></span><span class="line"><span class="cl">  21:   jae    0x0000000000000037
+</span></span><span class="line"><span class="cl">  23:   add    <span class="nv">$0</span>x1,%eax
+</span></span><span class="line"><span class="cl">  26:   mov    %eax,-0x4<span class="o">(</span>%rbp<span class="o">)</span>
+</span></span><span class="line"><span class="cl">  2c:   nopl   0x0<span class="o">(</span>%rax,%rax,1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">  31:   pop    %rax
+</span></span><span class="line"><span class="cl">  32:   jmp    0xffffffffffffffe3   // bug? 🤔
+</span></span><span class="line"><span class="cl"><span class="p">;</span> <span class="k">return</span> 0xf00d<span class="p">;</span>
+</span></span><span class="line"><span class="cl">  37:   mov    <span class="nv">$0</span>xf00d,%eax
+</span></span><span class="line"><span class="cl">  3c:   leave
+</span></span><span class="line"><span class="cl">  3d:   ret
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>注意了，<code>bpftool prog dump jited</code> 看到的尾调用跳转的目标地址是没有任何意义的。为了发现真正的跳转目标地址，我们必须深入内核内存。在我们在 <code>/proc/kallsyms</code> 中找到 JIT 后的 BPF 程序地址后，<code>gdb</code> 派上用场。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Bash" data-lang="Bash"><span class="line"><span class="cl"><span class="c1"># tail -2 /proc/kallsyms</span>
+</span></span><span class="line"><span class="cl">ffffffffa0000720 t bpf_prog_f85b2547b00cbbe9_target_prog        <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl">ffffffffa0000748 t bpf_prog_4f697d723aa87765_entry_prog <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># gdb -q -c /proc/kcore -ex &#39;x/18i 0xffffffffa0000748&#39; -ex &#39;quit&#39;</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>New process 1<span class="o">]</span>
+</span></span><span class="line"><span class="cl">Core was generated by <span class="sb">`</span><span class="nv">earlyprintk</span><span class="o">=</span>serial,ttyS0,115200 <span class="nv">console</span><span class="o">=</span>ttyS0 psmouse.proto<span class="o">=</span>exps <span class="s2">&#34;virtme_stty_c&#39;.
+</span></span></span><span class="line"><span class="cl"><span class="s2">#0  0x0000000000000000 in ?? ()
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000748:  nopl   0x0(%rax,%rax,1)
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa000074d:  xor    %eax,%eax
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa000074f:  push   %rbp
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000750:  mov    %rsp,%rbp
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000753:  push   %rax
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000754:  movabs </span><span class="nv">$0</span><span class="s2">xffff888102764800,%rsi
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa000075e:  xor    %edx,%edx
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000760:  mov    -0x4(%rbp),%eax
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000766:  cmp    </span><span class="nv">$0</span><span class="s2">x21,%eax
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000769:  jae    0xffffffffa000077f
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa000076b:  add    </span><span class="nv">$0</span><span class="s2">x1,%eax
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa000076e:  mov    %eax,-0x4(%rbp)
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000774:  nopl   0x0(%rax,%rax,1)
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000779:  pop    %rax
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa000077a:  jmp    0xffffffffa000072b
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa000077f:  mov    </span><span class="nv">$0</span><span class="s2">xf00d,%eax
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000784:  leave
+</span></span></span><span class="line"><span class="cl"><span class="s2">   0xffffffffa0000785:  ret
+</span></span></span><span class="line"><span class="cl"><span class="s2"># gdb -q -c /proc/kcore -ex &#39;x/7i 0xffffffffa0000720&#39; -ex &#39;quit&#39;
+</span></span></span><span class="line"><span class="cl"><span class="s2">[New process 1]
+</span></span></span><span class="line"><span class="cl"><span class="s2">Core was generated by `earlyprintk=serial,ttyS0,115200 console=ttyS0 psmouse.proto=exps &#34;</span>virtme_stty_c<span class="err">&#39;</span>.
+</span></span><span class="line"><span class="cl"><span class="c1">#0  0x0000000000000000 in ?? ()</span>
+</span></span><span class="line"><span class="cl">   0xffffffffa0000720:  nopl   0x0<span class="o">(</span>%rax,%rax,1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">   0xffffffffa0000725:  xchg   %ax,%ax
+</span></span><span class="line"><span class="cl">   0xffffffffa0000727:  push   %rbp
+</span></span><span class="line"><span class="cl">   0xffffffffa0000728:  mov    %rsp,%rbp
+</span></span><span class="line"><span class="cl">   0xffffffffa000072b:  mov    <span class="nv">$0</span>xcafe,%eax
+</span></span><span class="line"><span class="cl">   0xffffffffa0000730:  leave
+</span></span><span class="line"><span class="cl">   0xffffffffa0000731:  ret
+</span></span><span class="line"><span class="cl"><span class="c1">#</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>最后，JIT 编译器使用的 BPF 寄存器和硬件寄存器之间的 <a href="https://elixir.bootlin.com/linux/v5.15.63/source/arch/x86/net/bpf_jit_comp.c#L104">对照表</a> 是非常有用的。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">BPF</th>
+<th style="text-align:center">x86-64</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">r0</td>
+<td style="text-align:center">rax</td>
+</tr>
+<tr>
+<td style="text-align:center">r1</td>
+<td style="text-align:center">rdi</td>
+</tr>
+<tr>
+<td style="text-align:center">r2</td>
+<td style="text-align:center">rsi</td>
+</tr>
+<tr>
+<td style="text-align:center">r3</td>
+<td style="text-align:center">rdx</td>
+</tr>
+<tr>
+<td style="text-align:center">r4</td>
+<td style="text-align:center">rcx</td>
+</tr>
+<tr>
+<td style="text-align:center">r5</td>
+<td style="text-align:center">r8</td>
+</tr>
+<tr>
+<td style="text-align:center">r6</td>
+<td style="text-align:center">rbx</td>
+</tr>
+<tr>
+<td style="text-align:center">r7</td>
+<td style="text-align:center">r13</td>
+</tr>
+<tr>
+<td style="text-align:center">r8</td>
+<td style="text-align:center">r14</td>
+</tr>
+<tr>
+<td style="text-align:center">r9</td>
+<td style="text-align:center">r15</td>
+</tr>
+<tr>
+<td style="text-align:center">r10</td>
+<td style="text-align:center">rbp</td>
+</tr>
+<tr>
+<td style="text-align:center">internal</td>
+<td style="text-align:center">r9-r12</td>
+</tr>
+</tbody>
+</table>
+<p>如今，我们准备搞明白使用 <code>tailcall</code> 时发生了什么。</p>
+<p><img src="/eBPF_Talk_33_tailcall_on_x86_8.png" alt=""></p>
+<p>本质上，<code>bpf_tail_call()</code> 就是跳转另一个函数、复用当前栈帧的跳转。它就像一个常规优化的尾调用，但有点点绕。</p>
+<p>因为 BPF 安全必须保证 BPF 程序执行会结束、没有栈溢出，所以尾调用次数有限制（<a href="https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=ebf7f6f0a6cdcc17a3da52b81e4b3a98c4005028">MAX_TAIL_CALL_CNT = 33</a>）。</p>
+<p>在 BPF 程序之间计数尾调用不是加载时的事情。跳表（<code>jump table</code>）（BPF 程序数组）的内容可以在程序被校验后被变更。我们唯一选项就是在运行时跟踪尾调用。这就是 <code>bpf_tail_call()</code> 帮助函数 JIT 后的代码检查并更新 <code>tail_call_cnt</code> 计数器的原因。</p>
+<p>如我们所见，通过 <code>rax</code> 寄存器（BPF <code>r0</code> 寄存器），更新后的计数器会从一个 BPF 程序传到另一个，从一个 BPF 函数传到另一个。</p>
+<p>幸运的是，x86-64 调用规约规定 <code>rax</code> 寄存器不参与传递函数参数，但相反地会保存函数返回值。JIT 就可以用它来传递额外的、隐藏的参数。</p>
+<p>然后，函数体可以随意使用 <code>r0</code>/<code>rax</code> 寄存器。这就解释了在跳转到另一个程序后需要立刻将 <code>rax</code> 传递的 <code>bpf_tail_cnt</code> 保存到栈上。之后 <code>bpf_tail_call()</code> 就可以从栈上已知位置加载值。</p>
+<p>结合每个 <code>bpf_tail_call()</code> 调用 <a href="https://elixir.bootlin.com/linux/v5.15.63/source/arch/x86/net/bpf_jit_comp.c#L1437">生成的代码</a>和 <a href="https://elixir.bootlin.com/linux/v5.15.63/source/arch/x86/net/bpf_jit_comp.c#L281">BPF 函数序言</a> （<code>BPF function prologue</code>），就可以在多个 BPF 程序之间跟踪尾调用计数。</p>
+<p>但是，如果我们的 BPF 程序割裂成好几个 BPF 函数，每个函数都有其栈帧呢？如果这些函数都有 <code>tailcall</code> 呢？接着尾调用技术该如何跟踪呢？</p>
+<h2 id="混合使用-bpf2bpf-和-tailcall">混合使用 <code>bpf2bpf</code> 和 <code>tailcall</code></h2>
+<p>受内部实现影响，当谈及函数和函数调用时，BPF 有其自己的术语。函数调用已称作 <a href="https://docs.cilium.io/en/stable/bpf/#bpf-to-bpf-calls">BPF 到 BPF 调用</a>。对应的，BPF 代码中的主函数/入口函数叫作“程序”，而其它函数就是“子程序”。</p>
+<p>每个子程序都会为本地状态分配直至函数返回都会维持的栈帧。自然地，嵌套的 BPF 子程序调用构成一个调用链。就像用户态的嵌套函数调用。</p>
+<p>在 BPF 子程序中也是可以使用 <code>tailcall</code> 的。非常有成效地，这是个将调用链扩展到其它 BPF 程序及其子程序的机制。</p>
+<p>如果我们不能跟踪调用链有多长、每个函数使用的栈空间有多少，我们就会陷入 <a href="https://en.wikipedia.org/wiki/Stack_overflow">栈溢出</a> 的风险中。我们不能让其发生，所以 BPF <a href="https://elixir.bootlin.com/linux/v5.15.62/source/kernel/bpf/verifier.c#L3600">强行限制了 <code>tailcall</code></a>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">check_max_stack_depth</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_verifier_env</span> <span class="o">*</span><span class="n">env</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="err">…</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* protect against potential stack overflow that might happen when
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * bpf2bpf calls get combined with tailcalls. Limit the caller&#39;s stack
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * depth for such case down to 256 so that the worst case scenario
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * would result in 8k stack size (32 which is tailcall limit * 256 =
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * 8k).
+</span></span></span><span class="line"><span class="cl"><span class="cm">         *
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * To get the idea what might happen, see an example:
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * func1 -&gt; sub rsp, 128
+</span></span></span><span class="line"><span class="cl"><span class="cm">         *  subfunc1 -&gt; sub rsp, 256
+</span></span></span><span class="line"><span class="cl"><span class="cm">         *  tailcall1 -&gt; add rsp, 256
+</span></span></span><span class="line"><span class="cl"><span class="cm">         *   func2 -&gt; sub rsp, 192 (total stack size = 128 + 192 = 320)
+</span></span></span><span class="line"><span class="cl"><span class="cm">         *   subfunc2 -&gt; sub rsp, 64
+</span></span></span><span class="line"><span class="cl"><span class="cm">         *   subfunc22 -&gt; sub rsp, 128
+</span></span></span><span class="line"><span class="cl"><span class="cm">         *   tailcall2 -&gt; add rsp, 128
+</span></span></span><span class="line"><span class="cl"><span class="cm">         *    func3 -&gt; sub rsp, 32 (total stack size 128 + 192 + 64 + 32 = 416)
+</span></span></span><span class="line"><span class="cl"><span class="cm">         *
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * tailcall will unwind the current stack frame but it will not get rid
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * of caller&#39;s stack as shown on the example above.
+</span></span></span><span class="line"><span class="cl"><span class="cm">         */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">idx</span> <span class="o">&amp;&amp;</span> <span class="n">subprog</span><span class="p">[</span><span class="n">idx</span><span class="p">].</span><span class="n">has_tail_call</span> <span class="o">&amp;&amp;</span> <span class="n">depth</span> <span class="o">&gt;=</span> <span class="mi">256</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nf">verbose</span><span class="p">(</span><span class="n">env</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                        <span class="s">&#34;tail_calls are not allowed when call stack of previous frames is %d bytes. Too large</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                        <span class="n">depth</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="o">-</span><span class="n">EACCES</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="err">…</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>栈深度（<code>stack depth</code>）在加载时由 BPF 校验器计算得到，我们仍然需要在运行时保持计数尾调用跳转；即使涉及子程序。</p>
+<p>这意味着，我们必须从一个 BPF 子程序到另一个子程序之间传递尾调用计数，就像 <code>tailcall</code> 时的做法，所以我们再一次通过 <code>rax</code> 寄存器传值。</p>
+<p><img src="/eBPF_Talk_33_tailcall_on_x86_9.png" alt="Control flow in a BPF program with a function call followed by a tail call."></p>
+<p>🛈 简单起见，例子中的 BPF 代码不在栈上分配任何东西。我建议你检查一下当你 <a href="https://elixir.bootlin.com/linux/v5.19.11/source/tools/testing/selftests/bpf/progs/tailcall_bpf2bpf6.c#L37">加一些局部变量</a> 时 JIT 后的机器汇编代码变化；只需保证编译器不将它们优化掉。</p>
+<p>为了成功，我们需要：</p>
+<p>① 在 <code>call</code> 子程序前将保存在栈上的尾调用计数加载到 <code>rax</code> 寄存器中，</p>
+<p>② 调整子程序序言（<code>prologue</code>），使其不要像主程序一样重置 <code>rax</code>，</p>
+<p>③ 将传过来的尾调用计数保存到子程序的栈上，以防 <code>bpf_tail_call()</code> 帮助函数用到。</p>
+<p>子程序中的 <code>bpf_tail_call()</code> 就会：</p>
+<p>④ 从栈上加载尾调用计数，</p>
+<p>⑤ 释放（<code>unwind</code>）BPF 栈，当实际上会保留当前子程序栈帧，</p>
+<p>⑥ 跳转到目标 BPF 程序。</p>
+<p>至此，我们已看到拼图碎片拼凑一起使得 <code>tailcall</code> 在 x86-64 上安全地工作起来。</p>
+<blockquote>
+<p>略过 <code>tailcall on arm64</code> 部分。</p>
+</blockquote>
+<h2 id="总结">总结</h2>
+<p>从递归到 BPF JIT。我们是如何做到的？不重要。重要的是这个过程。</p>
+<p>在这过程中，我们揭示了 <code>tailcall</code> 背后的秘密，并希望能抑制住你的学习底层编程（<code>low-level programming</code>）的渴望；至少是今天。</p>
+<p>剩下的就是做下来等待我们的工作成果。通过 GDB 在 VM 上挂钩子，我们能够观测到 BPF 程序是如何调用 BPF 函数的、是如何从那尾调用另一个 BPF 程序的：</p>
+<p><a href="https://demo-gdb-step-thru-bpf.pages.dev/">https://demo-gdb-step-thru-bpf.pages.dev/</a></p>
+<p>直到下一次🖖。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2023-05-23
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/tailcall/">tailcall</a>
+      <a href="/%20tags/bpf2bpf/">bpf2bpf</a>
+      <a href="/%20tags/x86/">x86</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-34-af_xdp/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 使用 AF_XDP 加速网络【译】</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-32-tailcall-and-bpf2bpf/">
+        <span class="next-text nav-default">eBPF Talk: tailcall 与 bpf2bpf【译】</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

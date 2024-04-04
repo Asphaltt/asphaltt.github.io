@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 使用 AF_XDP 注入延时 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="学习了 AF_XDP 后，一时手痒弄了个 ping-latency-injector。 eBPF Talk: 使用 AF_XDP 加速网络【译】 eBPF Talk: XDP redirect to AF_XDP ping-latency-injector 它可以用来混淆使用 ping 实现的网络距" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-56-latency-injection-with-af_xdp/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 使用 AF_XDP 注入延时" />
+<meta property="og:description" content="学习了 AF_XDP 后，一时手痒弄了个 ping-latency-injector。 eBPF Talk: 使用 AF_XDP 加速网络【译】 eBPF Talk: XDP redirect to AF_XDP ping-latency-injector 它可以用来混淆使用 ping 实现的网络距" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-56-latency-injection-with-af_xdp/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-03-31T23:50:45+08:00" />
+<meta property="article:modified_time" content="2024-03-31T23:50:45+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 使用 AF_XDP 注入延时">
+  <meta itemprop="description" content="学习了 AF_XDP 后，一时手痒弄了个 ping-latency-injector。 eBPF Talk: 使用 AF_XDP 加速网络【译】 eBPF Talk: XDP redirect to AF_XDP ping-latency-injector 它可以用来混淆使用 ping 实现的网络距">
+  <meta itemprop="datePublished" content="2024-03-31T23:50:45+08:00">
+  <meta itemprop="dateModified" content="2024-03-31T23:50:45+08:00">
+  <meta itemprop="wordCount" content="531">
+  <meta itemprop="keywords" content="EBPF,AF_XDP"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 使用 AF_XDP 注入延时"/>
+<meta name="twitter:description" content="学习了 AF_XDP 后，一时手痒弄了个 ping-latency-injector。 eBPF Talk: 使用 AF_XDP 加速网络【译】 eBPF Talk: XDP redirect to AF_XDP ping-latency-injector 它可以用来混淆使用 ping 实现的网络距"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 使用 AF_XDP 注入延时</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-03-31 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 531 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#ping-latency-injector"><code>ping-latency-injector</code></a></li>
+        <li><a href="#编译并运行">编译并运行</a></li>
+        <li><a href="#工作原理">工作原理</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>学习了 AF_XDP 后，一时手痒弄了个 <code>ping-latency-injector</code>。</p>
+<ul>
+<li><a href="/post/ebpf-talk-34-af_xdp/">eBPF Talk: 使用 AF_XDP 加速网络【译】</a></li>
+<li><a href="/post/ebpf-talk-36-xdp-redirect-to-af_xdp/">eBPF Talk: XDP redirect to AF_XDP</a></li>
+</ul>
+<h2 id="ping-latency-injector"><code>ping-latency-injector</code></h2>
+<p>它可以用来混淆使用 ping 实现的网络距离探测；比如注入 100ms 后，ping 得到的延时就会增加 100ms。</p>
+<p>所以，对于面向公网的网关而言，不想关闭 ping、又不想别人 ping 真实的网络距离，就可以用上该工具注入指定延时。而计算真实真实延时，可以用 ping 延时减去指定延时。</p>
+<p>小巧又有趣的工具。</p>
+<h2 id="编译并运行">编译并运行</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># git clone git@github.com:Asphaltt/ping-latency-injector.git</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># cd ping-latency-injector</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># go generate &amp;&amp; go build</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ./ping-latency-injector -h</span>
+</span></span><span class="line"><span class="cl">Usage of ./ping-latency-injector:
+</span></span><span class="line"><span class="cl">  -D, --dev string   device to inject latency to ping
+</span></span><span class="line"><span class="cl">  -L, --lat string   latency to delay, 1ms &lt;<span class="o">=</span> latency &lt;<span class="o">=</span> 10s <span class="o">(</span>default <span class="s2">&#34;1ms&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">pflag: <span class="nb">help</span> requested
+</span></span><span class="line"><span class="cl"><span class="c1"># ./ping-latency-injector -D enp0s8 -L 600ms</span>
+</span></span><span class="line"><span class="cl">2023/03/12 16:01:37 Attached XDP to enp0s8
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># echo 在另一台主机上 ping</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ping -s 1400 -c3 192.168.1.138</span>
+</span></span><span class="line"><span class="cl">PING 192.168.1.138 <span class="o">(</span>192.168.1.138<span class="o">)</span>: <span class="m">1400</span> data bytes
+</span></span><span class="line"><span class="cl"><span class="m">1408</span> bytes from 192.168.1.138: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">0</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">64</span> <span class="nv">time</span><span class="o">=</span>601.807 ms
+</span></span><span class="line"><span class="cl"><span class="m">1408</span> bytes from 192.168.1.138: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">1</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">64</span> <span class="nv">time</span><span class="o">=</span>600.700 ms
+</span></span><span class="line"><span class="cl"><span class="m">1408</span> bytes from 192.168.1.138: <span class="nv">icmp_seq</span><span class="o">=</span><span class="m">2</span> <span class="nv">ttl</span><span class="o">=</span><span class="m">64</span> <span class="nv">time</span><span class="o">=</span>601.272 ms
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">--- 192.168.1.138 ping statistics ---
+</span></span><span class="line"><span class="cl"><span class="m">3</span> packets transmitted, <span class="m">3</span> packets received, 0.0% packet loss
+</span></span><span class="line"><span class="cl">round-trip min/avg/max/stddev <span class="o">=</span> 600.700/601.260/601.807/0.452 ms
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="工作原理">工作原理</h2>
+<p>没错，<code>ping-latency-injector</code> 由 XDP、AF_XDP 和用户态应用程序 3 部分组成。</p>
+<ol>
+<li>XDP: 检查当前网络包是否是 ICMPv4 ECHOREQUEST 网络包。</li>
+<li>XDP: 将 ICMPv4 ECHOREQUEST 网络包 redirect 给 AF_XDP。</li>
+<li>用户态应用程序：从 AF_XDP 接收网络包。</li>
+<li>用户态应用程序：将网络包更改为 ICMPv4 ECHOREPLY 网络包。</li>
+<li>用户态应用程序：将网络包从 AF_XDP 发送出去。</li>
+</ol>
+<p>详细源代码请查看 <a href="https://github.com/Asphaltt/ping-latency-injector">GitHub ping-latency-injector</a>。</p>
+<h2 id="小结">小结</h2>
+<p>这是一个 AF_XDP 练手工具。</p>
+<p>方便后面深挖 AF_XDP 的内核源代码。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-03-31
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/af_xdp/">AF_XDP</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-57-kprobe.multi-and-fprobe/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: kprobe.multi 与 fprobe</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-55-xdp-on-veth/">
+        <span class="next-text nav-default">eBPF Talk: XDP on veth</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

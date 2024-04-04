@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.124.1 with theme even" />
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/iptables-bpf-source-code-reading/" />
@@ -47,11 +47,13 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/iptables-bpf-source-code-reading/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2021-12-19T14:27:19+08:00" />
 <meta property="article:modified_time" content="2021-12-19T14:27:19+08:00" />
-<meta itemprop="name" content="iptables-bpf 的实现原理分析">
-<meta itemprop="description" content="该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一"><meta itemprop="datePublished" content="2021-12-19T14:27:19+08:00" />
-<meta itemprop="dateModified" content="2021-12-19T14:27:19+08:00" />
-<meta itemprop="wordCount" content="554">
-<meta itemprop="keywords" content="iptables,iptables-bpf,eBPF," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="iptables-bpf 的实现原理分析"/>
+
+  <meta itemprop="name" content="iptables-bpf 的实现原理分析">
+  <meta itemprop="description" content="该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一">
+  <meta itemprop="datePublished" content="2021-12-19T14:27:19+08:00">
+  <meta itemprop="dateModified" content="2021-12-19T14:27:19+08:00">
+  <meta itemprop="wordCount" content="554">
+  <meta itemprop="keywords" content="Iptables,Iptables-Bpf,EBPF"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="iptables-bpf 的实现原理分析"/>
 <meta name="twitter:description" content="该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一"/>
 
 

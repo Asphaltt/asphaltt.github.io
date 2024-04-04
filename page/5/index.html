@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.124.1 with theme even" />
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/" />
@@ -47,8 +47,10 @@
 <meta property="og:description" content="Run eBPF with Go, run eBPF in kernel space" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://le0nhwan9.github.io/" />
-<meta itemprop="name" content="LeonHwang&#39;s Blogs">
-<meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+
+  <meta itemprop="name" content="LeonHwang&#39;s Blogs">
+  <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
+  <meta itemprop="dateModified" content="2024-04-04T21:59:50+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -141,7 +143,31 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-42---trampoline-on-x86/">eBPF Talk: trampoline on x86【汇编慎入】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-43-trampoline-on-x86/">eBPF Talk: trampoline on x86【续】【汇编慎入】</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 475 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      书接上回，使用 fexit 的时候，为什么在 ret 前增加 add $0x8,%rsp 指令就能跳过执行原来的函数？ eBPF Talk: trampoline on x86【汇编慎入】 call 学习一下几条常用指令： call %N: 相当于 push %eip + mov
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-43-trampoline-on-x86/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-42-trampoline-on-x86/">eBPF Talk: trampoline on x86【汇编慎入】</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
@@ -158,14 +184,14 @@
       类似 freplace，trampoline 是对 prologue 进行 poke 的另一个应用。 eBPF Talk: freplace on x86【汇编慎入】 TL;DR 类似 freplace，trampoline 是
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-42---trampoline-on-x86/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-42-trampoline-on-x86/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-41---freplace-on-x86/">eBPF Talk: freplace on x86【汇编慎入】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-41-freplace-on-x86/">eBPF Talk: freplace on x86【汇编慎入】</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
@@ -182,14 +208,14 @@
       freplace 技术便是对 prologue 进行 poke 的简单应用。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 TL;DR 究竟有多简单呢？就是将 prologue 里的第一条 nop 指令替换成 jmp 指令；
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-41---freplace-on-x86/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-41-freplace-on-x86/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-40---perilogue-on-x86/">eBPF Talk: perilogue on x86【汇编慎入】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-40-perilogue-on-x86/">eBPF Talk: perilogue on x86【汇编慎入】</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
@@ -206,14 +232,14 @@
       perilogue 是个缝合单词，由 prologue 和 epilogue 缝合组成。 而 prologue 和 epilogue 是 函数调用规约 中的术语。 prologue: 函数整体指令中最开始的几条指令。 epilogue: 函数整体指令中最末尾的几条指令。 perilogue: 函数
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-40---perilogue-on-x86/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-40-perilogue-on-x86/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-39---poke-on-x86/">eBPF Talk: poke on x86【汇编慎入】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-39-poke-on-x86/">eBPF Talk: poke on x86【汇编慎入】</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
@@ -230,14 +256,14 @@
       小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。 TL;DR 在 x86 架构平台上的指令插桩&amp;补丁的步骤如下： 在需要的地方预
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-39---poke-on-x86/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-39-poke-on-x86/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-38---kernel-version/">eBPF Talk: 学习经验之确认 kernel version</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-38-kernel-version/">eBPF Talk: 学习经验之确认 kernel version</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
@@ -254,14 +280,14 @@
       当我们想要在项目特定版本内核中落地某个 eBPF 特性时，需要确认该版本内核是否支持该 eBPF 特性。 与此同时，也想知道，该 eBPF 特性最低要求哪个版本的内核。 前置
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-38---kernel-version/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-38-kernel-version/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-37---loop/">eBPF Talk: 实战经验之 loop</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-37-loop/">eBPF Talk: 实战经验之 loop</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
@@ -278,14 +304,14 @@
       最近刚好打算使用 for 遍历 CIDR 数组的方式替换性能较差的 LPM trie bpf map，就顺便总结一下 loop 相关经验。 在 eBPF 中，出于性能、安全考虑，并不支持无限循环。这并不
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-37---loop/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-37-loop/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-36---xdp-redirect-to-af_xdp/">eBPF Talk: XDP redirect to AF_XDP</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-36-xdp-redirect-to-af_xdp/">eBPF Talk: XDP redirect to AF_XDP</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
@@ -302,14 +328,14 @@
       通过学习 eBPF Talk: AF_XDP，我们掌握了 AF_XDP 的那些基础知识。 提问：对于如下高性能场景，在网卡收到网络包后，该网络包会被哪个 AF_XDP socket 处理呢？ 该网卡独占一
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-36---xdp-redirect-to-af_xdp/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-36-xdp-redirect-to-af_xdp/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-35---bpf2bpf-and-tailcall-error/">eBPF Talk: bpf2bpf &amp; tailcall 报错分析</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/">eBPF Talk: bpf2bpf &amp; tailcall 报错分析</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
@@ -326,14 +352,14 @@
       终于要将 bpf2bpf &amp; tailcall 的组合落地到项目中了。 不过，当头一棒的是：tail_calls are not allowed when call stack of previous frames is 256 bytes. Too large。 幸好学习过 eBPF Talk: tailcall on x86，
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-35---bpf2bpf-and-tailcall-error/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-34---af_xdp/">eBPF Talk: 使用 AF_XDP 加速网络【译】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-34-af_xdp/">eBPF Talk: 使用 AF_XDP 加速网络【译】</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
       <div class="post-category">
@@ -350,31 +376,7 @@
       本文翻译自 2018 年的 LWN: Accelerating networking with AF_XDP。 以下为译文。 Linux 网络栈不缺乏特性，且对于大部分使用场景都有不错的性能表现。不过，随着网络的高速发展，对网
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-34---af_xdp/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-33---tailcall-on-x86/">eBPF Talk: tailcall on x86【汇编慎入】【译】</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 5190 字 </span>
-        <span class="more-meta"> 预计阅读 11 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf【译】 以下为译文。 最初我们学习编程的时候，我们就学
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-33---tailcall-on-x86/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-34-af_xdp/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

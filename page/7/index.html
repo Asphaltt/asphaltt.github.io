@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.124.1 with theme even" />
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/" />
@@ -47,8 +47,10 @@
 <meta property="og:description" content="Run eBPF with Go, run eBPF in kernel space" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://le0nhwan9.github.io/" />
-<meta itemprop="name" content="LeonHwang&#39;s Blogs">
-<meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+
+  <meta itemprop="name" content="LeonHwang&#39;s Blogs">
+  <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
+  <meta itemprop="dateModified" content="2024-04-04T21:59:50+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -141,7 +143,31 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-22---global-variables-in-action/">eBPF Talk: 全局变量实战指南</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-23-a-concrete-usage-of-array-map/">eBPF Talk: 一个 ARRAY bpf map 的使用细节</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 478 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      创建 bpf map 时，出现了如下错误： 1 failed to load bpf: failed to create map: invalid argument 看下需要创建的 bpf map： 1 2 3 4 5 6 struct { __uint(type, BPF_MAP_TYPE_ARRAY); __type(key, __u8); __type(value, bitmap); __uint(max_entries, PROTO_MAX_ENTRIES); } acl_protocol SEC(&#34;.maps&#34;); 想着，需要处理的 protocol 也就 TCP
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-23-a-concrete-usage-of-array-map/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-22-global-variables-in-action/">eBPF Talk: 全局变量实战指南</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-21 </span>
       <div class="post-category">
@@ -158,14 +184,14 @@
       类似于常量的使用，如今在 eBPF 里也能够使用全局变量了。 使用例子 源代码：global-variable example 以 kprobe TCP 连接建立事件为例子，当有新的 TCP 连接时
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-22---global-variables-in-action/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-22-global-variables-in-action/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-21---xdp-acl-optimisation/">eBPF Talk: 优化 XDP ACL</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-21-xdp-acl-optimisation/">eBPF Talk: 优化 XDP ACL</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-21 </span>
       <div class="post-category">
@@ -182,14 +208,14 @@
       书接上回 ，本文讲解对高性能 XDP ACL 的开源项目 xdp_acl 的优化内容： 按需开启 eBPF 中的 debug 日志 动态调整 bitmap 大小 使用 PERCPU ARRAY 优化规则 bpf map 动态增删 ACL 规则的处理 以下代码片段
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-21---xdp-acl-optimisation/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-21-xdp-acl-optimisation/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-20---xdp-acl-again/">eBPF Talk: 再论高性能 eBPF ACL</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-20-xdp-acl-again/">eBPF Talk: 再论高性能 eBPF ACL</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-21 </span>
       <div class="post-category">
@@ -206,14 +232,14 @@
       因为近期又得搞基于 eBPF 的 ACL，所以再次研究基于 eBPF 的 ACL 的几篇论文和一个开源项目。 以前，我研究过 「eBPF技术实践：高性能ACL」，并实现了一个
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-20---xdp-acl-again/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-20-xdp-acl-again/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-19---how-skbs-work/">eBPF Talk: SKB 工作原理【译】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-19-how-skbs-work/">eBPF Talk: SKB 工作原理【译】</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-21 </span>
       <div class="post-category">
@@ -230,14 +256,14 @@
       翻译自 How SKBs work。 数据区域的布局 第一张图描述的是 SKB 数据区域的布局，以及几个 struct sk_buff 中的指针。 本文余下内容将讲解 SKB 数据区域的操作：通过修改这些指
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-19---how-skbs-work/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-19-how-skbs-work/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-18---another-side-of-bpf-helpers/">eBPF Talk: bpf helpers 的另一面</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-18-another-side-of-bpf-helpers/">eBPF Talk: bpf helpers 的另一面</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-20 </span>
       <div class="post-category">
@@ -254,14 +280,14 @@
       本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，verifier 是怎么处理 bpf helpers 的。 书接上回 eBPF Talk: 揭秘 XDP 转发网络包，本文解答： 为什么 XDP
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-18---another-side-of-bpf-helpers/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-18-another-side-of-bpf-helpers/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-17---xdp-redirect-packet/">eBPF Talk: 揭秘 XDP 转发网络包</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-17-xdp-redirect-packet/">eBPF Talk: 揭秘 XDP 转发网络包</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-20 </span>
       <div class="post-category">
@@ -278,14 +304,14 @@
       书接上回 eBPF Talk: 解密 XDP generic 模式，本文从源代码层面剖析 XDP 转发网络包的实现。 demo 按需将网络包从另一张网卡转发走。 1 2 3 4 5 6 7 8 9 static volatile const u32 REDIRECT_IFINDEX = 0xFFFFFFFF; SEC(&#34;xdp&#34;) int xdp_redirect(struct xdp_md
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-17---xdp-redirect-packet/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-17-xdp-redirect-packet/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-16---xdp-generic-mode/">eBPF Talk: 解密 XDP generic 模式</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-16-xdp-generic-mode/">eBPF Talk: 解密 XDP generic 模式</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-20 </span>
       <div class="post-category">
@@ -302,14 +328,14 @@
       近期又得搞 XDP 了，就顺手研究了下 XDP generic 模式的源代码。 XDP generic 模式的函数位置 已知，内核协议栈会对每个 skb 都执行一次 XDP generic 模式处理，当然是启用了 XDP generic 模式的情
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-16---xdp-generic-mode/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-16-xdp-generic-mode/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-15---useful-histogram/">eBPF Talk: 好用的 histogram</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-15-useful-histogram/">eBPF Talk: 好用的 histogram</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-20 </span>
       <div class="post-category">
@@ -326,14 +352,14 @@
       最近 eBPF 轮子造的多了后，发现需要用 histogram 的时候，要写的代码就一个模板，如下。 以下内容以 syscalldist 为例。 用于 histogram 的 C 代码 参考（抄袭） libbpf-tools 里 histogram 的实现，用于 histogram 的 C 代
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-15---useful-histogram/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-15-useful-histogram/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-14---bpf2bpf-functions-call/">eBPF Talk: bpf2bpf 特性揭秘</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-14-bpf2bpf-functions-call/">eBPF Talk: bpf2bpf 特性揭秘</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-20 </span>
       <div class="post-category">
@@ -350,31 +376,7 @@
       在 eBPF Talk: bpf2bpf 特性简介 中已介绍了 bpf2bpf 特性，同时有 demo 介绍该怎么使用该特性。 在该特性神秘面纱的背后，到底是怎样的呢？让我娓娓道来。 编译阶段 不懂编译器 clang 中
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-14---bpf2bpf-functions-call/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-13---bpf-map-new-born-in-cilium_ebpf/">eBPF Talk: cilium/ebpf 中 bpf map 的诞生</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-20 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 537 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在博客 eBPF Talk: 揭秘 BPF map 前生今世，已讲解了 bpf map 从定义到创建的整个过程。 不过博客中讲解的加载器是 C 语言的 libbpf。 在此，就讲解一下纯 Go 语言的加载
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-13---bpf-map-new-born-in-cilium_ebpf/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-14-bpf2bpf-functions-call/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

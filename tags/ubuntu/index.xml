@@ -4,15 +4,15 @@
     <title>Ubuntu on LeonHwang&#39;s Blogs</title>
     <link>https://le0nhwan9.github.io/tags/ubuntu/</link>
     <description>Recent content in Ubuntu on LeonHwang&#39;s Blogs</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <lastBuildDate>Wed, 03 Apr 2024 23:18:57 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/ubuntu/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: Ubuntu 23.04</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-77---ubuntu-23.04/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-77-ubuntu-23.04/</link>
       <pubDate>Wed, 03 Apr 2024 23:18:57 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-77---ubuntu-23.04/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-77-ubuntu-23.04/</guid>
       <description>Ubuntu 23.04 已在 4 月 20 日发布，可以到官网下载镜像安装到虚拟机，用来学习 eBPF。 Ubuntu 23.04 (Lunar Lobster) 使用的内核版本是 6.2.0-20-generic。 Ubuntu 23.04 的相关</description>
     </item>
   </channel>

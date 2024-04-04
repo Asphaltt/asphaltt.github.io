@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.124.1 with theme even" />
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-trampoline-better-than-kprobe/" />
@@ -47,11 +47,13 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-trampoline-better-than-kprobe/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2022-11-01T23:31:04+08:00" />
 <meta property="article:modified_time" content="2022-11-01T23:31:04+08:00" />
-<meta itemprop="name" content="eBPF Talk: 比 kprobe 更好的 trampoline">
-<meta itemprop="description" content="eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功"><meta itemprop="datePublished" content="2022-11-01T23:31:04+08:00" />
-<meta itemprop="dateModified" content="2022-11-01T23:31:04+08:00" />
-<meta itemprop="wordCount" content="1016">
-<meta itemprop="keywords" content="eBPF,kprobe,trampoline," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 比 kprobe 更好的 trampoline"/>
+
+  <meta itemprop="name" content="eBPF Talk: 比 kprobe 更好的 trampoline">
+  <meta itemprop="description" content="eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功">
+  <meta itemprop="datePublished" content="2022-11-01T23:31:04+08:00">
+  <meta itemprop="dateModified" content="2022-11-01T23:31:04+08:00">
+  <meta itemprop="wordCount" content="1016">
+  <meta itemprop="keywords" content="EBPF,Kprobe,Trampoline"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 比 kprobe 更好的 trampoline"/>
 <meta name="twitter:description" content="eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功"/>
 
 

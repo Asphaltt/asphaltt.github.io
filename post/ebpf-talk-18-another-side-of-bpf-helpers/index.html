@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: bpf helpers 的另一面 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，verifier 是怎么处理 bpf helpers 的。 书接上回 eBPF Talk: 揭秘 XDP 转发网络包，本文解答： 为什么 XDP" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-18-another-side-of-bpf-helpers/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: bpf helpers 的另一面" />
+<meta property="og:description" content="本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，verifier 是怎么处理 bpf helpers 的。 书接上回 eBPF Talk: 揭秘 XDP 转发网络包，本文解答： 为什么 XDP" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-18-another-side-of-bpf-helpers/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2023-05-20T17:48:25+08:00" />
+<meta property="article:modified_time" content="2023-05-20T17:48:25+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: bpf helpers 的另一面">
+  <meta itemprop="description" content="本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，verifier 是怎么处理 bpf helpers 的。 书接上回 eBPF Talk: 揭秘 XDP 转发网络包，本文解答： 为什么 XDP">
+  <meta itemprop="datePublished" content="2023-05-20T17:48:25+08:00">
+  <meta itemprop="dateModified" content="2023-05-20T17:48:25+08:00">
+  <meta itemprop="wordCount" content="1659">
+  <meta itemprop="keywords" content="EBPF,Bpf Helpers"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: bpf helpers 的另一面"/>
+<meta name="twitter:description" content="本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，verifier 是怎么处理 bpf helpers 的。 书接上回 eBPF Talk: 揭秘 XDP 转发网络包，本文解答： 为什么 XDP"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: bpf helpers 的另一面</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1659 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#bpf-helpers-id">bpf helpers ID</a></li>
+        <li><a href="#bpftool-feature">bpftool feature</a></li>
+        <li><a href="#bpf-verifier">bpf verifier</a></li>
+        <li><a href="#注册-bpf_verifier_ops">注册 <code>bpf_verifier_ops</code></a></li>
+        <li><a href="#bpf_xdp_redirect"><code>bpf_xdp_redirect()</code></a></li>
+        <li><a href="#运行阶段调用-bpf-helpers">运行阶段调用 bpf helpers</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>本文不讲解 bpf helpers 的使用，也不讲解 bpf helpers 的源代码。本文讲解的是，<strong>verifier 是怎么处理 bpf helpers 的</strong>。</p>
+<blockquote>
+<p>书接上回 <a href="/post/ebpf-talk-17-xdp-redirect-packet/">eBPF Talk: 揭秘 XDP 转发网络包</a>，本文解答： <em>为什么 XDP 具体的 <code>bpf_redirect()</code> 函数的实现是 <code>bpf_xdp_redirect()</code> 而不是 <code>bpf_redirect()</code> 呢？</em></p>
+</blockquote>
+<h2 id="bpf-helpers-id">bpf helpers ID</h2>
+<p>bpf helpers ID 是什么？简单来说，是内核跟 eBPF 程序之间关于 bpf helpers 的一个约定：</p>
+<ul>
+<li>约定 eBPF 程序中如何使用 bpf helpers。</li>
+<li>约定内核在执行 eBPF 汇编指令时如何调用对应的函数。</li>
+</ul>
+<p>所以，bpf helpers ID 是约定俗成的东西，请查看
+<a href="https://github.com/libbpf/libbpf/blob/master/src/bpf_helper_defs.h">bpf_helper_defs.h</a>。
+对应内核中的源代码 <a href="https://github.com/torvalds/linux/blob/v5.19/include/uapi/linux/bpf.h#L5467">enum bpf_func_id</a>。</p>
+<p>例如，<code>void *val = bpf_map_lookup_elem(map, key);</code> 在编译后用命令行
+<code>llvm-objdump -S xxx.o</code> 可以参考有汇编 <code>call 1</code>；其中，1 就是
+<code>bpf_map_lookup_elem()</code>，<code>static void *(*bpf_map_lookup_elem)(void *map, const void *key) = (void *) 1;</code>。</p>
+<h2 id="bpftool-feature">bpftool feature</h2>
+<p>在深入讲解 <strong>verifier 是怎么处理 bpf helpers 的</strong> 之前，有必要简单介绍一下 <code>bpftool feature</code>。
+执行命令行 <code>bpftool feature</code> 后，可以看到命令行输出的大部分内容都是某类型的 eBPF
+程序支持哪些 bpf helpers。譬如 XDP 程序：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">ebpf helpers supported for program type xdp:
+</span></span><span class="line"><span class="cl">        - bpf_map_lookup_elem
+</span></span><span class="line"><span class="cl">        - bpf_map_update_elem
+</span></span><span class="line"><span class="cl">        - bpf_map_delete_elem
+</span></span><span class="line"><span class="cl">        - bpf_redirect
+</span></span><span class="line"><span class="cl">        - bpf_xdp_adjust_head
+</span></span><span class="line"><span class="cl">        - bpf_redirect_map
+</span></span><span class="line"><span class="cl">        - bpf_xdp_adjust_meta
+</span></span><span class="line"><span class="cl">        - bpf_xdp_adjust_tail
+</span></span><span class="line"><span class="cl">        - ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这对于日常编写 eBPF 程序 C 代码是非常有用的，能够避免等到校验阶段报错的时间浪费。</p>
+<h2 id="bpf-verifier">bpf verifier</h2>
+<p>简单推理可知，编译阶段、加载阶段都无需对 bpf helpers 进行特定处理。而在校验阶
+段，需要对 bpf helpers 进行如下处理：</p>
+<ol>
+<li>判断当前 eBPF 程序类型是否支持汇编指令 <code>call xxx</code> 中的 bpf helpers ID。</li>
+<li>找到 bpf helpers ID 对应的函数。</li>
+<li>重新计算汇编指令 <code>call xxx</code> 中 <code>imm</code> 字段的值，以备运行阶段使用。</li>
+</ol>
+<p>似乎需要处理的事情不多，就来看下内核中的相关函数执行路径吧：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">bpf</span><span class="p">)</span> <span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">|--&gt;</span><span class="nf">bpf_prog_load</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="nf">bpf_check</span><span class="p">()</span>  <span class="c1">// ${KERNEL}/kernel/bpf/verifier.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="o">|--&gt;</span><span class="n">env</span><span class="o">-&gt;</span><span class="n">ops</span> <span class="o">=</span> <span class="n">bpf_verifier_ops</span><span class="p">[</span><span class="n">env</span><span class="o">-&gt;</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">type</span><span class="p">];</span> <span class="c1">// 关键步骤
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="o">|--&gt;</span><span class="nf">do_check_main</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>   <span class="o">|--&gt;</span><span class="nf">do_check_common</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>       <span class="o">|--&gt;</span><span class="nf">do_check</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>           <span class="o">|--&gt;</span><span class="k">if</span> <span class="p">(</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">BPF_CALL</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>           <span class="o">|</span>       <span class="k">if</span> <span class="p">(</span><span class="n">insn</span><span class="o">-&gt;</span><span class="n">src_reg</span> <span class="o">==</span> <span class="n">BPF_PSEUDO_CALL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>           <span class="o">|</span>           <span class="n">err</span> <span class="o">=</span> <span class="nf">check_func_call</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">insn</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">env</span><span class="o">-&gt;</span><span class="n">insn_idx</span><span class="p">);</span> <span class="c1">// bpf2bpf functions call 走这里
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="o">|</span>           <span class="o">|</span>       <span class="k">else</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>           <span class="o">|</span>           <span class="n">err</span> <span class="o">=</span> <span class="nf">check_helper_call</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="n">insn</span><span class="o">-&gt;</span><span class="n">imm</span><span class="p">,</span> <span class="n">env</span><span class="o">-&gt;</span><span class="n">insn_idx</span><span class="p">);</span> <span class="c1">// bpf helpers 走这里
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="o">|</span>           <span class="o">|</span>   <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>           <span class="o">|--&gt;</span><span class="nf">check_helper_call</span><span class="p">()</span> <span class="c1">// 步骤 1
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="o">|</span>               <span class="o">|--&gt;</span><span class="k">if</span> <span class="p">(</span><span class="n">func_id</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">func_id</span> <span class="o">&gt;=</span> <span class="n">__BPF_FUNC_MAX_ID</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                       <span class="nf">verbose</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s">&#34;invalid func %s#%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="nf">func_id_name</span><span class="p">(</span><span class="n">func_id</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                           <span class="n">func_id</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                       <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                   <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                   <span class="k">if</span> <span class="p">(</span><span class="n">env</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="n">get_func_proto</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                       <span class="n">fn</span> <span class="o">=</span> <span class="n">env</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="nf">get_func_proto</span><span class="p">(</span><span class="n">func_id</span><span class="p">,</span> <span class="n">env</span><span class="o">-&gt;</span><span class="n">prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                   <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">fn</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                       <span class="nf">verbose</span><span class="p">(</span><span class="n">env</span><span class="p">,</span> <span class="s">&#34;unknown func %s#%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="nf">func_id_name</span><span class="p">(</span><span class="n">func_id</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                           <span class="n">func_id</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                       <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                   <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>                   <span class="c1">// 后面还有很多检查工作，略过
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="o">|--&gt;</span><span class="nf">fixup_bpf_calls</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">            <span class="o">|--&gt;</span><span class="n">fn</span> <span class="o">=</span> <span class="n">env</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="nf">get_func_proto</span><span class="p">(</span><span class="n">insn</span><span class="o">-&gt;</span><span class="n">imm</span><span class="p">,</span> <span class="n">env</span><span class="o">-&gt;</span><span class="n">prog</span><span class="p">);</span> <span class="c1">// 步骤 2
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="cm">/* all functions that have prototype and verifier allowed
+</span></span></span><span class="line"><span class="cl"><span class="cm">                * programs to call them, must be real in-kernel functions
+</span></span></span><span class="line"><span class="cl"><span class="cm">                */</span>
+</span></span><span class="line"><span class="cl">                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">fn</span><span class="o">-&gt;</span><span class="n">func</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="nf">verbose</span><span class="p">(</span><span class="n">env</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                        <span class="s">&#34;kernel subsystem misconfigured func %s#%d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                        <span class="nf">func_id_name</span><span class="p">(</span><span class="n">insn</span><span class="o">-&gt;</span><span class="n">imm</span><span class="p">),</span> <span class="n">insn</span><span class="o">-&gt;</span><span class="n">imm</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">return</span> <span class="o">-</span><span class="n">EFAULT</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">                <span class="n">insn</span><span class="o">-&gt;</span><span class="n">imm</span> <span class="o">=</span> <span class="n">fn</span><span class="o">-&gt;</span><span class="n">func</span> <span class="o">-</span> <span class="n">__bpf_call_base</span><span class="p">;</span> <span class="c1">// 步骤 3
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="注册-bpf_verifier_ops">注册 <code>bpf_verifier_ops</code></h2>
+<blockquote>
+<p>以下分析以 XDP 程序为例。</p>
+</blockquote>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/verifier.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_verifier_ops</span> <span class="o">*</span> <span class="k">const</span> <span class="n">bpf_verifier_ops</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define BPF_PROG_TYPE(_id, _name, prog_ctx_type, kern_ctx_type) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    [_id] = &amp; _name ## _verifier_ops,
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define BPF_MAP_TYPE(_id, _ops)
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define BPF_LINK_TYPE(_id, _name)
+</span></span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&lt;linux/bpf_types.h&gt;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp">#undef BPF_PROG_TYPE
+</span></span></span><span class="line"><span class="cl"><span class="cp">#undef BPF_MAP_TYPE
+</span></span></span><span class="line"><span class="cl"><span class="cp">#undef BPF_LINK_TYPE
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在 <a href="/post/ebpf-map-source-code-reading-guide/">eBPF Talk: bpf map 源码导读</a> 中有提到 <code>bpf_types.h</code>，该头文件里列举
+了所有 eBPF 程序类型和 eBPF map 类型。其中 <strong>BPF_PROG_TYPE_xxx</strong> 和
+<strong>BPF_MAP_TYPE_xxx</strong> 的定义都在 <code>${KERNEL}/include/uapi/linux/bpf.h</code> 头文件中。</p>
+<p>其中 XDP 程序类型的代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/include/linux/bpf_types.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_PROG_TYPE</span><span class="p">(</span><span class="n">BPF_PROG_TYPE_XDP</span><span class="p">,</span> <span class="n">xdp</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">          <span class="k">struct</span> <span class="n">xdp_md</span><span class="p">,</span> <span class="k">struct</span> <span class="n">xdp_buff</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// 等价于
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_verifier_ops</span> <span class="o">*</span> <span class="k">const</span> <span class="n">bpf_verifier_ops</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="p">[</span><span class="n">BPF_PROG_TYPE_XDP</span><span class="p">]</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">xdp_verifier_ops</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这就好办了，继续往下看 <code>xdp_verifier_ops</code>。</p>
+<blockquote>
+<p>Tips： 通过 <code>xxx_verifier_ops</code> 可以准确找到 eBPF 程序类型所支持的 bpf helpers 的具体函数的源代码。</p>
+</blockquote>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/filter.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_verifier_ops</span> <span class="n">xdp_verifier_ops</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">get_func_proto</span>     <span class="o">=</span> <span class="n">xdp_func_proto</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">is_valid_access</span>    <span class="o">=</span> <span class="n">xdp_is_valid_access</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">convert_ctx_access</span> <span class="o">=</span> <span class="n">xdp_convert_ctx_access</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">gen_prologue</span>       <span class="o">=</span> <span class="n">bpf_noop_prologue</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>对于步骤 1 和 2，会调用 <code>xdp_verifier_ops</code> 的 <code>get_func_proto</code> 函数，即
+<code>xdp_func_proto</code> 函数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/filter.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_func_proto</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="nf">xdp_func_proto</span><span class="p">(</span><span class="k">enum</span> <span class="n">bpf_func_id</span> <span class="n">func_id</span><span class="p">,</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">switch</span> <span class="p">(</span><span class="n">func_id</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 以下所有 case 都是 XDP 专门实现的函数，譬如 BPF_FUNC_redirect 会调用 bpf_xdp_redirect() 函数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_perf_event_output</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_event_output_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_get_smp_processor_id</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_get_smp_processor_id_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_csum_diff</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_csum_diff_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_xdp_adjust_head</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_adjust_head_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_xdp_adjust_meta</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_adjust_meta_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_redirect</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_redirect_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_redirect_map</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_redirect_map_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_xdp_adjust_tail</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_adjust_tail_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_fib_lookup</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_fib_lookup_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#ifdef CONFIG_INET
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>    <span class="k">case</span> <span class="nl">BPF_FUNC_sk_lookup_udp</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_sk_lookup_udp_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_sk_lookup_tcp</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_sk_lookup_tcp_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_sk_release</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_sk_release_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_skc_lookup_tcp</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_xdp_skc_lookup_tcp_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_tcp_check_syncookie</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_tcp_check_syncookie_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_FUNC_tcp_gen_syncookie</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">&amp;</span><span class="n">bpf_tcp_gen_syncookie_proto</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">default</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 其他函数则包括 sk 相关的一些基础函数、和 eBPF map 相关的函数，还有一众基础函数。
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="c1">// 此处不再展开 bpf_sk_base_func_proto()
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">bpf_sk_base_func_proto</span><span class="p">(</span><span class="n">func_id</span><span class="p">);</span> <span class="c1">// ${KERNEL}/kernel/bpf/helpers.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="bpf_xdp_redirect"><code>bpf_xdp_redirect()</code></h2>
+<p>以 <code>BPF_FUNC_redirect</code> 为例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/filter.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_CALL_2</span><span class="p">(</span><span class="n">bpf_xdp_redirect</span><span class="p">,</span> <span class="n">u32</span><span class="p">,</span> <span class="n">ifindex</span><span class="p">,</span> <span class="n">u64</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_redirect_info</span> <span class="o">*</span><span class="n">ri</span> <span class="o">=</span> <span class="nf">this_cpu_ptr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bpf_redirect_info</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="n">flags</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">XDP_ABORTED</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">=</span> <span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_index</span> <span class="o">=</span> <span class="n">ifindex</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ri</span><span class="o">-&gt;</span><span class="n">tgt_value</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">WRITE_ONCE</span><span class="p">(</span><span class="n">ri</span><span class="o">-&gt;</span><span class="n">map</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">XDP_REDIRECT</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_func_proto</span> <span class="n">bpf_xdp_redirect_proto</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">func</span>           <span class="o">=</span> <span class="n">bpf_xdp_redirect</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">gpl_only</span>       <span class="o">=</span> <span class="nb">false</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">ret_type</span>       <span class="o">=</span> <span class="n">RET_INTEGER</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">arg1_type</span>      <span class="o">=</span> <span class="n">ARG_ANYTHING</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">.</span><span class="n">arg2_type</span>      <span class="o">=</span> <span class="n">ARG_ANYTHING</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>此时，便能非常有信心地回答 <a href="/post/ebpf-talk-17-xdp-redirect-packet/">eBPF Talk: 揭秘 XDP 转发网络包</a> 中的那个 <em>为什么</em> 了。</p>
+<h2 id="运行阶段调用-bpf-helpers">运行阶段调用 bpf helpers</h2>
+<p>一切皆已就绪，运行阶段就比较简单了，通过 <code>insn-&gt;imm</code> 计算得到目标函数，执行函数；也就一行代码完事。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/core.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="nf">___bpf_prog_run</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="o">|--&gt;</span><span class="nl">JMP_CALL</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Function call scratches BPF_R1-BPF_R5 registers,
+</span></span></span><span class="line"><span class="cl"><span class="cm">        * preserves BPF_R6-BPF_R9, and stores return value
+</span></span></span><span class="line"><span class="cl"><span class="cm">        * into BPF_R0.
+</span></span></span><span class="line"><span class="cl"><span class="cm">        */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">BPF_R0</span> <span class="o">=</span> <span class="p">(</span><span class="n">__bpf_call_base</span> <span class="o">+</span> <span class="n">insn</span><span class="o">-&gt;</span><span class="n">imm</span><span class="p">)(</span><span class="n">BPF_R1</span><span class="p">,</span> <span class="n">BPF_R2</span><span class="p">,</span> <span class="n">BPF_R3</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                            <span class="n">BPF_R4</span><span class="p">,</span> <span class="n">BPF_R5</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">CONT</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="小结">小结</h2>
+<p>只看了一部分 verifier 的源代码，觉得 verifier 就是 eBPF <em>大编译器</em> 的最后端
+的一部分：</p>
+<ol>
+<li>校验汇编指令的合法性、安全性</li>
+<li>进行一定的汇编指令优化（更多时候是 dead code 优化）</li>
+<li>将汇编指令 JIT 翻译成机器码</li>
+<li>&hellip;&hellip;</li>
+</ol>
+<p>目前，能力所限，只能按图索骥地阅读 verifier 的部分源代码。</p>
+<p>终究还是对 verifier 望而生畏。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2023-05-20
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/bpf-helpers/">bpf helpers</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-19-how-skbs-work/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: SKB 工作原理【译】</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-17-xdp-redirect-packet/">
+        <span class="next-text nav-default">eBPF Talk: 揭秘 XDP 转发网络包</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

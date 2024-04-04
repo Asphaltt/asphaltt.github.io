@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: introduce bpf_iter - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="通过 Linux 网络: sequence file 的学习，我们知道在 Linux 里有不少地方都使用 sequence file 机制向用户态空间传递数据。 在 eBPF 的加持下，sequence file 机制迎来了更加灵活的实现" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-74-introduce-bpf_iter/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: introduce bpf_iter" />
+<meta property="og:description" content="通过 Linux 网络: sequence file 的学习，我们知道在 Linux 里有不少地方都使用 sequence file 机制向用户态空间传递数据。 在 eBPF 的加持下，sequence file 机制迎来了更加灵活的实现" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-74-introduce-bpf_iter/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-04-03T23:14:50+08:00" />
+<meta property="article:modified_time" content="2024-04-03T23:14:50+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: introduce bpf_iter">
+  <meta itemprop="description" content="通过 Linux 网络: sequence file 的学习，我们知道在 Linux 里有不少地方都使用 sequence file 机制向用户态空间传递数据。 在 eBPF 的加持下，sequence file 机制迎来了更加灵活的实现">
+  <meta itemprop="datePublished" content="2024-04-03T23:14:50+08:00">
+  <meta itemprop="dateModified" content="2024-04-03T23:14:50+08:00">
+  <meta itemprop="wordCount" content="1449">
+  <meta itemprop="keywords" content="EBPF,Bpf_iter"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: introduce bpf_iter"/>
+<meta name="twitter:description" content="通过 Linux 网络: sequence file 的学习，我们知道在 Linux 里有不少地方都使用 sequence file 机制向用户态空间传递数据。 在 eBPF 的加持下，sequence file 机制迎来了更加灵活的实现"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: introduce bpf_iter</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1449 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#bpf_iter-demo"><code>bpf_iter</code> demo</a></li>
+        <li><a href="#bpf_iter-用法"><code>bpf_iter</code> 用法</a></li>
+        <li><a href="#bpf_iter-bpf-prog"><code>bpf_iter</code> bpf prog</a></li>
+        <li><a href="#bpf_iter-原理"><code>bpf_iter</code> 原理</a></li>
+        <li><a href="#bpf_iter-实现"><code>bpf_iter</code> 实现</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>通过 <a href="/post/linux-networking-4-sequence-files/">Linux 网络: sequence file</a> 的学习，我们知道在 Linux 里有不少地方都使用 sequence file 机制向用户态空间传递数据。</p>
+<p>在 eBPF 的加持下，sequence file 机制迎来了更加灵活的实现：使用 eBPF 按需制定 record 格式，不再局限于内核中固定的格式。</p>
+<p><code>bpf_iter</code> 参考资料：</p>
+<ul>
+<li><a href="https://developers.secure.facebook.com/blog/post/2022/03/31/bpf-iterator-retrieving-kernel-data-with-flexibility-and-efficiency/">BPF Iterator: Retrieving Kernel Data With Flexibility and Efficiency</a></li>
+<li><a href="https://www.ebpf.top/post/bpf-iterator-retrieving-kernel-data-with-flexibility-and-efficiency/">BPF 迭代器：以灵活和高效的方式检索内核数据结构 【中文版】</a></li>
+</ul>
+<h2 id="bpf_iter-demo"><code>bpf_iter</code> demo</h2>
+<p>demo 先行，将内核源代码里的 tcp4 例子适配一下，然后跑起来：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># cat /proc/net/tcp</span>
+</span></span><span class="line"><span class="cl">  sl  local_address rem_address   st tx_queue rx_queue tr tm-&gt;when retrnsmt   uid  timeout inode
+</span></span><span class="line"><span class="cl">   0: 00000000:0016 00000000:0000 0A 00000000:00000000 00:00000000 <span class="m">00000000</span>     <span class="m">0</span>        <span class="m">0</span> <span class="m">21171</span> <span class="m">1</span> ffff8c6a5561e300 <span class="m">100</span> <span class="m">0</span> <span class="m">0</span> <span class="m">10</span> <span class="m">0</span>
+</span></span><span class="line"><span class="cl">   1: 3500007F:0035 00000000:0000 0A 00000000:00000000 00:00000000 <span class="m">00000000</span>   <span class="m">101</span>        <span class="m">0</span> <span class="m">21025</span> <span class="m">1</span> ffff8c6a5561c800 <span class="m">100</span> <span class="m">0</span> <span class="m">0</span> <span class="m">10</span> <span class="m">5</span>
+</span></span><span class="line"><span class="cl">   2: 8A01A8C0:0016 0C01A8C0:F709 <span class="m">01</span> 00000000:00000000 02:000794F0 <span class="m">00000000</span>     <span class="m">0</span>        <span class="m">0</span> <span class="m">28502</span> <span class="m">2</span> ffff8c6a5561d100 <span class="m">20</span> <span class="m">4</span> <span class="m">11</span> <span class="m">10</span> -1
+</span></span><span class="line"><span class="cl">   3: 8A01A8C0:0016 0C01A8C0:CB4F <span class="m">01</span> 00000000:00000000 02:000A1323 <span class="m">00000000</span>     <span class="m">0</span>        <span class="m">0</span> <span class="m">33929</span> <span class="m">2</span> ffff8c6a5561ec00 <span class="m">20</span> <span class="m">4</span> <span class="m">25</span> <span class="m">10</span> -1
+</span></span><span class="line"><span class="cl">   4: 8A01A8C0:0016 0C01A8C0:CC0B <span class="m">01</span> 00000000:00000000 02:000AF05D <span class="m">00000000</span>     <span class="m">0</span>        <span class="m">0</span> <span class="m">34017</span> <span class="m">4</span> ffff8c6a55619200 <span class="m">20</span> <span class="m">4</span> <span class="m">29</span> <span class="m">10</span> -1
+</span></span><span class="line"><span class="cl">   5: 8A01A8C0:0016 0C01A8C0:CA1F <span class="m">01</span> 00000000:00000000 02:0008919D <span class="m">00000000</span>     <span class="m">0</span>        <span class="m">0</span> <span class="m">30667</span> <span class="m">2</span> ffff8c6a5561da00 <span class="m">20</span> <span class="m">4</span> <span class="m">23</span> <span class="m">10</span> -1
+</span></span><span class="line"><span class="cl"><span class="c1"># cat /sys/fs/bpf/itertcp4</span>
+</span></span><span class="line"><span class="cl">  sl  local_address rem_address   st tx_queue rx_queue tr tm-&gt;when retrnsmt   uid  timeout inode
+</span></span><span class="line"><span class="cl">   1: 00000000:0016 00000000:0000 0A 00000000:00000000 00:00000000 <span class="m">00000000</span>     <span class="m">0</span>        <span class="m">0</span> <span class="m">21171</span> <span class="m">2</span> ffff8c6a5561e300 <span class="m">100</span> <span class="m">0</span> <span class="m">0</span> <span class="m">10</span> <span class="m">0</span>
+</span></span><span class="line"><span class="cl">   2: 3500007F:0035 00000000:0000 0A 00000000:00000000 00:00000000 <span class="m">00000000</span>   <span class="m">101</span>        <span class="m">0</span> <span class="m">21025</span> <span class="m">2</span> ffff8c6a5561c800 <span class="m">100</span> <span class="m">0</span> <span class="m">0</span> <span class="m">10</span> <span class="m">5</span>
+</span></span><span class="line"><span class="cl">   3: 8A01A8C0:0016 0C01A8C0:F709 <span class="m">01</span> 00000000:00000000 02:00074E54 <span class="m">00000000</span>     <span class="m">0</span>        <span class="m">0</span> <span class="m">28502</span> <span class="m">3</span> ffff8c6a5561d100 <span class="m">20</span> <span class="m">4</span> <span class="m">10</span> <span class="m">10</span> -1
+</span></span><span class="line"><span class="cl">   4: 8A01A8C0:0016 0C01A8C0:CB4F <span class="m">01</span> 00000000:00000000 02:0009CC88 <span class="m">00000000</span>     <span class="m">0</span>        <span class="m">0</span> <span class="m">33929</span> <span class="m">3</span> ffff8c6a5561ec00 <span class="m">20</span> <span class="m">4</span> <span class="m">26</span> <span class="m">10</span> -1
+</span></span><span class="line"><span class="cl">   5: 8A01A8C0:0016 0C01A8C0:CC0B <span class="m">01</span> 00000000:00000000 02:000AA9C2 <span class="m">00000000</span>     <span class="m">0</span>        <span class="m">0</span> <span class="m">34017</span> <span class="m">4</span> ffff8c6a55619200 <span class="m">20</span> <span class="m">4</span> <span class="m">18</span> <span class="m">10</span> -1
+</span></span><span class="line"><span class="cl">   6: 8A01A8C0:0016 0C01A8C0:CA1F <span class="m">01</span> 00000000:00000000 02:00084B02 <span class="m">00000000</span>     <span class="m">0</span>        <span class="m">0</span> <span class="m">30667</span> <span class="m">3</span> ffff8c6a5561da00 <span class="m">20</span> <span class="m">4</span> <span class="m">24</span> <span class="m">10</span> -1
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到，通过 <code>bpf_iter</code>，能够实现 <code>/proc/net/tcp</code> 同样的功能。</p>
+<ul>
+<li><a href="https://github.com/Asphaltt/learn-by-example/blob/master/ebpf-iter">ebpf-iter 源代码</a></li>
+</ul>
+<p>更多例子，请参考 <a href="https://github.com/torvalds/linux/tree/master/tools/testing/selftests/bpf/progs">tools/testing/selftests/bpf/progs</a> 目录下 <code>bpf_iter_*.c</code> 文件。</p>
+<h2 id="bpf_iter-用法"><code>bpf_iter</code> 用法</h2>
+<p>参考 demo，<code>bpf_iter</code> 使用起来的关键是如下两点：</p>
+<ol>
+<li><code>bpf_iter_meta</code>: <code>bpf_iter</code> 的元数据，包括 <code>seq_file</code> 和 <code>bpf_iter</code> 的会话 ID 及调用次数。</li>
+<li><code>bpf_seq_printf</code>: 使用宏 <strong>BPF_SEQ_PRINTF</strong> 向 <code>seq_file</code> 写入数据。</li>
+</ol>
+<p><code>bpf_iter_meta</code> 定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">bpf_iter_meta</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">union</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">seq_file</span> <span class="o">*</span><span class="n">seq</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">};</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u64</span> <span class="n">session_id</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u64</span> <span class="n">seq_num</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>每个 <code>bpf_iter</code> bpf prog 的 <code>ctx</code> 里都带有一个 <code>struct bpf_iter_meta *meta</code>。</p>
+<p><code>bpf_seq_printf</code> helper 的定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/trace/bpf_trace.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_CALL_5</span><span class="p">(</span><span class="n">bpf_seq_printf</span><span class="p">,</span> <span class="k">struct</span> <span class="n">seq_file</span> <span class="o">*</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="p">,</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">u32</span><span class="p">,</span> <span class="n">fmt_size</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">       <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">u32</span><span class="p">,</span> <span class="n">data_len</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">err</span><span class="p">,</span> <span class="n">num_args</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u32</span> <span class="o">*</span><span class="n">bin_args</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">data_len</span> <span class="o">&amp;</span> <span class="mi">7</span> <span class="o">||</span> <span class="n">data_len</span> <span class="o">&gt;</span> <span class="n">MAX_BPRINTF_VARARGS</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">||</span>
+</span></span><span class="line"><span class="cl">        <span class="p">(</span><span class="n">data_len</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">data</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">num_args</span> <span class="o">=</span> <span class="n">data_len</span> <span class="o">/</span> <span class="mi">8</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">err</span> <span class="o">=</span> <span class="nf">bpf_bprintf_prepare</span><span class="p">(</span><span class="n">fmt</span><span class="p">,</span> <span class="n">fmt_size</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">bin_args</span><span class="p">,</span> <span class="n">num_args</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">seq_bprintf</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">fmt</span><span class="p">,</span> <span class="n">bin_args</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_bprintf_cleanup</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">seq_has_overflowed</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">?</span> <span class="o">-</span><span class="nl">EOVERFLOW</span> <span class="p">:</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>由定义可知，<code>bpf_seq_printf</code> helper 有如下限制：</p>
+<ol>
+<li>数据长度必须是 8 的倍数。</li>
+<li>数据长度不能超过 96（12*8）；意即 <code>bpf_seq_printf</code> helper 能够格式化最多 12 个参数。</li>
+</ol>
+<p>不过，类似 <code>bpf_snprintf</code> helper，<code>bpf_seq_printf</code> helper 也支持使用 <code>%p{i,I}{4,6}</code> 对 IP 地址进行格式化。</p>
+<h2 id="bpf_iter-bpf-prog"><code>bpf_iter</code> bpf prog</h2>
+<p><code>bpf_iter</code> bpf prog 由每个具体的 <code>bpf_iter</code> 实现的 <code>seq_file</code> 中的 <code>show</code> 函数调用，对 bpf prog 的返回值有如下处理：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/bpf_iter.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="n">seq</span><span class="o">-&gt;</span><span class="n">op</span><span class="o">-&gt;</span><span class="nf">show</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">bpf_iter_dec_seq_num</span><span class="p">(</span><span class="n">seq</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="n">seq</span><span class="o">-&gt;</span><span class="n">count</span> <span class="o">=</span> <span class="n">offs</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">err</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="nf">seq_has_overflowed</span><span class="p">(</span><span class="n">seq</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">seq</span><span class="o">-&gt;</span><span class="n">count</span> <span class="o">=</span> <span class="n">offs</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">offs</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                    <span class="n">err</span> <span class="o">=</span> <span class="o">-</span><span class="n">E2BIG</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="n">seq</span><span class="o">-&gt;</span><span class="n">op</span><span class="o">-&gt;</span><span class="nf">stop</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">                <span class="k">goto</span> <span class="n">done</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">            <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>分以下 3 中情况：</p>
+<ol>
+<li>小于 0: 异常情况，停止处理，结束会话。</li>
+<li>等于 0: 正常情况，继续处理下一个 record。</li>
+<li>大于 0: 跳过当前处理的 record，继续处理下一个 record。</li>
+</ol>
+<h2 id="bpf_iter-原理"><code>bpf_iter</code> 原理</h2>
+<p>bpf 子系统里，<code>bpf_iter</code> 的源代码和历史 commit 并不多，可以快速阅读一下：</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/blob/master/kernel/bpf/bpf_iter.c">bpf_iter.c</a></li>
+<li><a href="https://github.com/torvalds/linux/commits/master?after=858fd168a95c5b9669aac8db6c14a9aeab446375+34&amp;branch=master&amp;path%5B%5D=kernel&amp;path%5B%5D=bpf&amp;path%5B%5D=bpf_iter.c&amp;qualified_name=refs%2Fheads%2Fmaster">bpf_iter.c 历史 commit</a></li>
+</ul>
+<blockquote>
+<p><code>bpf_iter</code> 最低要求 5.8 kernel。</p>
+</blockquote>
+<p>基于 Linux <code>seq_file</code> 机制，bpf 实现了一套运行 bpf prog 的 <code>bpf_iter</code> 机制，record 格式和内容由 bpf prog 来决定。</p>
+<h2 id="bpf_iter-实现"><code>bpf_iter</code> 实现</h2>
+<p>在内核源代码仓库里全局搜索 <strong>DEFINE_BPF_ITER_FUNC</strong>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">kernel/bpf/task_iter.c:619:DEFINE_BPF_ITER_FUNC<span class="o">(</span>task_vma, struct bpf_iter_meta *meta,
+</span></span><span class="line"><span class="cl">kernel/bpf/task_iter.c:368:DEFINE_BPF_ITER_FUNC<span class="o">(</span>task_file, struct bpf_iter_meta *meta,
+</span></span><span class="line"><span class="cl">kernel/bpf/task_iter.c:194:DEFINE_BPF_ITER_FUNC<span class="o">(</span>task, struct bpf_iter_meta *meta, struct task_struct *task<span class="o">)</span>
+</span></span><span class="line"><span class="cl">kernel/bpf/link_iter.c:42:DEFINE_BPF_ITER_FUNC<span class="o">(</span>bpf_link, struct bpf_iter_meta *meta, struct bpf_link *1ink<span class="o">)</span>
+</span></span><span class="line"><span class="cl">kernel/bpf/map_iter.c:165:DEFINE_BPF_ITER_FUNC<span class="o">(</span>bpf_map_elem, struct bpf_iter_meta *meta,
+</span></span><span class="line"><span class="cl">kernel/bpf/map_iter.c:42:DEFINE_BPF_ITER_FUNC<span class="o">(</span>bpf_map, struct bpf_iter_meta *meta, struct bpf_map *map<span class="o">)</span>
+</span></span><span class="line"><span class="cl">kernel/bpf/cgroup_iter.c:258:DEFINE_BPF_ITER_FUNC<span class="o">(</span>cgroup, struct bpf_iter_meta *meta,
+</span></span><span class="line"><span class="cl">kernel/bpf/prog_iter.c:42:DEFINE_BPF_ITER_FUNC<span class="o">(</span>bpf_prog, struct bpf_iter_meta *meta, struct bpf_prog *prog<span class="o">)</span>
+</span></span><span class="line"><span class="cl">kernel/kallsyms.c:840:DEFINE_BPF_ITER_FUNC<span class="o">(</span>ksym, struct bpf_iter_meta *meta, struct kallsym_iter *ksym<span class="o">)</span>
+</span></span><span class="line"><span class="cl">include/linux/bpf.h:1799:#define DEFINE_BPF_ITER_FUNC<span class="o">(</span>target, args...<span class="o">)</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>net/ipv6/route.c:6632:DEFINE_BPF_ITER_FUNC<span class="o">(</span>ipv6_route, struct bpf_iter_meta *meta, struct fib6_info *rt<span class="o">)</span>
+</span></span><span class="line"><span class="cl">net/unix/af_unix.c:3652:DEFINE_BPF_ITER FUNC<span class="o">(</span>unix, struct bpf_iter_meta *meta,
+</span></span><span class="line"><span class="cl">net/ipv4/udp.c:3274:DEFINE_BPF_ITER_FUNC<span class="o">(</span>udp, struct bpf_iter_meta *meta,
+</span></span><span class="line"><span class="cl">net/ipv4/tcp_ipv4.c:3250:DEFINE_BPF_ITER_FUNC<span class="o">(</span>tcp, struct bpf_iter_meta *meta,
+</span></span><span class="line"><span class="cl">net/netlink/af_netlink.c:2716:DEFINE_BPF_ITER_FUNC<span class="o">(</span>netlink, struct bpf_iter_meta *meta, struct netlink_sock *sk<span class="o">)</span>
+</span></span><span class="line"><span class="cl">net/core/sock_map.c:702:DEFINE_BPF_ITER _FUNC<span class="o">(</span>sockmap, struct bpf_iter_meta *meta,
+</span></span><span class="line"><span class="cl">net/core/bpf_sk_storage.c:830:DEFINE_BPF_ITER_FUNC<span class="o">(</span>bpf_sk_storage_map, struct bpf_iter_meta *meta,
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>除去 <strong>DEFINE_BPF_ITER_FUNC</strong> 宏定义，一共有 16 个地方支持 <code>bpf_iter</code> 机制。</p>
+<ol>
+<li>task: <a href="https://github.com/torvalds/linux/commit/eaaacd23910f2d7c4b22d43f591002cc217d294b">bpf: Add task and task/file iterator targets</a> since <strong>5.8</strong> kernel</li>
+<li>task_file: <a href="https://github.com/torvalds/linux/commit/eaaacd23910f2d7c4b22d43f591002cc217d294b">bpf: Add task and task/file iterator targets</a> since <strong>5.8</strong> kernel</li>
+<li>task_vma: <a href="https://github.com/torvalds/linux/commit/3a7b35b899dedd29468301a3cbc4fa48a49e2131">bpf: Introduce task_vma bpf_iter</a> since <strong>5.12</strong> kernel</li>
+<li>bpf_link: <a href="https://github.com/torvalds/linux/commit/9f88361273082825d9f0d13a543d49f9fa0d44a8">bpf: Add bpf_link iterator</a> since <strong>5.19</strong> kernel</li>
+<li>bpf_map: <a href="https://github.com/torvalds/linux/commit/6086d29def80edd78f9832ea6eafa74e3818f6a7">bpf: Add bpf_map iterator</a> since <strong>5.8</strong> kernel</li>
+<li>bpf_map_elem: <a href="https://github.com/torvalds/linux/commit/a5cbe05a6673b85bed2a63ffcfea6a96c6410cff">bpf: Implement bpf iterator for map elements</a> since <strong>5.9</strong> kernel</li>
+<li>cgroup: <a href="https://github.com/torvalds/linux/commit/d4ccaf58a8472123ac97e6db03932c375b5c45ba">bpf: Introduce cgroup iter</a> since <strong>6.1</strong> kernel</li>
+<li>bpf_prog: <a href="https://github.com/torvalds/linux/commit/a228a64fc1e4428e2b96dc68e9ad3c447095c9e7">bpf: Add bpf_prog iterator</a> since <strong>5.9</strong> kernel</li>
+<li>ksym: <a href="https://github.com/torvalds/linux/commit/647cafa22349026a8435030e9157074ab7fe5710">bpf: add a ksym BPF iterator</a> since <strong>6.0</strong> kernel</li>
+<li>ipv6_route: <a href="https://github.com/torvalds/linux/commit/138d0be35b141e09f6b267c6ae4094318d4e4491">net: bpf: Add netlink and ipv6_route bpf_iter targets</a> since <strong>5.8</strong> kernel</li>
+<li>UNIX domain socket: <a href="https://github.com/torvalds/linux/commit/2c860a43dd77f969bb959336a2f743d7103a8f63">bpf: af_unix: Implement BPF iterator for UNIX domain socket.</a> since <strong>5.15</strong> kernel</li>
+<li>udp (IPv4, IPv6): <a href="https://github.com/torvalds/linux/commit/5788b3a07fc5863606c3b92fa7b1ffe125e6eb4c">net: bpf: Implement bpf iterator for udp</a> since <strong>5.9</strong> kernel</li>
+<li>tcp (IPv4, IPv6): <a href="https://github.com/torvalds/linux/commit/52d87d5f6418ba1b8b449ed5eea1532664896851">net: bpf: Implement bpf iterator for tcp</a> since <strong>5.9</strong> kernel</li>
+<li>netlink: <a href="https://github.com/torvalds/linux/commit/138d0be35b141e09f6b267c6ae4094318d4e4491">net: bpf: Add netlink and ipv6_route bpf_iter targets</a> since <strong>5.8</strong> kernel</li>
+<li>sockmap/sockhash: <a href="https://github.com/torvalds/linux/commit/0365351524d7560d8ed7a42801a15252c6c56f41">net: Allow iterating sockmap and sockhash</a> since <strong>5.10</strong> kernel</li>
+<li>bpf_sk_storage: <a href="https://github.com/torvalds/linux/commit/5ce6e77c7edf7310a0ff9532fd6b9693c082ab32">bpf: Implement bpf iterator for sock local storage map</a> since <strong>5.9</strong> kernel</li>
+</ol>
+<h2 id="小结">小结</h2>
+<p><code>bpf_iter</code> 是 bpf 子系统里基于 <code>seq_file</code> 机制实现的一套灵活的 sequence 机制，它的 record 格式和内容均由用户编写的 bpf prog 决定。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-04-03
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/bpf_iter/">bpf_iter</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-75-introduce-bpf_timer/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: introduce bpf_timer</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/linux-networking-5-netdevsim/">
+        <span class="next-text nav-default">Linux 网络: netdevsim</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

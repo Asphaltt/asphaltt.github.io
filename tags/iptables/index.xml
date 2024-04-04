@@ -4,29 +4,29 @@
     <title>Iptables on LeonHwang&#39;s Blogs</title>
     <link>https://le0nhwan9.github.io/tags/iptables/</link>
     <description>Recent content in Iptables on LeonHwang&#39;s Blogs</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <lastBuildDate>Sun, 31 Mar 2024 21:05:00 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/iptables/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: iptables-trace</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-50---iptables-trace/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-50-iptables-trace/</link>
       <pubDate>Sun, 31 Mar 2024 21:05:00 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-50---iptables-trace/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-50-iptables-trace/</guid>
       <description>填坑 eBPF Talk: skbtracer-iptables 中的 One more thing. 源代码：GitHub iptables-trace 前置知识： eBPF Talk: skbtracer-iptables eBPF Talk: 在内核模块里运行 bpf 程序 kprobes in kernel module 因为 eBPF 不支持修改 skb-&amp;gt;nf_trace 字段和 struct pt_regs（出于安</description>
     </item>
     <item>
       <title>eBPF Talk: skbtracer-iptables</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-45---skbtracer-iptables/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-45-skbtracer-iptables/</link>
       <pubDate>Fri, 29 Mar 2024 23:46:26 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-45---skbtracer-iptables/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-45-skbtracer-iptables/</guid>
       <description>可还曾记得 skbtracer 内核网络包跟踪工具？ skbtracer: Linux 内核网络包路径追踪利器，Go 语言版本 这是我刚学习 eBPF 不久就开发的工具，不过更多时候是向 skbtracer 和 pwru 这两个网络包跟</description>
     </item>
     <item>
       <title>eBPF Talk: 低性能 eBPF ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-26---iptables-in-bpf/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-26-iptables-in-bpf/</link>
       <pubDate>Sun, 21 May 2023 16:24:22 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-26---iptables-in-bpf/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-26-iptables-in-bpf/</guid>
       <description>eBPF Talk: 再论高性能 eBPF ACL 中的 ACL 规则匹配算法比较复杂，晦涩难懂；相对于 iptables 而言，该实现就比较难维护了。这就是为了性能而牺牲了可维护性。 所以，有没有类似</description>
     </item>
     <item>

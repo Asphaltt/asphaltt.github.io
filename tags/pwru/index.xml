@@ -4,15 +4,15 @@
     <title>Pwru on LeonHwang&#39;s Blogs</title>
     <link>https://le0nhwan9.github.io/tags/pwru/</link>
     <description>Recent content in Pwru on LeonHwang&#39;s Blogs</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <lastBuildDate>Sun, 31 Mar 2024 21:16:34 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/pwru/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: pwru 自己挖坑自己填</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-52---eat-dog-food-of-pwru/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-52-eat-dog-food-of-pwru/</link>
       <pubDate>Sun, 31 Mar 2024 21:16:34 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-52---eat-dog-food-of-pwru/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-52-eat-dog-food-of-pwru/</guid>
       <description>当遇上 cilium/pwru 时，我便放弃维护自己的 skbtracer 了。 挖坑 之前，学习了 eBPF Talk: 全局变量实战指南，就打算在开源项目 GitHub cilium/pwru 上一展身手： PR bpf: make config as a constant 2023 年 2 月 4 日提了 PR</description>
     </item>
   </channel>

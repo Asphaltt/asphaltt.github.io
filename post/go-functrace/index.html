@@ -25,7 +25,7 @@
 
 
 
-<meta name="generator" content="Hugo 0.124.1 with theme even" />
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
 
 
 <link rel="canonical" href="https://le0nhwan9.github.io/post/go-functrace/" />
@@ -47,11 +47,13 @@
 <meta property="og:url" content="https://le0nhwan9.github.io/post/go-functrace/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2021-12-15T21:07:44+08:00" />
 <meta property="article:modified_time" content="2021-12-15T21:07:44+08:00" />
-<meta itemprop="name" content="使用 functrace 排查 Go 函数卡顿问题">
-<meta itemprop="description" content="在验证 使用 Go 对接 iptables NFQUEUE 的例子 所使用的 go-nfqueue 第三方库 go-nfnetlink 的性能的时候，发现每秒只能处理 4 个网络包，遂使用 functrace 排查了起来。以下记录了排查过程。 排查过程 根据"><meta itemprop="datePublished" content="2021-12-15T21:07:44+08:00" />
-<meta itemprop="dateModified" content="2021-12-15T21:07:44+08:00" />
-<meta itemprop="wordCount" content="1068">
-<meta itemprop="keywords" content="Go," /><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="使用 functrace 排查 Go 函数卡顿问题"/>
+
+  <meta itemprop="name" content="使用 functrace 排查 Go 函数卡顿问题">
+  <meta itemprop="description" content="在验证 使用 Go 对接 iptables NFQUEUE 的例子 所使用的 go-nfqueue 第三方库 go-nfnetlink 的性能的时候，发现每秒只能处理 4 个网络包，遂使用 functrace 排查了起来。以下记录了排查过程。 排查过程 根据">
+  <meta itemprop="datePublished" content="2021-12-15T21:07:44+08:00">
+  <meta itemprop="dateModified" content="2021-12-15T21:07:44+08:00">
+  <meta itemprop="wordCount" content="1068">
+  <meta itemprop="keywords" content="Go"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="使用 functrace 排查 Go 函数卡顿问题"/>
 <meta name="twitter:description" content="在验证 使用 Go 对接 iptables NFQUEUE 的例子 所使用的 go-nfqueue 第三方库 go-nfnetlink 的性能的时候，发现每秒只能处理 4 个网络包，遂使用 functrace 排查了起来。以下记录了排查过程。 排查过程 根据"/>
 
 

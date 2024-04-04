@@ -4,22 +4,22 @@
     <title>Bpf Unittest on LeonHwang&#39;s Blogs</title>
     <link>https://le0nhwan9.github.io/tags/bpf-unittest/</link>
     <description>Recent content in Bpf Unittest on LeonHwang&#39;s Blogs</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <lastBuildDate>Wed, 03 Apr 2024 22:48:15 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/bpf-unittest/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: eBPF 程序模块化与单测构想</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-66---an-idea-about-bpf-prog-modules-and-their-unittests/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/</link>
       <pubDate>Wed, 03 Apr 2024 22:48:15 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-66---an-idea-about-bpf-prog-modules-and-their-unittests/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/</guid>
       <description>我们来复习一下以下两篇文章： eBPF Talk: freplace on x86【汇编慎入】 eBPF Talk: 给 XDP 程序写 unittest 一个构想：使用 replace 实现 eBPF 程序的模块化，使用 BPF_PROG_TEST_RUN 对 eBPF 程序模块进行单测。 eBPF 程序</description>
     </item>
     <item>
       <title>eBPF Talk: 给 XDP 程序写 unittest</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-65---write-unittest-for-xdp/</link>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-65-write-unittest-for-xdp/</link>
       <pubDate>Wed, 03 Apr 2024 22:46:00 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-65---write-unittest-for-xdp/</guid>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-65-write-unittest-for-xdp/</guid>
       <description>我们都知道写 unittest 是非常必要的，但是在 eBPF 程序里，该如何给 XDP 程序写 unittest 呢？ bpf: introduce BPF_PROG_TEST_RUN command since 4.12 kernel 在 4.12 内核中，引入了 BPF_PROG_TEST_RUN 命令，可以用来给 XDP 和 tc-bpf 等 eBPF 程序写 unit</description>
     </item>
   </channel>

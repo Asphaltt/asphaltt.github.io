@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: iptables-trace - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="Leon Hwang" /><meta name="description" content="填坑 eBPF Talk: skbtracer-iptables 中的 One more thing. 源代码：GitHub iptables-trace 前置知识： eBPF Talk: skbtracer-iptables eBPF Talk: 在内核模块里运行 bpf 程序 kprobes in kernel module 因为 eBPF 不支持修改 skb-&amp;gt;nf_trace 字段和 struct pt_regs（出于安" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-50-iptables-trace/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: iptables-trace" />
+<meta property="og:description" content="填坑 eBPF Talk: skbtracer-iptables 中的 One more thing. 源代码：GitHub iptables-trace 前置知识： eBPF Talk: skbtracer-iptables eBPF Talk: 在内核模块里运行 bpf 程序 kprobes in kernel module 因为 eBPF 不支持修改 skb-&gt;nf_trace 字段和 struct pt_regs（出于安" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-50-iptables-trace/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-03-31T21:05:00+08:00" />
+<meta property="article:modified_time" content="2024-03-31T21:05:00+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: iptables-trace">
+  <meta itemprop="description" content="填坑 eBPF Talk: skbtracer-iptables 中的 One more thing. 源代码：GitHub iptables-trace 前置知识： eBPF Talk: skbtracer-iptables eBPF Talk: 在内核模块里运行 bpf 程序 kprobes in kernel module 因为 eBPF 不支持修改 skb-&gt;nf_trace 字段和 struct pt_regs（出于安">
+  <meta itemprop="datePublished" content="2024-03-31T21:05:00+08:00">
+  <meta itemprop="dateModified" content="2024-03-31T21:05:00+08:00">
+  <meta itemprop="wordCount" content="1114">
+  <meta itemprop="keywords" content="EBPF,Iptables,Iptables-Trace"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: iptables-trace"/>
+<meta name="twitter:description" content="填坑 eBPF Talk: skbtracer-iptables 中的 One more thing. 源代码：GitHub iptables-trace 前置知识： eBPF Talk: skbtracer-iptables eBPF Talk: 在内核模块里运行 bpf 程序 kprobes in kernel module 因为 eBPF 不支持修改 skb-&gt;nf_trace 字段和 struct pt_regs（出于安"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: iptables-trace</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-03-31 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1114 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#kprobes-in-kernel-module">kprobes in kernel module</a></li>
+        <li><a href="#go-and-bpf-prog">Go and bpf prog</a></li>
+        <li><a href="#效果">效果</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>填坑 <a href="/post/ebpf-talk-45-skbtracer-iptables/">eBPF Talk: skbtracer-iptables</a> 中的 One more thing.</p>
+<blockquote>
+<p>源代码：<a href="https://github.com/Asphaltt/iptables-trace">GitHub iptables-trace</a></p>
+</blockquote>
+<p>前置知识：</p>
+<ul>
+<li><a href="/post/ebpf-talk-45-skbtracer-iptables/">eBPF Talk: skbtracer-iptables</a></li>
+<li><a href="/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/">eBPF Talk: 在内核模块里运行 bpf 程序</a></li>
+</ul>
+<h2 id="kprobes-in-kernel-module">kprobes in kernel module</h2>
+<p>因为 eBPF 不支持修改 <code>skb-&gt;nf_trace</code> 字段和 <code>struct pt_regs</code>（出于安全考虑），所以就在内核模块里修改它们。</p>
+<ol>
+<li>先运行 <code>ipt_do_table</code>/<code>ip6t_do_table</code> 上的 <code>kprobe</code> bpf prog。</li>
+<li><code>skb-&gt;nf_trace = 1;</code>，后面就会运行 <code>nf_log_trace()</code>。</li>
+<li>运行 <code>nf_log_trace</code> 上的 <code>kprobe</code> bpf prog。</li>
+<li><code>regs-&gt;si = 0;</code> 将第二个参数置 0，劫持 <code>nf_log_trace()</code> 函数，使其跳过 log 处理逻辑。</li>
+<li>运行 <code>ipt_do_table</code>/<code>ip6t_do_table</code> 上的 <code>kretprobe</code> bpf prog。</li>
+</ol>
+<p>处理逻辑并不复杂。</p>
+<p>但需要在 <code>insmod</code> 内核模块的时候：</p>
+<ol>
+<li>获取 <code>kprobe</code>/<code>kretprobe</code> 三个 bpf prog。</li>
+<li>对 <code>ipt_do_table</code>/<code>ip6t_do_table</code>/<code>nf_log_trace</code> 进行 <code>kprobe</code>，在 <code>kprobe</code> 回调函数里 <code>bpf_prog_run()</code> <code>kprobe</code> bpf prog。</li>
+<li>对 <code>ipt_do_table</code>/<code>ip6t_do_table</code> 进行 <code>kretprobe</code>，在 <code>kretprobe</code> 回调函数里 <code>bpf_prog_run()</code> <code>kretprobe</code> bpf prog。</li>
+</ol>
+<p>在 <code>rmmod</code> 时：</p>
+<ol>
+<li>注销 <code>kprobe</code> 和 <code>kretprobe</code>。</li>
+<li>释放 <code>kprobe</code>/<code>kretprobe</code> 三个 bpf prog。</li>
+</ol>
+<p>Emm，在开发的时候，没正确注销 <code>kprobe</code> 和 <code>kretprobe</code>，将我的虚拟机搞崩了 3 次；吐血了都。庆幸有做快照，能快速恢复回来。所以，在开发内核模块前，需要给系统做下快照，以便搞坏了后恢复回来。</p>
+<h2 id="go-and-bpf-prog">Go and bpf prog</h2>
+<p>没错，用户态的代码逻辑复用了 <a href="https://github.com/Asphaltt/skbtracer-iptables">GitHub skbtracer-iptables</a>。</p>
+<p>不同的地方是，将 <code>skbtracer-iptables</code> 进行 <code>ebpf.Kprobe()</code> 的逻辑改为 <code>insmod</code> 了，使用内核模块进行 <code>kprobe</code>。</p>
+<p>将 bpf prog pin 到 <code>/sys/fs/bpf/</code> 后，将 pin 路径传给内核模块；内核模块通过 <code>bpf_prog_get_type_path()</code> 获取 bpf prog。</p>
+<p>这里踩了坑：将 bpf prog 的 FD 传给内核模块是否可以？通过 <code>insmod</code> 的方式是不可以的，因为 <code>exec.Command()</code> 会拉起新的进程；不同进程间不能直接共享 FD。</p>
+<p>如果想要通过 FD 的方式传递 bpf prog，可以考虑 netlink：<a href="/post/netlink-and-go/">Linux 网络: netlink 是 Go 和内核模块之间优秀的通信兵</a>。</p>
+<h2 id="效果">效果</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># git clone https://github.com/Asphaltt/iptables-trace.git</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># cd iptables-trace</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># make</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ./iptables-trace -c 20</span>
+</span></span><span class="line"><span class="cl">TIME       SKB                  NETWORK_NS   PID      CPU    INTERFACE          DEST_MAC           IP_LEN PKT_INFO                                               IPTABLES_INFO
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df402e052e8<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">6888</span>     <span class="m">3</span>                         00:00:00:00:00:00  <span class="m">264</span>    T_ACK,PSH:192.168.1.138:22-&gt;192.168.1.12:53030         <span class="nv">ipttrace</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">in</span><span class="o">=</span> <span class="nv">out</span><span class="o">=</span>enp0s8 <span class="nv">table</span><span class="o">=</span>filter <span class="nv">chain</span><span class="o">=</span>OUTPUT <span class="nv">hook</span><span class="o">=</span><span class="m">3</span> <span class="nv">rulenum</span><span class="o">=</span>1<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df402e052e8<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">6888</span>     <span class="m">3</span>                         00:00:00:00:00:00  <span class="m">264</span>    T_ACK,PSH:192.168.1.138:22-&gt;192.168.1.12:53030         <span class="nv">iptables</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span>filter <span class="nv">hook</span><span class="o">=</span>OUTPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>77.425µs<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df50291d200<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>      enp0s8             08:00:27:39:de:94  <span class="m">52</span>     T_PSH:192.168.1.12:53030-&gt;192.168.1.138:22             <span class="nv">ipttrace</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">in</span><span class="o">=</span>enp0s8 <span class="nv">out</span><span class="o">=</span> <span class="nv">table</span><span class="o">=</span>filter <span class="nv">chain</span><span class="o">=</span>INPUT <span class="nv">hook</span><span class="o">=</span><span class="m">1</span> <span class="nv">rulenum</span><span class="o">=</span>1<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df50291d200<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>      enp0s8             08:00:27:39:de:94  <span class="m">52</span>     T_PSH:192.168.1.12:53030-&gt;192.168.1.138:22             <span class="nv">iptables</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span>filter <span class="nv">hook</span><span class="o">=</span>INPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>36.942µs<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df402e050e8<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>                         87:ab:0d:ea:d5:19  <span class="m">88</span>     T_ACK,PSH:192.168.1.138:22-&gt;192.168.1.12:53030         <span class="nv">ipttrace</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">in</span><span class="o">=</span> <span class="nv">out</span><span class="o">=</span>enp0s8 <span class="nv">table</span><span class="o">=</span>filter <span class="nv">chain</span><span class="o">=</span>OUTPUT <span class="nv">hook</span><span class="o">=</span><span class="m">3</span> <span class="nv">rulenum</span><span class="o">=</span>1<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df402e050e8<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>                         87:ab:0d:ea:d5:19  <span class="m">88</span>     T_ACK,PSH:192.168.1.138:22-&gt;192.168.1.12:53030         <span class="nv">iptables</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span>filter <span class="nv">hook</span><span class="o">=</span>OUTPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>40.266µs<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df402e04ce8<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">6888</span>     <span class="m">3</span>                         00:00:00:00:00:00  <span class="m">328</span>    T_ACK,PSH:192.168.1.138:22-&gt;192.168.1.12:53030         <span class="nv">ipttrace</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">in</span><span class="o">=</span> <span class="nv">out</span><span class="o">=</span>enp0s8 <span class="nv">table</span><span class="o">=</span>filter <span class="nv">chain</span><span class="o">=</span>OUTPUT <span class="nv">hook</span><span class="o">=</span><span class="m">3</span> <span class="nv">rulenum</span><span class="o">=</span>1<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df402e04ce8<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">6888</span>     <span class="m">3</span>                         00:00:00:00:00:00  <span class="m">328</span>    T_ACK,PSH:192.168.1.138:22-&gt;192.168.1.12:53030         <span class="nv">iptables</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span>filter <span class="nv">hook</span><span class="o">=</span>OUTPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>84.42µs<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df50291db00<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>      enp0s8             08:00:27:39:de:94  <span class="m">52</span>     T_PSH:192.168.1.12:53030-&gt;192.168.1.138:22             <span class="nv">ipttrace</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">in</span><span class="o">=</span>enp0s8 <span class="nv">out</span><span class="o">=</span> <span class="nv">table</span><span class="o">=</span>filter <span class="nv">chain</span><span class="o">=</span>INPUT <span class="nv">hook</span><span class="o">=</span><span class="m">1</span> <span class="nv">rulenum</span><span class="o">=</span>1<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df50291db00<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>      enp0s8             08:00:27:39:de:94  <span class="m">52</span>     T_PSH:192.168.1.12:53030-&gt;192.168.1.138:22             <span class="nv">iptables</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span>filter <span class="nv">hook</span><span class="o">=</span>INPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>38.611µs<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df50291d000<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>      enp0s8             08:00:27:39:de:94  <span class="m">52</span>     T_PSH:192.168.1.12:53030-&gt;192.168.1.138:22             <span class="nv">ipttrace</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">in</span><span class="o">=</span>enp0s8 <span class="nv">out</span><span class="o">=</span> <span class="nv">table</span><span class="o">=</span>filter <span class="nv">chain</span><span class="o">=</span>INPUT <span class="nv">hook</span><span class="o">=</span><span class="m">1</span> <span class="nv">rulenum</span><span class="o">=</span>1<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df50291d000<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>      enp0s8             08:00:27:39:de:94  <span class="m">52</span>     T_PSH:192.168.1.12:53030-&gt;192.168.1.138:22             <span class="nv">iptables</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span>filter <span class="nv">hook</span><span class="o">=</span>INPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>40.887µs<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df50291d900<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>      enp0s8             08:00:27:39:de:94  <span class="m">52</span>     T_PSH:192.168.1.12:53030-&gt;192.168.1.138:22             <span class="nv">ipttrace</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">in</span><span class="o">=</span>enp0s8 <span class="nv">out</span><span class="o">=</span> <span class="nv">table</span><span class="o">=</span>filter <span class="nv">chain</span><span class="o">=</span>INPUT <span class="nv">hook</span><span class="o">=</span><span class="m">1</span> <span class="nv">rulenum</span><span class="o">=</span>1<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df50291d900<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>      enp0s8             08:00:27:39:de:94  <span class="m">52</span>     T_PSH:192.168.1.12:53030-&gt;192.168.1.138:22             <span class="nv">iptables</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span>filter <span class="nv">hook</span><span class="o">=</span>INPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>48.685µs<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df402e048e8<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">6888</span>     <span class="m">3</span>                         00:00:00:00:00:00  <span class="m">328</span>    T_ACK,PSH:192.168.1.138:22-&gt;192.168.1.12:53030         <span class="nv">ipttrace</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">in</span><span class="o">=</span> <span class="nv">out</span><span class="o">=</span>enp0s8 <span class="nv">table</span><span class="o">=</span>filter <span class="nv">chain</span><span class="o">=</span>OUTPUT <span class="nv">hook</span><span class="o">=</span><span class="m">3</span> <span class="nv">rulenum</span><span class="o">=</span>1<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df402e048e8<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">6888</span>     <span class="m">3</span>                         00:00:00:00:00:00  <span class="m">328</span>    T_ACK,PSH:192.168.1.138:22-&gt;192.168.1.12:53030         <span class="nv">iptables</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span>filter <span class="nv">hook</span><span class="o">=</span>OUTPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>126.368µs<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df50291df00<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>      enp0s8             08:00:27:39:de:94  <span class="m">52</span>     T_PSH:192.168.1.12:53030-&gt;192.168.1.138:22             <span class="nv">ipttrace</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">in</span><span class="o">=</span>enp0s8 <span class="nv">out</span><span class="o">=</span> <span class="nv">table</span><span class="o">=</span>filter <span class="nv">chain</span><span class="o">=</span>INPUT <span class="nv">hook</span><span class="o">=</span><span class="m">1</span> <span class="nv">rulenum</span><span class="o">=</span>1<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df50291df00<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">8432</span>     <span class="m">1</span>      enp0s8             08:00:27:39:de:94  <span class="m">52</span>     T_PSH:192.168.1.12:53030-&gt;192.168.1.138:22             <span class="nv">iptables</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span>filter <span class="nv">hook</span><span class="o">=</span>INPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>38.087µs<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df402e050e8<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">6888</span>     <span class="m">3</span>                         87:ab:0d:ea:d5:19  <span class="m">1324</span>   T_ACK,PSH:192.168.1.138:22-&gt;192.168.1.12:53030         <span class="nv">ipttrace</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">in</span><span class="o">=</span> <span class="nv">out</span><span class="o">=</span>enp0s8 <span class="nv">table</span><span class="o">=</span>filter <span class="nv">chain</span><span class="o">=</span>OUTPUT <span class="nv">hook</span><span class="o">=</span><span class="m">3</span> <span class="nv">rulenum</span><span class="o">=</span>1<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>04:53:15<span class="o">]</span> <span class="o">[</span>0xffff8df402e050e8<span class="o">]</span> <span class="o">[</span>4026531840<span class="o">]</span> <span class="m">6888</span>     <span class="m">3</span>                         87:ab:0d:ea:d5:19  <span class="m">1324</span>   T_ACK,PSH:192.168.1.138:22-&gt;192.168.1.12:53030         <span class="nv">iptables</span><span class="o">=[</span><span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span>filter <span class="nv">hook</span><span class="o">=</span>OUTPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>40.68µs<span class="o">]</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>ipttrace</code> 里的 <code>rulenum</code> 对应 <code>iptables -nvL --line-numbers</code> 里的规则编号。</p>
+<h2 id="总结">总结</h2>
+<p>内核模块会搞崩系统，还是 eBPF 安全。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content">Leon Hwang</span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-03-31
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/iptables/">iptables</a>
+      <a href="/%20tags/iptables-trace/">iptables-trace</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-51-bpf-fd-leak/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 实战经验之 bpf FD 泄漏分析</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/">
+        <span class="next-text nav-default">eBPF Talk: 在内核模块里运行 bpf 程序</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
