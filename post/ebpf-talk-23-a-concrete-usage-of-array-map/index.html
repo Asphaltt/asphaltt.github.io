@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="Leon Hwang" /><meta name="description" content="创建 bpf map 时，出现了如下错误： 1 failed to load bpf: failed to create map: invalid argument 看下需要创建的 bpf map： 1 2 3 4 5 6 struct { __uint(type, BPF_MAP_TYPE_ARRAY); __type(key, __u8); __type(value, bitmap); __uint(max_entries, PROTO_MAX_ENTRIES); } acl_protocol SEC(&amp;#34;.maps&amp;#34;); 想着，需要处理的 protocol 也就 TCP" /><meta name="keywords"
+  content="" /><meta name="description" content="创建 bpf map 时，出现了如下错误： 1 failed to load bpf: failed to create map: invalid argument 看下需要创建的 bpf map： 1 2 3 4 5 6 struct { __uint(type, BPF_MAP_TYPE_ARRAY); __type(key, __u8); __type(value, bitmap); __uint(max_entries, PROTO_MAX_ENTRIES); } acl_protocol SEC(&amp;#34;.maps&amp;#34;); 想着，需要处理的 protocol 也就 TCP" /><meta name="keywords"
   content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -318,7 +318,7 @@ key 类型 <code>__u8</code>；因为每个 key 只需要占用 1 个字节。</
   <div class="post-copyright">
   <p class="copyright-item">
     <span class="item-title">文章作者</span>
-    <span class="item-content">Leon Hwang</span>
+    <span class="item-content"></span>
   </p>
   <p class="copyright-item">
     <span class="item-title">上次更新</span>
@@ -342,6 +342,12 @@ key 类型 <code>__u8</code>；因为每个 key 只需要占用 1 个字节。</
             
         </label>
     </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
 </div><footer class="post-footer">
     <div class="post-tags">
       <a href="/%20tags/ebpf/">eBPF</a>
@@ -405,7 +411,7 @@ key 类型 <code>__u8</code>；因为每个 key 只需要占用 1 个字节。</
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span></span>
   </span>
 </div>
 

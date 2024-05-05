@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="Leon Hwang" /><meta name="description" content="Run eBPF with Go, run eBPF in kernel space" /><meta name="keywords"
+  content="" /><meta name="description" content="Run eBPF with Go, run eBPF in kernel space" /><meta name="keywords"
   content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
-  <meta itemprop="dateModified" content="2024-04-04T22:38:55+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-04-05T22:45:28+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -143,6 +143,30 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-86-tracepoint-__data_loc/">eBPF Talk: tracepoint __data_loc</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-05 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 529 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      书接上回：eBPF Talk: trace tracepoint 程序，本文将介绍在 bpf 里如何处理 tracepoint 中 __data_loc 描述的字段。 关于 tracepoint __data_loc 的资料超级少，网络上能找到的资料如下： tracepoint arguments are missing __data_loc char strings tracepoint: Support __data_loc fields
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-86-tracepoint-__data_loc/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-85-trace-tracepoint-program/">eBPF Talk: trace tracepoint 程序</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2024-04-04 </span>
@@ -150,7 +174,7 @@
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1051 字 </span>
+        <span class="more-meta"> 约 1049 字 </span>
         <span class="more-meta"> 预计阅读 3 分钟 </span>
     </div>
   </header>
@@ -357,30 +381,6 @@
   </div>
 </article>
 
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-75-introduce-bpf_timer/">eBPF Talk: introduce bpf_timer</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-04-03 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 911 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      bpf_timer 是 eBPF 里基于 hrtimer 实现的定时器。 hrtimers - subsystem for high-resolution kernel timers LWN bpf: Introduce BPF timers. bpf: Introduce bpf timers. since 5.15 kernel bpf_timer 最初的需求是在 perf events bpf prog 中做定期采样；后来在 XDP 中可以用来做垃圾回收和健康检
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-75-introduce-bpf_timer/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
     </section>
   
   <nav class="pagination">
@@ -422,7 +422,7 @@
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span></span>
   </span>
 </div>
 

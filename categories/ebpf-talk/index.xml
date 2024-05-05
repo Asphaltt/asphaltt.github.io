@@ -6,8 +6,15 @@
     <description>Recent content in EBPF Talk on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
-    <lastBuildDate>Thu, 04 Apr 2024 22:38:55 +0800</lastBuildDate>
+    <lastBuildDate>Fri, 05 Apr 2024 22:45:28 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/categories/ebpf-talk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: tracepoint __data_loc</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-86-tracepoint-__data_loc/</link>
+      <pubDate>Fri, 05 Apr 2024 22:45:28 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-86-tracepoint-__data_loc/</guid>
+      <description>书接上回：eBPF Talk: trace tracepoint 程序，本文将介绍在 bpf 里如何处理 tracepoint 中 __data_loc 描述的字段。 关于 tracepoint __data_loc 的资料超级少，网络上能找到的资料如下： tracepoint arguments are missing __data_loc char strings tracepoint: Support __data_loc fields</description>
+    </item>
     <item>
       <title>eBPF Talk: trace tracepoint 程序</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-85-trace-tracepoint-program/</link>

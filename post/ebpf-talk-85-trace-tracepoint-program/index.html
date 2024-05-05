@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="Leon Hwang" /><meta name="description" content="此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程" /><meta name="keywords"
+  content="" /><meta name="description" content="此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程" /><meta name="keywords"
   content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -52,7 +52,7 @@
   <meta itemprop="description" content="此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程">
   <meta itemprop="datePublished" content="2024-04-04T22:38:55+08:00">
   <meta itemprop="dateModified" content="2024-04-04T22:38:55+08:00">
-  <meta itemprop="wordCount" content="1051">
+  <meta itemprop="wordCount" content="1049">
   <meta itemprop="keywords" content="EBPF,Tracepoint,Fentry,Fexit"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: trace tracepoint 程序"/>
 <meta name="twitter:description" content="此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程"/>
 
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 1051 字 </span>
+      <span class="more-meta"> 约 1049 字 </span>
       <span class="more-meta"> 预计阅读 3 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -467,14 +467,14 @@
 </div>
 </div><p>本应是 <code>const char *msg</code>，但 <code>tracepoint</code> 里使用的是 <code>__data_loc char[] msg</code>；带有 <code>__data_loc</code> annotation，就不等同于 <code>char *msg</code> 了。</p>
 <p>所以，遇到 <code>__data_loc</code> 时，bpf 代码里为什么就要通过 <code>(void *)(__u64) ((void *) nl_ctx + (__u16) msg)</code> 来获取 <code>msg</code> 的值呢？</p>
-<p>敬请期待下一篇文章：<em>eBPF Talk: tracepoint __data_loc</em>。</p>
+<p>请看下一篇文章：<a href="/post/ebpf-talk-86-tracepoint-__data_loc/">eBPF Talk: tracepoint __data_loc</a>。</p>
 
   </div>
 
   <div class="post-copyright">
   <p class="copyright-item">
     <span class="item-title">文章作者</span>
-    <span class="item-content">Leon Hwang</span>
+    <span class="item-content"></span>
   </p>
   <p class="copyright-item">
     <span class="item-title">上次更新</span>
@@ -498,6 +498,12 @@
             
         </label>
     </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
 </div><footer class="post-footer">
     <div class="post-tags">
       <a href="/%20tags/ebpf/">eBPF</a>
@@ -506,7 +512,11 @@
       <a href="/%20tags/fexit/">fexit</a>
       </div>
     <nav class="post-nav">
-      
+      <a class="prev" href="/post/ebpf-talk-86-tracepoint-__data_loc/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: tracepoint __data_loc</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
       <a class="next" href="/post/ebpf-talk-84-trace-kprobe-program/">
         <span class="next-text nav-default">eBPF Talk: trace kprobe 程序</span>
         <span class="next-text nav-mobile">下一篇</span>
@@ -559,7 +569,7 @@
   <span class="copyright-year">
     &copy; 
     2021 - 
-    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span>Leon Hwang</span>
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span></span>
   </span>
 </div>
 

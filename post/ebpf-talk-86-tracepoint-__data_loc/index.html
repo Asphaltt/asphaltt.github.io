@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: tracepoint __data_loc - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="书接上回：eBPF Talk: trace tracepoint 程序，本文将介绍在 bpf 里如何处理 tracepoint 中 __data_loc 描述的字段。 关于 tracepoint __data_loc 的资料超级少，网络上能找到的资料如下： tracepoint arguments are missing __data_loc char strings tracepoint: Support __data_loc fields" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-86-tracepoint-__data_loc/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: tracepoint __data_loc" />
+<meta property="og:description" content="书接上回：eBPF Talk: trace tracepoint 程序，本文将介绍在 bpf 里如何处理 tracepoint 中 __data_loc 描述的字段。 关于 tracepoint __data_loc 的资料超级少，网络上能找到的资料如下： tracepoint arguments are missing __data_loc char strings tracepoint: Support __data_loc fields" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-86-tracepoint-__data_loc/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-04-05T22:45:28+08:00" />
+<meta property="article:modified_time" content="2024-04-05T22:45:28+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: tracepoint __data_loc">
+  <meta itemprop="description" content="书接上回：eBPF Talk: trace tracepoint 程序，本文将介绍在 bpf 里如何处理 tracepoint 中 __data_loc 描述的字段。 关于 tracepoint __data_loc 的资料超级少，网络上能找到的资料如下： tracepoint arguments are missing __data_loc char strings tracepoint: Support __data_loc fields">
+  <meta itemprop="datePublished" content="2024-04-05T22:45:28+08:00">
+  <meta itemprop="dateModified" content="2024-04-05T22:45:28+08:00">
+  <meta itemprop="wordCount" content="529">
+  <meta itemprop="keywords" content="EBPF,Tracepoint"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: tracepoint __data_loc"/>
+<meta name="twitter:description" content="书接上回：eBPF Talk: trace tracepoint 程序，本文将介绍在 bpf 里如何处理 tracepoint 中 __data_loc 描述的字段。 关于 tracepoint __data_loc 的资料超级少，网络上能找到的资料如下： tracepoint arguments are missing __data_loc char strings tracepoint: Support __data_loc fields"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: tracepoint __data_loc</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-05 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 529 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#tracepoint-中-string-类型的参数定义"><code>tracepoint</code> 中 string 类型的参数定义</a></li>
+        <li><a href="#__string-类型"><code>__string</code> 类型</a></li>
+        <li><a href="#__get_str-宏"><code>__get_str()</code> 宏</a></li>
+        <li><a href="#tracepoint-bpf-代码里获取-__data_loc-的方法"><code>tracepoint</code> bpf 代码里获取 <code>__data_loc</code> 的方法</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>书接上回：<a href="/post/ebpf-talk-85-trace-tracepoint-program/">eBPF Talk: trace tracepoint 程序</a>，本文将介绍在 bpf 里如何处理 <code>tracepoint</code> 中 <code>__data_loc</code> 描述的字段。</p>
+<p>关于 <code>tracepoint</code> <code>__data_loc</code> 的资料超级少，网络上能找到的资料如下：</p>
+<ul>
+<li><a href="https://github.com/iovisor/bpftrace/issues/385">tracepoint arguments are missing __data_loc char strings</a></li>
+<li><a href="https://github.com/iovisor/bpftrace/pull/1542">tracepoint: Support __data_loc fields in tracepoints</a></li>
+</ul>
+<p>不过，我深入研究了一下 kernel 里相关的源代码，发现了 <code>__data_loc</code> 的秘密。</p>
+<h2 id="tracepoint-中-string-类型的参数定义"><code>tracepoint</code> 中 string 类型的参数定义</h2>
+<p>P.S. 本文以 <code>netlink:netlink_extack</code> 为例。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/include/trace/events/netlink.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">TRACE_EVENT</span><span class="p">(</span><span class="n">netlink_extack</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">TP_PROTO</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">TP_ARGS</span><span class="p">(</span><span class="n">msg</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">TP_STRUCT__entry</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">__string</span><span class="p">(</span>   <span class="n">msg</span><span class="p">,</span>    <span class="n">msg</span> <span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">),</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">TP_fast_assign</span><span class="p">(</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">__assign_str</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">msg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">),</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">TP_printk</span><span class="p">(</span><span class="s">&#34;msg=%s&#34;</span><span class="p">,</span> <span class="nf">__get_str</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>由上 <code>tracepoint</code> 的定义可知：</p>
+<ol>
+<li><code>tracepoint</code> 的原型包括 <code>const char *msg</code> 参数；</li>
+<li><code>tracepoint</code> 的参数是 <code>msg</code>；</li>
+<li><code>tracepoint</code> 的 entry struct 里有一个 <code>__string</code> 类型的 <code>msg</code> 字段；</li>
+<li><code>tracepoint</code> 使用 &ldquo;msg=%s&rdquo; 进行输出。</li>
+</ol>
+<h2 id="__string-类型"><code>__string</code> 类型</h2>
+<p><code>__string</code> 类型的定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/include/trace/stages/stage1_struct_define.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#undef __dynamic_array
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define __dynamic_array(type, item, len) u32 __data_loc_##item;
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#undef __string
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define __string(item, src) __dynamic_array(char, item, -1)
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中使用了 <code>__data_loc</code> 前缀。</p>
+<h2 id="__get_str-宏"><code>__get_str()</code> 宏</h2>
+<p><code>__get_str()</code> 的定义如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/include/trace/stages/stage3_trace_output.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#undef __get_dynamic_array
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define __get_dynamic_array(field)  \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        ((void *)__entry + (__entry-&gt;__data_loc_##field &amp; 0xffff))
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#undef __get_dynamic_array_len
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define __get_dynamic_array_len(field)  \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        ((__entry-&gt;__data_loc_##field &gt;&gt; 16) &amp; 0xffff)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#undef __get_str
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define __get_str(field) ((char *)__get_dynamic_array(field))
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="tracepoint-bpf-代码里获取-__data_loc-的方法"><code>tracepoint</code> bpf 代码里获取 <code>__data_loc</code> 的方法</h2>
+<p>参考 <code>__get_str()</code> 的定义，<code>tracepoint</code> bpf 代码里获取 <code>__data_loc</code> 的方法如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">netlink_extack_error_ctx</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">unused</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">msg</span><span class="p">;</span> <span class="c1">// __data_loc char[] msg;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tp/netlink/netlink_extack&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">tp__netlink_extack</span><span class="p">(</span><span class="k">struct</span> <span class="n">netlink_extack_error_ctx</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">__u64</span><span class="p">)</span> <span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">ctx</span> <span class="o">+</span> <span class="p">(</span><span class="n">__u64</span><span class="p">)</span> <span class="p">((</span><span class="n">ctx</span><span class="o">-&gt;</span><span class="n">msg</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xFFFF</span><span class="p">));</span>  <span class="c1">// 获取其中的 msg
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__output_msg</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">PROBE_TYPE_DEFAULT</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="小结">小结</h2>
+<ul>
+<li><code>tracepoint</code> 中 string 类型的参数定义：<code>__string(msg, msg)</code>；</li>
+<li>实际上是 <code>__data_loc_msg</code> 字段；</li>
+<li>用 <code>bpftrace -lv</code> 命令查看：<code>__data_loc char[] msg</code>；</li>
+<li><code>tracepoint</code> bpf 代码里获取 <code>__data_loc</code> 的方法：<code>char *msg = (void *)(__u64) ((void *) ctx + (__u64) ((ctx-&gt;msg) &amp; 0xFFFF));</code>。</li>
+</ul>
+<p>一切尽在源代码里，只是源代码并不好看明白。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content"></span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-04-05
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/tracepoint/">tracepoint</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-85-trace-tracepoint-program/">
+        <span class="next-text nav-default">eBPF Talk: trace tracepoint 程序</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span></span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
