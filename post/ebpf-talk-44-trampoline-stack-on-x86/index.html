@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="" /><meta name="description" content="前面学习了 trampoline 的工作原理： eBPF Talk: trampoline on x86【汇编慎入】 eBPF Talk: trampoline on x86【续】【汇编慎入】 继续深入学习 trampoline 底层实现，回答以下 2 个问题： fentry bpf prog 是如何获取" /><meta name="keywords"
+  content="" /><meta name="description" content="本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】" /><meta name="keywords"
   content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -42,19 +42,19 @@
 
 
 <meta property="og:title" content="eBPF Talk: trampoline stack on x86【汇编慎入】" />
-<meta property="og:description" content="前面学习了 trampoline 的工作原理： eBPF Talk: trampoline on x86【汇编慎入】 eBPF Talk: trampoline on x86【续】【汇编慎入】 继续深入学习 trampoline 底层实现，回答以下 2 个问题： fentry bpf prog 是如何获取" />
+<meta property="og:description" content="本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-44-trampoline-stack-on-x86/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2023-05-23T23:02:47+08:00" />
 <meta property="article:modified_time" content="2023-05-23T23:02:47+08:00" />
 
   <meta itemprop="name" content="eBPF Talk: trampoline stack on x86【汇编慎入】">
-  <meta itemprop="description" content="前面学习了 trampoline 的工作原理： eBPF Talk: trampoline on x86【汇编慎入】 eBPF Talk: trampoline on x86【续】【汇编慎入】 继续深入学习 trampoline 底层实现，回答以下 2 个问题： fentry bpf prog 是如何获取">
+  <meta itemprop="description" content="本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】">
   <meta itemprop="datePublished" content="2023-05-23T23:02:47+08:00">
   <meta itemprop="dateModified" content="2023-05-23T23:02:47+08:00">
-  <meta itemprop="wordCount" content="1141">
+  <meta itemprop="wordCount" content="1254">
   <meta itemprop="keywords" content="EBPF,Trampoline,X86"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: trampoline stack on x86【汇编慎入】"/>
-<meta name="twitter:description" content="前面学习了 trampoline 的工作原理： eBPF Talk: trampoline on x86【汇编慎入】 eBPF Talk: trampoline on x86【续】【汇编慎入】 继续深入学习 trampoline 底层实现，回答以下 2 个问题： fentry bpf prog 是如何获取"/>
+<meta name="twitter:description" content="本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】"/>
 
 
 <!--[if lte IE 9]>
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 1141 字 </span>
+      <span class="more-meta"> 约 1254 字 </span>
       <span class="more-meta"> 预计阅读 3 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -179,7 +179,17 @@
   </div>
 </div>
   <div class="post-content">
-    <p>前面学习了 <code>trampoline</code> 的工作原理：</p>
+    <p>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。</p>
+<ul>
+<li><a href="/post/ebpf-talk-39-poke-on-x86/">eBPF Talk: poke on x86【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-40-perilogue-on-x86/">eBPF Talk: perilogue on x86【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-41-freplace-on-x86/">eBPF Talk: freplace on x86【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-42-trampoline-on-x86/">eBPF Talk: trampoline on x86【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-43-trampoline-on-x86/">eBPF Talk: trampoline on x86【续】【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-44-trampoline-stack-on-x86/">eBPF Talk: trampoline stack on x86【汇编慎入】</a></li>
+</ul>
+<hr>
+<p>前面学习了 <code>trampoline</code> 的工作原理：</p>
 <ul>
 <li><a href="/post/ebpf-talk-42-trampoline-on-x86/">eBPF Talk: trampoline on x86【汇编慎入】</a></li>
 <li><a href="/post/ebpf-talk-43-trampoline-on-x86/">eBPF Talk: trampoline on x86【续】【汇编慎入】</a></li>
@@ -230,9 +240,9 @@
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/arch/x86/net/bpf_jit_comp.c
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>
 </span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">arch_prepare_bpf_trampoline</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_tramp_image</span> <span class="o">*</span><span class="n">im</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">image</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">image_end</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">                <span class="k">const</span> <span class="k">struct</span> <span class="n">btf_func_model</span> <span class="o">*</span><span class="n">m</span><span class="p">,</span> <span class="n">u32</span> <span class="n">flags</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">                <span class="k">struct</span> <span class="n">bpf_tramp_links</span> <span class="o">*</span><span class="n">tlinks</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">                <span class="kt">void</span> <span class="o">*</span><span class="n">func_addr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                                <span class="k">const</span> <span class="k">struct</span> <span class="n">btf_func_model</span> <span class="o">*</span><span class="n">m</span><span class="p">,</span> <span class="n">u32</span> <span class="n">flags</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                <span class="k">struct</span> <span class="n">bpf_tramp_links</span> <span class="o">*</span><span class="n">tlinks</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                <span class="kt">void</span> <span class="o">*</span><span class="n">func_addr</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="c1">// ...
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span>
@@ -419,7 +429,7 @@
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fexit/inet_csk_complete_hashdance&#34;</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">inet_csk_complete_hashdance</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">child</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">own_req</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">ret</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">             <span class="k">struct</span> <span class="n">request_sock</span> <span class="o">*</span><span class="n">req</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">own_req</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">ret</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl">        <span class="nf">handle_new_connection</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">ret</span><span class="p">);</span>

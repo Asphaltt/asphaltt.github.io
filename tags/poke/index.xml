@@ -13,7 +13,7 @@
       <link>https://le0nhwan9.github.io/post/ebpf-talk-39-poke-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:22:24 +0800</pubDate>
       <guid>https://le0nhwan9.github.io/post/ebpf-talk-39-poke-on-x86/</guid>
-      <description>小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。 TL;DR 在 x86 架构平台上的指令插桩&amp;amp;补丁的步骤如下： 在需要的地方预</description>
+      <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
   </channel>
 </rss>

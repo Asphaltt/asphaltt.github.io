@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="" /><meta name="description" content="类似 freplace，trampoline 是对 prologue 进行 poke 的另一个应用。 eBPF Talk: freplace on x86【汇编慎入】 TL;DR 类似 freplace，trampoline 是" /><meta name="keywords"
+  content="" /><meta name="description" content="本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】" /><meta name="keywords"
   content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -42,19 +42,19 @@
 
 
 <meta property="og:title" content="eBPF Talk: trampoline on x86【汇编慎入】" />
-<meta property="og:description" content="类似 freplace，trampoline 是对 prologue 进行 poke 的另一个应用。 eBPF Talk: freplace on x86【汇编慎入】 TL;DR 类似 freplace，trampoline 是" />
+<meta property="og:description" content="本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-42-trampoline-on-x86/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2023-05-23T22:45:15+08:00" />
 <meta property="article:modified_time" content="2023-05-23T22:45:15+08:00" />
 
   <meta itemprop="name" content="eBPF Talk: trampoline on x86【汇编慎入】">
-  <meta itemprop="description" content="类似 freplace，trampoline 是对 prologue 进行 poke 的另一个应用。 eBPF Talk: freplace on x86【汇编慎入】 TL;DR 类似 freplace，trampoline 是">
+  <meta itemprop="description" content="本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】">
   <meta itemprop="datePublished" content="2023-05-23T22:45:15+08:00">
   <meta itemprop="dateModified" content="2023-05-23T22:45:15+08:00">
-  <meta itemprop="wordCount" content="1295">
+  <meta itemprop="wordCount" content="1395">
   <meta itemprop="keywords" content="EBPF,Trampoline,X86"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: trampoline on x86【汇编慎入】"/>
-<meta name="twitter:description" content="类似 freplace，trampoline 是对 prologue 进行 poke 的另一个应用。 eBPF Talk: freplace on x86【汇编慎入】 TL;DR 类似 freplace，trampoline 是"/>
+<meta name="twitter:description" content="本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】"/>
 
 
 <!--[if lte IE 9]>
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 1295 字 </span>
+      <span class="more-meta"> 约 1395 字 </span>
       <span class="more-meta"> 预计阅读 3 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -177,10 +177,17 @@
   </div>
 </div>
   <div class="post-content">
-    <p>类似 <code>freplace</code>，<code>trampoline</code> 是对 <code>prologue</code> 进行 <code>poke</code> 的另一个应用。</p>
+    <p>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。</p>
 <ul>
+<li><a href="/post/ebpf-talk-39-poke-on-x86/">eBPF Talk: poke on x86【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-40-perilogue-on-x86/">eBPF Talk: perilogue on x86【汇编慎入】</a></li>
 <li><a href="/post/ebpf-talk-41-freplace-on-x86/">eBPF Talk: freplace on x86【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-42-trampoline-on-x86/">eBPF Talk: trampoline on x86【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-43-trampoline-on-x86/">eBPF Talk: trampoline on x86【续】【汇编慎入】</a></li>
+<li><a href="/post/ebpf-talk-44-trampoline-stack-on-x86/">eBPF Talk: trampoline stack on x86【汇编慎入】</a></li>
 </ul>
+<hr>
+<p>类似 <code>freplace</code>，<code>trampoline</code> 是对 <code>prologue</code> 进行 <code>poke</code> 的另一个应用。</p>
 <p><strong>TL;DR</strong> 类似 <code>freplace</code>，<code>trampoline</code> 是将 prologue 里的第一条 <code>nop</code> 指令替换成 <code>call</code> 指令；<code>call</code> 后可以回去/也可以不回去继续执行原来的函数。</p>
 <hr>
 <p>以前了解到 <code>trampoline</code> 的时候，只知道基于 <code>trampoline</code> 的 <code>fentry/fexit</code> 比 <code>kprobe/kretprobe</code> 好；但却不知为什么好。</p>
@@ -288,9 +295,9 @@
 </span></span></span><span class="line"><span class="cl"><span class="cm"> * ret                             // return to its caller
 </span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
 </span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">arch_prepare_bpf_trampoline</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_tramp_image</span> <span class="o">*</span><span class="n">im</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">image</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">image_end</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">                <span class="k">const</span> <span class="k">struct</span> <span class="n">btf_func_model</span> <span class="o">*</span><span class="n">m</span><span class="p">,</span> <span class="n">u32</span> <span class="n">flags</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">                <span class="k">struct</span> <span class="n">bpf_tramp_links</span> <span class="o">*</span><span class="n">tlinks</span><span class="p">,</span>
-</span></span><span class="line"><span class="cl">                <span class="kt">void</span> <span class="o">*</span><span class="n">func_addr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                                <span class="k">const</span> <span class="k">struct</span> <span class="n">btf_func_model</span> <span class="o">*</span><span class="n">m</span><span class="p">,</span> <span class="n">u32</span> <span class="n">flags</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                <span class="k">struct</span> <span class="n">bpf_tramp_links</span> <span class="o">*</span><span class="n">tlinks</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                <span class="kt">void</span> <span class="o">*</span><span class="n">func_addr</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="c1">// ...
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>

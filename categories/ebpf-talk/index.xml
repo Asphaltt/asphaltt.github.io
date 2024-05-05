@@ -321,42 +321,42 @@
       <link>https://le0nhwan9.github.io/post/ebpf-talk-44-trampoline-stack-on-x86/</link>
       <pubDate>Tue, 23 May 2023 23:02:47 +0800</pubDate>
       <guid>https://le0nhwan9.github.io/post/ebpf-talk-44-trampoline-stack-on-x86/</guid>
-      <description>前面学习了 trampoline 的工作原理： eBPF Talk: trampoline on x86【汇编慎入】 eBPF Talk: trampoline on x86【续】【汇编慎入】 继续深入学习 trampoline 底层实现，回答以下 2 个问题： fentry bpf prog 是如何获取</description>
+      <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
     <item>
       <title>eBPF Talk: trampoline on x86【续】【汇编慎入】</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-43-trampoline-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:55:23 +0800</pubDate>
       <guid>https://le0nhwan9.github.io/post/ebpf-talk-43-trampoline-on-x86/</guid>
-      <description>书接上回，使用 fexit 的时候，为什么在 ret 前增加 add $0x8,%rsp 指令就能跳过执行原来的函数？ eBPF Talk: trampoline on x86【汇编慎入】 call 学习一下几条常用指令： call %N: 相当于 push %eip + mov</description>
+      <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
     <item>
       <title>eBPF Talk: trampoline on x86【汇编慎入】</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-42-trampoline-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:45:15 +0800</pubDate>
       <guid>https://le0nhwan9.github.io/post/ebpf-talk-42-trampoline-on-x86/</guid>
-      <description>类似 freplace，trampoline 是对 prologue 进行 poke 的另一个应用。 eBPF Talk: freplace on x86【汇编慎入】 TL;DR 类似 freplace，trampoline 是</description>
+      <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
     <item>
       <title>eBPF Talk: freplace on x86【汇编慎入】</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-41-freplace-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:31:24 +0800</pubDate>
       <guid>https://le0nhwan9.github.io/post/ebpf-talk-41-freplace-on-x86/</guid>
-      <description>freplace 技术便是对 prologue 进行 poke 的简单应用。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 TL;DR 究竟有多简单呢？就是将 prologue 里的第一条 nop 指令替换成 jmp 指令；</description>
+      <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
     <item>
       <title>eBPF Talk: perilogue on x86【汇编慎入】</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-40-perilogue-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:25:35 +0800</pubDate>
       <guid>https://le0nhwan9.github.io/post/ebpf-talk-40-perilogue-on-x86/</guid>
-      <description>perilogue 是个缝合单词，由 prologue 和 epilogue 缝合组成。 而 prologue 和 epilogue 是 函数调用规约 中的术语。 prologue: 函数整体指令中最开始的几条指令。 epilogue: 函数整体指令中最末尾的几条指令。 perilogue: 函数</description>
+      <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
     <item>
       <title>eBPF Talk: poke on x86【汇编慎入】</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-39-poke-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:22:24 +0800</pubDate>
       <guid>https://le0nhwan9.github.io/post/ebpf-talk-39-poke-on-x86/</guid>
-      <description>小司机们，是时候学习真正的 eBPF 挖掘机技术了：指令插桩，以及指令 live patch。 TL;DR 在 x86 架构平台上的指令插桩&amp;amp;补丁的步骤如下： 在需要的地方预</description>
+      <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
     <item>
       <title>eBPF Talk: 学习经验之确认 kernel version</title>
