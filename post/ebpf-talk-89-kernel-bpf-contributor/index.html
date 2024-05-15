@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 达成内核 bpf 子系统贡献者成就 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="给 XDP 新增了一个 tracepoint；历时一个月，终不负所望。 bpf, xdp: Add tracepoint to xdp attaching failure 年份：2023 年。 需求来源 说来惭愧，需求不来自公司、也不来自我自" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 达成内核 bpf 子系统贡献者成就" />
+<meta property="og:description" content="给 XDP 新增了一个 tracepoint；历时一个月，终不负所望。 bpf, xdp: Add tracepoint to xdp attaching failure 年份：2023 年。 需求来源 说来惭愧，需求不来自公司、也不来自我自" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-05-15T23:20:40+08:00" />
+<meta property="article:modified_time" content="2024-05-15T23:20:40+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 达成内核 bpf 子系统贡献者成就">
+  <meta itemprop="description" content="给 XDP 新增了一个 tracepoint；历时一个月，终不负所望。 bpf, xdp: Add tracepoint to xdp attaching failure 年份：2023 年。 需求来源 说来惭愧，需求不来自公司、也不来自我自">
+  <meta itemprop="datePublished" content="2024-05-15T23:20:40+08:00">
+  <meta itemprop="dateModified" content="2024-05-15T23:20:40+08:00">
+  <meta itemprop="wordCount" content="1209">
+  <meta itemprop="keywords" content="EBPF,XDP,Kernel-Patch"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 达成内核 bpf 子系统贡献者成就"/>
+<meta name="twitter:description" content="给 XDP 新增了一个 tracepoint；历时一个月，终不负所望。 bpf, xdp: Add tracepoint to xdp attaching failure 年份：2023 年。 需求来源 说来惭愧，需求不来自公司、也不来自我自"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 达成内核 bpf 子系统贡献者成就</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-15 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1209 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#需求来源">需求来源</a></li>
+        <li><a href="#提交第一个-patch">提交第一个 patch</a></li>
+        <li><a href="#提交第二个-patch">提交第二个 patch</a></li>
+        <li><a href="#提交第三个-patch">提交第三个 patch</a></li>
+        <li><a href="#提交第四个-patch">提交第四个 patch</a></li>
+        <li><a href="#提交第五个-patch">提交第五个 patch</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>给 XDP 新增了一个 tracepoint；历时一个月，终不负所望。</p>
+<ul>
+<li><a href="https://lore.kernel.org/all/20230801142621.7925-1-hffilwlqm@gmail.com/">bpf, xdp: Add tracepoint to xdp attaching failure</a></li>
+</ul>
+<p>年份：2023 年。</p>
+<h2 id="需求来源">需求来源</h2>
+<p>说来惭愧，需求不来自公司、也不来自我自己，而是来自 Cilium 社区的一个讨论：</p>
+<ul>
+<li><a href="https://cilium.slack.com/archives/C4XCTGYEM/p1688083930088079">invalid argument - MTU size</a></li>
+</ul>
+<p>有人在使用 <em>go-ebpf</em> 库时，遇到了一个问题：当 MTU 设置为 9000 时，调用 <code>AttachXDP()</code> 会返回 <code>invalid argument</code> 错误；但却没有更详细的错误信息。</p>
+<p>最后，在 7 月 3 日，我回复：“我觉得像 bpf verifier 一样报告错误信息会比较好”。</p>
+<p>接着，在 7 月 4 日，我便完成了 POC，将错误信息通过 BPF 系统调用传递给用户空间。</p>
+<h2 id="提交第一个-patch">提交第一个 patch</h2>
+<p>这是第一次提交正式的 patch，有许多社区行为需要注意；幸好有同事的帮助，才没有犯大错。</p>
+<p>在 patch 的基本要求没问题后，厚着脸皮，在 7 月 5 日向 kernel bpf 社区发出了第一个 patch。</p>
+<p>幸好，该主意得到了社区大佬 Daniel Borkmann 的肯定，并指出了我的 patch 中的一些问题：</p>
+<ol>
+<li>破坏了 UAPI。</li>
+<li>使用 <code>bpf_log_once()</code> 封装一下啰嗦的代码。</li>
+</ol>
+<h2 id="提交第二个-patch">提交第二个 patch</h2>
+<p>根据 Daniel 的建议，我修正了 UAPI 的问题，并使用 <code>bpf_log_once()</code> 封装了代码。</p>
+<p>并在 7 月 8 日提交了第二个 patch。</p>
+<p>不过，该 patch 存在不少问题，被社区大佬 Alexei Starovoitov 指出：</p>
+<ol>
+<li>缺失 libbpf 的更新。</li>
+<li>缺失 selftest。</li>
+<li>使用 <code>bpf_vlog_finalize()</code> 会更好。</li>
+<li>考虑一下 Daniel Xu 提出的 tracepoint 的主意。</li>
+</ol>
+<h2 id="提交第三个-patch">提交第三个 patch</h2>
+<p>接下来，当然是接纳社区大佬的建议，改用 tracepoint 的方式，并添加 selftest。</p>
+<p>不过，在实现 selftest 的时候，遇到了困难：如何使用 bpf trace 该 tracepoint？</p>
+<p>因为该 tracepoint 的 <code>ctx</code> 如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">xdp_attach_error_ctx</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">unused</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在 bpf 里，是无法直接通过 <code>ctx-&gt;msg</code> 来获取字符串的。</p>
+<p>请教了社区大佬 Daniel Xu 后，得到具体的解决办法，请看：<a href="/post/ebpf-talk-86-tracepoint-__data_loc/">eBPF Talk: tracepoint __data_loc</a>。</p>
+<p>而后，在完成了基本的 selftest 后，便在 7 月 20 日提交了第三个 patch。</p>
+<p>为什么该 patch 被拒绝呢？因为该 patch 的 selftest 在某些情况下 crashed 了：<a href="https://github.com/kernel-patches/bpf/actions/runs/5672753995/job/15373384795#step:6:8037">kernel-patches/bpf CI</a>。</p>
+<p>其实，我在提交 patch 之前就知道这个问题，但我罔顾问题就直接提交 patch 了，被狠狠地打脸。</p>
+<h2 id="提交第四个-patch">提交第四个 patch</h2>
+<p>只能硬着头皮，修复 selftest 的问题。</p>
+<p>此时，VirtualBox VM 不给力了，我只能使用 QEMU VM 来进行测试。</p>
+<p>但没有学会使用 QEMU 通过 bzImage 来创建 VM，只能直接编译内核了。</p>
+<p>给 QEMU VM 开 6 个 CPU 来编译内核，编译了 1 个小时。</p>
+<p>而后，使用 gdb 调试 selftest 程序，发现是在 perf event callback 里复制字符串时复制多了 4 个字节，导致栈上的变量被破坏了。</p>
+<p>修复了这个问题后，便在 7 月 30 日提交了第四个 patch。</p>
+<h2 id="提交第五个-patch">提交第五个 patch</h2>
+<p>在 8 月 1 日，kernel net 社区大佬 Jakub Kicinski 指出 <code>extack</code> 变量没初始化，而且变量声明的代码行存在风格问题，这些行需要从长到短排列。</p>
+<p>还好，这些问题都很容易修复，便在 8 月 1 日晚上提交了第五个 patch。</p>
+<p>终于，在 8 月 3 日迎来了好消息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl">Hello:
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">This series was applied to bpf/bpf-next.git (master)
+</span></span><span class="line"><span class="cl">by Alexei Starovoitov &lt;ast@kernel.org&gt;:
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="小结">小结</h2>
+<p>这是我第二次向 kernel bpf 社区提交 patch，历时一个月，终于达成了目标。第一次仅是修复了一个单词拼写问题，就略过吧。</p>
+<p>向 kernel 社区提交 patch 时，有不少地方需要注意的：</p>
+<ul>
+<li><a href="https://www.kernel.org/doc/html/next/bpf/bpf_devel_QA.html">HOWTO interact with BPF subsystem</a></li>
+<li><a href="https://www.kernel.org/doc/html/v4.10/process/coding-style.html">Linux kernel coding style</a></li>
+<li><a href="https://www.kernel.org/doc/html/v6.4/process/email-clients.html">Email clients info for Linux</a></li>
+</ul>
+<p>即便如此，最好还是在有经验的同事的 review 下，再将 patch 提交到社区。</p>
+<p>作为新人，厚着脸皮混个脸熟；但也要快速学习社区的行为约定，以免冒犯了社区大佬们。</p>
+<p>祝好！</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content"></span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-05-15
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/xdp/">XDP</a>
+      <a href="/%20tags/kernel-patch/">kernel-patch</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-92-try-trace-tailcall/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 尝试 trace tailcall 程序？！</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-87-introduce-tracepoint/">
+        <span class="next-text nav-default">eBPF Talk: introduce tracepoint</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span></span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

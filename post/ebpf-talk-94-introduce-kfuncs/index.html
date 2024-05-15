@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: introduce kfuncs - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="通过 bpf: Support bpf program calling kernel function 学习 kfuncs 的实现。 不过，此 kfuncs 不是 bpftrace kfunc/kretfunc: Kernel Functions Tracing。bpftrace 的 kfunc 是的底层是 fentry/fexit。 BPF Kernel Functions (kfuncs) 该内核" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-94-introduce-kfuncs/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: introduce kfuncs" />
+<meta property="og:description" content="通过 bpf: Support bpf program calling kernel function 学习 kfuncs 的实现。 不过，此 kfuncs 不是 bpftrace kfunc/kretfunc: Kernel Functions Tracing。bpftrace 的 kfunc 是的底层是 fentry/fexit。 BPF Kernel Functions (kfuncs) 该内核" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-94-introduce-kfuncs/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-05-15T23:29:42+08:00" />
+<meta property="article:modified_time" content="2024-05-15T23:29:42+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: introduce kfuncs">
+  <meta itemprop="description" content="通过 bpf: Support bpf program calling kernel function 学习 kfuncs 的实现。 不过，此 kfuncs 不是 bpftrace kfunc/kretfunc: Kernel Functions Tracing。bpftrace 的 kfunc 是的底层是 fentry/fexit。 BPF Kernel Functions (kfuncs) 该内核">
+  <meta itemprop="datePublished" content="2024-05-15T23:29:42+08:00">
+  <meta itemprop="dateModified" content="2024-05-15T23:29:42+08:00">
+  <meta itemprop="wordCount" content="1594">
+  <meta itemprop="keywords" content="EBPF,Kfunc"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: introduce kfuncs"/>
+<meta name="twitter:description" content="通过 bpf: Support bpf program calling kernel function 学习 kfuncs 的实现。 不过，此 kfuncs 不是 bpftrace kfunc/kretfunc: Kernel Functions Tracing。bpftrace 的 kfunc 是的底层是 fentry/fexit。 BPF Kernel Functions (kfuncs) 该内核"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: introduce kfuncs</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-15 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1594 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#demo-示例">demo 示例</a></li>
+        <li><a href="#编译阶段">编译阶段</a></li>
+        <li><a href="#加载阶段">加载阶段</a></li>
+        <li><a href="#校验阶段">校验阶段</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>通过 <a href="https://lore.kernel.org/bpf/20210325015142.1544736-1-kafai@fb.com/">bpf: Support bpf program calling kernel function</a> 学习 <code>kfuncs</code> 的实现。</p>
+<p>不过，此 <code>kfuncs</code> 不是 <a href="https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md#17-kfunckretfunc-kernel-functions-tracing">bpftrace kfunc/kretfunc: Kernel Functions Tracing</a>。bpftrace 的 <code>kfunc</code> 是的底层是 <code>fentry</code>/<code>fexit</code>。</p>
+<ul>
+<li><a href="https://docs.kernel.org/bpf/kfuncs.html">BPF Kernel Functions (kfuncs)</a></li>
+</ul>
+<p>该内核文档不适合用来学习 <code>kfuncs</code> 的实现，更多地讲解 <code>kfuncs</code> 的规范、方便内核开发者实现自己的 <code>kfuncs</code>。</p>
+<p>不过，从该文档里学习到，只有 <code>__bpf_kfunc</code> 描述的内核函数才是 <code>kfuncs</code>，才能在 bpf 代码里直接调用。所以，当要了解有哪些 <code>kfuncs</code> 时，可以在内核源码里搜索 <code>__bpf_kfunc</code>。</p>
+<h2 id="demo-示例">demo 示例</h2>
+<p>没有 demo，直接看看内核源代码里的 selftests 吧。</p>
+<p>例子：<code>${KERNEL}/tools/testing/selftests/bpf/progs/kfunc_call_test_subprog.c</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// SPDX-License-Identifier: GPL-2.0
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cm">/* Copyright (c) 2021 Facebook */</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#include</span> <span class="cpf">&#34;../bpf_testmod/bpf_testmod_kfunc.h&#34;</span><span class="cp">
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">extern</span> <span class="k">const</span> <span class="kt">int</span> <span class="n">bpf_prog_active</span> <span class="n">__ksym</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">active_res</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">sk_state_res</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">__noinline</span> <span class="nf">f1</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_sock</span> <span class="o">*</span><span class="n">sk</span> <span class="o">=</span> <span class="n">skb</span><span class="o">-&gt;</span><span class="n">sk</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="o">*</span><span class="n">active</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">sk</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">sk</span> <span class="o">=</span> <span class="nf">bpf_sk_fullsock</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">sk</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">active</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="p">)</span><span class="nf">bpf_per_cpu_ptr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">bpf_prog_active</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="nf">bpf_get_smp_processor_id</span><span class="p">());</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">active</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">active_res</span> <span class="o">=</span> <span class="o">*</span><span class="n">active</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">sk_state_res</span> <span class="o">=</span> <span class="nf">bpf_kfunc_call_test3</span><span class="p">((</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="p">)</span><span class="n">sk</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">__sk_common</span><span class="p">.</span><span class="n">skc_state</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">(</span><span class="n">__u32</span><span class="p">)</span><span class="nf">bpf_kfunc_call_test1</span><span class="p">((</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="p">)</span><span class="n">sk</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tc&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">kfunc_call_test1</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">f1</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">char</span> <span class="n">_license</span><span class="p">[]</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;license&#34;</span><span class="p">)</span> <span class="o">=</span> <span class="s">&#34;GPL&#34;</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="编译阶段">编译阶段</h2>
+<p>不了解 clang，直接看下 <code>kfunc_call_test_subprog.bpf.o</code> 的反汇编：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Bash" data-lang="Bash"><span class="line"><span class="cl"><span class="c1"># llvm-objdump -S kfunc_call_test_subprog.bpf.o</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">kfunc_call_test_subprog.bpf.o:  file format elf64-bpf
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Disassembly of section .text:
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="m">0000000000000000</span> &lt;f1&gt;:
+</span></span><span class="line"><span class="cl"><span class="p">;</span> <span class="o">{</span>
+</span></span><span class="line"><span class="cl">       0:   b4 <span class="m">07</span> <span class="m">00</span> <span class="m">00</span> ff ff ff ff <span class="nv">w7</span> <span class="o">=</span> -1
+</span></span><span class="line"><span class="cl"><span class="p">;</span>   struct bpf_sock *sk <span class="o">=</span> skb-&gt;sk<span class="p">;</span>
+</span></span><span class="line"><span class="cl">       1:   <span class="m">79</span> <span class="m">11</span> a8 <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r1</span> <span class="o">=</span> *<span class="o">(</span>u64 *<span class="o">)(</span>r1 + 168<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">;</span>   <span class="k">if</span> <span class="o">(</span>!sk<span class="o">)</span>
+</span></span><span class="line"><span class="cl">       2:   <span class="m">15</span> <span class="m">01</span> 1a <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="k">if</span> <span class="nv">r1</span> <span class="o">==</span> <span class="m">0</span> goto +26 &lt;LBB0_5&gt;
+</span></span><span class="line"><span class="cl"><span class="p">;</span>   <span class="nv">sk</span> <span class="o">=</span> bpf_sk_fullsock<span class="o">(</span>sk<span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">       3:   <span class="m">85</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> 5f <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> call <span class="m">95</span>
+</span></span><span class="line"><span class="cl">       4:   bf <span class="m">06</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r6</span> <span class="o">=</span> r0
+</span></span><span class="line"><span class="cl"><span class="p">;</span>   <span class="k">if</span> <span class="o">(</span>!sk<span class="o">)</span>
+</span></span><span class="line"><span class="cl">       5:   <span class="m">15</span> <span class="m">06</span> <span class="m">17</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="k">if</span> <span class="nv">r6</span> <span class="o">==</span> <span class="m">0</span> goto +23 &lt;LBB0_5&gt;
+</span></span><span class="line"><span class="cl"><span class="p">;</span>                   bpf_get_smp_processor_id<span class="o">())</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">       6:   <span class="m">85</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">08</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> call <span class="m">8</span>
+</span></span><span class="line"><span class="cl"><span class="p">;</span>   <span class="nv">active</span> <span class="o">=</span> <span class="o">(</span>int *<span class="o">)</span>bpf_per_cpu_ptr<span class="o">(</span><span class="p">&amp;</span>bpf_prog_active,
+</span></span><span class="line"><span class="cl">       7:   <span class="m">18</span> <span class="m">01</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r1</span> <span class="o">=</span> <span class="m">0</span> ll
+</span></span><span class="line"><span class="cl">       9:   bc <span class="m">02</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">w2</span> <span class="o">=</span> w0
+</span></span><span class="line"><span class="cl">      10:   <span class="m">85</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">99</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> call <span class="m">153</span>
+</span></span><span class="line"><span class="cl"><span class="p">;</span>   <span class="k">if</span> <span class="o">(</span>active<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      11:   <span class="m">15</span> <span class="m">00</span> <span class="m">04</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="k">if</span> <span class="nv">r0</span> <span class="o">==</span> <span class="m">0</span> goto +4 &lt;LBB0_4&gt;
+</span></span><span class="line"><span class="cl"><span class="p">;</span>       <span class="nv">active_res</span> <span class="o">=</span> *active<span class="p">;</span>
+</span></span><span class="line"><span class="cl">      12:   <span class="m">61</span> <span class="m">01</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r1</span> <span class="o">=</span> *<span class="o">(</span>u32 *<span class="o">)(</span>r0 + 0<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      13:   <span class="m">18</span> <span class="m">02</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r2</span> <span class="o">=</span> <span class="m">0</span> ll
+</span></span><span class="line"><span class="cl">      15:   <span class="m">63</span> <span class="m">12</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> *<span class="o">(</span>u32 *<span class="o">)(</span>r2 + 0<span class="o">)</span> <span class="o">=</span> r1
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="m">0000000000000080</span> &lt;LBB0_4&gt;:
+</span></span><span class="line"><span class="cl"><span class="p">;</span>   <span class="nv">sk_state_res</span> <span class="o">=</span> bpf_kfunc_call_test3<span class="o">((</span>struct sock *<span class="o">)</span>sk<span class="o">)</span>-&gt;__sk_common.skc_state<span class="p">;</span>
+</span></span><span class="line"><span class="cl">      16:   bf <span class="m">61</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r1</span> <span class="o">=</span> r6
+</span></span><span class="line"><span class="cl">      17:   <span class="m">85</span> <span class="m">10</span> <span class="m">00</span> <span class="m">00</span> ff ff ff ff call -1
+</span></span><span class="line"><span class="cl">      18:   <span class="m">71</span> <span class="m">01</span> <span class="m">12</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r1</span> <span class="o">=</span> *<span class="o">(</span>u8 *<span class="o">)(</span>r0 + 18<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      19:   <span class="m">18</span> <span class="m">02</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r2</span> <span class="o">=</span> <span class="m">0</span> ll
+</span></span><span class="line"><span class="cl">      21:   <span class="m">63</span> <span class="m">12</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> *<span class="o">(</span>u32 *<span class="o">)(</span>r2 + 0<span class="o">)</span> <span class="o">=</span> r1
+</span></span><span class="line"><span class="cl"><span class="p">;</span>   <span class="k">return</span> <span class="o">(</span>__u32<span class="o">)</span>bpf_kfunc_call_test1<span class="o">((</span>struct sock *<span class="o">)</span>sk, 1, 2, 3, 4<span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">      22:   bf <span class="m">61</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r1</span> <span class="o">=</span> r6
+</span></span><span class="line"><span class="cl">      23:   b4 <span class="m">02</span> <span class="m">00</span> <span class="m">00</span> <span class="m">01</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">w2</span> <span class="o">=</span> <span class="m">1</span>
+</span></span><span class="line"><span class="cl">      24:   b7 <span class="m">03</span> <span class="m">00</span> <span class="m">00</span> <span class="m">02</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r3</span> <span class="o">=</span> <span class="m">2</span>
+</span></span><span class="line"><span class="cl">      25:   b4 <span class="m">04</span> <span class="m">00</span> <span class="m">00</span> <span class="m">03</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">w4</span> <span class="o">=</span> <span class="m">3</span>
+</span></span><span class="line"><span class="cl">      26:   b7 <span class="m">05</span> <span class="m">00</span> <span class="m">00</span> <span class="m">04</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r5</span> <span class="o">=</span> <span class="m">4</span>
+</span></span><span class="line"><span class="cl">      27:   <span class="m">85</span> <span class="m">10</span> <span class="m">00</span> <span class="m">00</span> ff ff ff ff call -1
+</span></span><span class="line"><span class="cl">      28:   bf <span class="m">07</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">r7</span> <span class="o">=</span> r0
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">00000000000000e8 &lt;LBB0_5&gt;:
+</span></span><span class="line"><span class="cl"><span class="p">;</span> <span class="o">}</span>
+</span></span><span class="line"><span class="cl">      29:   bc <span class="m">70</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nv">w0</span> <span class="o">=</span> w7
+</span></span><span class="line"><span class="cl">      30:   <span class="m">95</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nb">exit</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">Disassembly of section tc:
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="m">0000000000000000</span> &lt;kfunc_call_test1&gt;:
+</span></span><span class="line"><span class="cl"><span class="p">;</span>   <span class="k">return</span> f1<span class="o">(</span>skb<span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">       0:   <span class="m">85</span> <span class="m">10</span> <span class="m">00</span> <span class="m">00</span> ff ff ff ff call -1
+</span></span><span class="line"><span class="cl">       1:   <span class="m">95</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span> <span class="nb">exit</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到，两个 <code>kfuncs</code> 对应的汇编都是 <code>85 10 00 00 ff ff ff ff call -1</code>。</p>
+<h2 id="加载阶段">加载阶段</h2>
+<p>在加载阶段，就会将汇编指令跟具体的内核函数的 BTF ID 关联起来。</p>
+<p>以下分析 go-ebpf 库里的加载处理。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="nf">LoadCollectionSpecFromReader</span><span class="p">()</span>                  <span class="c1">// ${ebpf}/elf_reader.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">|</span><span class="o">--</span><span class="p">&gt;</span><span class="nf">LoadSpecAndExtInfosFromReader</span><span class="p">()</span>             <span class="c1">// ${ebpf}/btf/btf.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">|</span>   <span class="p">|</span><span class="o">--</span><span class="p">&gt;</span><span class="nf">loadExtInfosFromELF</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>       <span class="p">|</span><span class="o">--</span><span class="p">&gt;</span><span class="nf">loadSpecFromELF</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>           <span class="p">|</span><span class="o">--</span><span class="p">&gt;</span><span class="nf">fixupDatasec</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>                   <span class="nx">_</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">vsi</span><span class="p">.</span><span class="nx">Type</span><span class="p">.(</span><span class="o">*</span><span class="nx">Func</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>                   <span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>                       <span class="c1">// Only Funcs are supported in the .ksyms Datasec.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">|</span>                       <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;data section %s: expected *btf.Func, not %T: %w&#34;</span><span class="p">,</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">vsi</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span> <span class="nx">ErrNotSupported</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>                   <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>               <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span><span class="o">--</span><span class="p">&gt;</span><span class="nf">loadKsymsSection</span><span class="p">()</span> <span class="p">{</span>                        <span class="c1">// ${ebpf}/elf_reader.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">|</span>       <span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">v</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">ds</span><span class="p">.</span><span class="nx">Vars</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>           <span class="c1">// we have already checked the .ksyms Datasec to only contain Func Vars.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">|</span>           <span class="nx">ec</span><span class="p">.</span><span class="nx">kfuncs</span><span class="p">[</span><span class="nx">v</span><span class="p">.</span><span class="nx">Type</span><span class="p">.</span><span class="nf">TypeName</span><span class="p">()]</span> <span class="p">=</span> <span class="nx">v</span><span class="p">.</span><span class="nx">Type</span><span class="p">.(</span><span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Func</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>       <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span>   <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">|</span><span class="o">--</span><span class="p">&gt;</span><span class="nf">loadProgramSections</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="p">|</span><span class="o">--</span><span class="p">&gt;</span><span class="nf">loadFunctions</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="p">|</span><span class="o">--</span><span class="p">&gt;</span><span class="nf">relocateInstruction</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">name</span> <span class="p">=</span> <span class="nx">rel</span><span class="p">.</span><span class="nx">Name</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">kf</span> <span class="o">:=</span> <span class="nx">ec</span><span class="p">.</span><span class="nx">kfuncs</span><span class="p">[</span><span class="nx">name</span><span class="p">]</span>
+</span></span><span class="line"><span class="cl">                <span class="k">switch</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">// If a Call instruction is found and the datasec has a btf.Func with a Name
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="c1">// that matches the symbol name we mark the instruction as a call to a kfunc.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="k">case</span> <span class="nx">kf</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="o">&amp;&amp;</span> <span class="nx">ins</span><span class="p">.</span><span class="nx">OpCode</span><span class="p">.</span><span class="nf">JumpOp</span><span class="p">()</span> <span class="o">==</span> <span class="nx">asm</span><span class="p">.</span><span class="nx">Call</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">                    <span class="nx">ins</span><span class="p">.</span><span class="nx">Metadata</span><span class="p">.</span><span class="nf">Set</span><span class="p">(</span><span class="nx">kfuncMeta</span><span class="p">{},</span> <span class="nx">kf</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                    <span class="nx">ins</span><span class="p">.</span><span class="nx">Src</span> <span class="p">=</span> <span class="nx">asm</span><span class="p">.</span><span class="nx">PseudoKfuncCall</span>
+</span></span><span class="line"><span class="cl">                    <span class="nx">ins</span><span class="p">.</span><span class="nx">Constant</span> <span class="p">=</span> <span class="o">-</span><span class="mi">1</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">                <span class="o">*</span><span class="nx">ins</span> <span class="p">=</span> <span class="nx">ins</span><span class="p">.</span><span class="nf">WithReference</span><span class="p">(</span><span class="nx">name</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">newProgramWithOptions</span><span class="p">()</span>                        <span class="c1">// ${ebpf}/prog.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">|</span><span class="o">--</span><span class="p">&gt;</span><span class="nf">fixupKfuncs</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">kfm</span><span class="p">,</span> <span class="nx">_</span> <span class="o">:=</span> <span class="nx">ins</span><span class="p">.</span><span class="nx">Metadata</span><span class="p">.</span><span class="nf">Get</span><span class="p">(</span><span class="nx">kfuncMeta</span><span class="p">{}).(</span><span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Func</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">target</span> <span class="o">:=</span> <span class="nx">btf</span><span class="p">.</span><span class="nf">Type</span><span class="p">((</span><span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Func</span><span class="p">)(</span><span class="kc">nil</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">spec</span><span class="p">,</span> <span class="nx">module</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nf">findTargetInKernel</span><span class="p">(</span><span class="nx">kernelSpec</span><span class="p">,</span> <span class="nx">kfm</span><span class="p">.</span><span class="nx">Name</span><span class="p">,</span> <span class="o">&amp;</span><span class="nx">target</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">id</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">spec</span><span class="p">.</span><span class="nf">TypeID</span><span class="p">(</span><span class="nx">target</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">ins</span><span class="p">.</span><span class="nx">Constant</span> <span class="p">=</span> <span class="nb">int64</span><span class="p">(</span><span class="nx">id</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>通过上面代码片段的分析，可以看到，最终将汇编指令的 <code>ins.Constant</code> (a.k.a. <code>ins.imm</code> in kernel) 设置为了 <code>kfuncs</code> 的 BTF ID。</p>
+<h2 id="校验阶段">校验阶段</h2>
+<p>接下来，看看在 verifier 里是怎么将 BTF ID 转换为真正的内核函数的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="nf">bpf_check</span><span class="p">()</span>                                     <span class="c1">// ${KERNEL}/kernel/bpf/verifier.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">|--&gt;</span><span class="nf">add_subprog_and_kfunc</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>   <span class="o">|--&gt;</span><span class="nf">add_kfunc_call</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>           <span class="n">func</span> <span class="o">=</span> <span class="nf">btf_type_by_id</span><span class="p">(</span><span class="n">desc_btf</span><span class="p">,</span> <span class="n">func_id</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>           <span class="n">func_name</span> <span class="o">=</span> <span class="nf">btf_name_by_offset</span><span class="p">(</span><span class="n">desc_btf</span><span class="p">,</span> <span class="n">func</span><span class="o">-&gt;</span><span class="n">name_off</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>           <span class="n">addr</span> <span class="o">=</span> <span class="nf">kallsyms_lookup_name</span><span class="p">(</span><span class="n">func_name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>           <span class="n">desc</span><span class="o">-&gt;</span><span class="n">func_id</span> <span class="o">=</span> <span class="n">func_id</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>           <span class="n">desc</span><span class="o">-&gt;</span><span class="n">imm</span> <span class="o">=</span> <span class="nf">BPF_CAST_CALL</span><span class="p">(</span><span class="n">addr</span><span class="p">)</span> <span class="o">-</span> <span class="n">__bpf_call_base</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>       <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">|**&gt;</span><span class="nf">do_check</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>   <span class="o">|--&gt;</span><span class="nf">check_kfunc_call</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="o">|--&gt;</span><span class="nf">do_misc_fixups</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>   <span class="o">|--&gt;</span><span class="nf">fixup_kfunc_call</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>           <span class="n">insn</span><span class="o">-&gt;</span><span class="n">imm</span> <span class="o">=</span> <span class="n">desc</span><span class="o">-&gt;</span><span class="n">imm</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="o">|</span>       <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nf">fixup_call_args</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="nf">jit_subprogs</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|--&gt;</span><span class="nf">bpf_int_jit_compile</span><span class="p">()</span>               <span class="c1">// ${KERNEL}/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="o">|--</span><span class="nf">do_jit</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">case</span> <span class="n">BPF_JMP</span> <span class="o">|</span> <span class="nl">BPF_CALL</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">                        <span class="cm">/* 不再区分 kfuncs 和其它 function call */</span>
+</span></span><span class="line"><span class="cl">                        <span class="n">func</span> <span class="o">=</span> <span class="p">(</span><span class="n">u8</span> <span class="o">*</span><span class="p">)</span> <span class="n">__bpf_call_base</span> <span class="o">+</span> <span class="n">imm32</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                        <span class="nf">emit_call</span><span class="p">(</span><span class="o">&amp;</span><span class="n">prog</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">image</span> <span class="o">+</span> <span class="n">addrs</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">offs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>通过上面代码片段的分析，可以看到，<code>kfuncs</code> 的 <code>ins.imm</code> 从 BTF ID 转为函数地址，最终 <code>kfuncs</code> 转为 <code>call</code> x86 汇编指令。</p>
+<h2 id="小结">小结</h2>
+<p>通过上面的分析，可以看到：</p>
+<ol>
+<li>编译阶段，<code>kfuncs</code> 的信息会被保存在 ELF 文件里的 <code>.ksyms</code> section 里。</li>
+<li>加载阶段，<code>kfuncs</code> 的 BTF ID 会被保存在 <code>ins.Constant</code> 里。</li>
+<li>校验阶段，<code>ins.Constant</code> 会被转换为函数地址，最终 <code>kfuncs</code> 转为 <code>call</code> x86 汇编指令。</li>
+</ol>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content"></span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-05-15
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/kfunc/">kfunc</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-95-kernel-bpf-contribution/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 内核 bpf 子系统贡献之修复 tailcall 无限循环</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-93-tailcall-in-freplace-bug/">
+        <span class="next-text nav-default">eBPF Talk: tailcall in freplace 有 BUG</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span></span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

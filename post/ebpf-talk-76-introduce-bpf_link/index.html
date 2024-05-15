@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: bpf link 简介 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="bpf link 的引入是为了解决 bpf prog attachment 持久化的问题，并由此引入了 bpf link fd。 bpf: Introduce pinnable bpf_link abstraction since kernel 5.7 在引入了 bpf link 之后，常用的 bpf prog attachment 都实现了对应的 bpf link，比如 TRACING," /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://le0nhwan9.github.io/post/ebpf-talk-76-introduce-bpf_link/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: bpf link 简介" />
+<meta property="og:description" content="bpf link 的引入是为了解决 bpf prog attachment 持久化的问题，并由此引入了 bpf link fd。 bpf: Introduce pinnable bpf_link abstraction since kernel 5.7 在引入了 bpf link 之后，常用的 bpf prog attachment 都实现了对应的 bpf link，比如 TRACING," />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://le0nhwan9.github.io/post/ebpf-talk-76-introduce-bpf_link/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-05-12T20:11:06+08:00" />
+<meta property="article:modified_time" content="2024-05-12T20:11:06+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: bpf link 简介">
+  <meta itemprop="description" content="bpf link 的引入是为了解决 bpf prog attachment 持久化的问题，并由此引入了 bpf link fd。 bpf: Introduce pinnable bpf_link abstraction since kernel 5.7 在引入了 bpf link 之后，常用的 bpf prog attachment 都实现了对应的 bpf link，比如 TRACING,">
+  <meta itemprop="datePublished" content="2024-05-12T20:11:06+08:00">
+  <meta itemprop="dateModified" content="2024-05-12T20:11:06+08:00">
+  <meta itemprop="wordCount" content="1249">
+  <meta itemprop="keywords" content="EBPF"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: bpf link 简介"/>
+<meta name="twitter:description" content="bpf link 的引入是为了解决 bpf prog attachment 持久化的问题，并由此引入了 bpf link fd。 bpf: Introduce pinnable bpf_link abstraction since kernel 5.7 在引入了 bpf link 之后，常用的 bpf prog attachment 都实现了对应的 bpf link，比如 TRACING,"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: bpf link 简介</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-12 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1249 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#bpf-link-创建过程">bpf link 创建过程</a></li>
+        <li><a href="#bpf-link-更新过程">bpf link 更新过程</a></li>
+        <li><a href="#bpf-link-卸载过程">bpf link 卸载过程</a></li>
+        <li><a href="#获取-bpf-link-的对象信息">获取 bpf link 的对象信息</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>bpf link 的引入是为了解决 bpf prog attachment 持久化的问题，并由此引入了 bpf link fd。</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/commit/70ed506c3bbcfa846d4636b23051ca79fa4781f7">bpf: Introduce pinnable bpf_link abstraction</a> since kernel 5.7</li>
+</ul>
+<p>在引入了 bpf link 之后，常用的 bpf prog attachment 都实现了对应的 bpf link，比如 TRACING, XDP, CGROUP, PERF_EVENT 等。</p>
+<p>其实，在将 bpf link 引入内核之前，libbpf 便已经引入了 bpf link 的概念。</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/commit/1c2e9efc26f389effc86e9b4d41f85d101f17629">libbpf: introduce concept of bpf_link</a> since kernel 5.3</li>
+</ul>
+<p>本文将基于 kernel 6.9 版本的代码来讲解 bpf link 的实现原理。</p>
+<h2 id="bpf-link-创建过程">bpf link 创建过程</h2>
+<p>以 XDP bpf prog 为例，创建 bpf link 的过程如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">bpf</span><span class="p">)</span>                <span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">|--&gt;</span><span class="nf">__sys_bpf</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="nf">link_create</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|--&gt;</span><span class="nf">bpf_xdp_link_attach</span><span class="p">()</span>   <span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中 <code>bpf_xdp_link_attach()</code> 是 XDP bpf prog 的 attachment 函数，其源代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">bpf_xdp_link_attach</span><span class="p">(</span><span class="k">const</span> <span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">net</span> <span class="o">*</span><span class="n">net</span> <span class="o">=</span> <span class="n">current</span><span class="o">-&gt;</span><span class="n">nsproxy</span><span class="o">-&gt;</span><span class="n">net_ns</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_link_primer</span> <span class="n">link_primer</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">netlink_ext_ack</span> <span class="n">extack</span> <span class="o">=</span> <span class="p">{};</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_xdp_link</span> <span class="o">*</span><span class="n">link</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">err</span><span class="p">,</span> <span class="n">fd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">rtnl_lock</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 通过 ifindex 找到对应的 net_device
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">dev</span> <span class="o">=</span> <span class="nf">dev_get_by_index</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">attr</span><span class="o">-&gt;</span><span class="n">link_create</span><span class="p">.</span><span class="n">target_ifindex</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">dev</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">rtnl_unlock</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 创建 bpf link 使用的内存
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">link</span> <span class="o">=</span> <span class="nf">kzalloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">link</span><span class="p">),</span> <span class="n">GFP_USER</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">link</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">err</span> <span class="o">=</span> <span class="o">-</span><span class="n">ENOMEM</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">goto</span> <span class="n">unlock</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 初始化 bpf link
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nf">bpf_link_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">link</span><span class="o">-&gt;</span><span class="n">link</span><span class="p">,</span> <span class="n">BPF_LINK_TYPE_XDP</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">bpf_xdp_link_lops</span><span class="p">,</span> <span class="n">prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">link</span><span class="o">-&gt;</span><span class="n">dev</span> <span class="o">=</span> <span class="n">dev</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">link</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">=</span> <span class="n">attr</span><span class="o">-&gt;</span><span class="n">link_create</span><span class="p">.</span><span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 分配 fd, ID，和创建一个匿名 file
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">err</span> <span class="o">=</span> <span class="nf">bpf_link_prime</span><span class="p">(</span><span class="o">&amp;</span><span class="n">link</span><span class="o">-&gt;</span><span class="n">link</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">link_primer</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">err</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">kfree</span><span class="p">(</span><span class="n">link</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">goto</span> <span class="n">unlock</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// XDP bpf prog 的 attach 过程
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">err</span> <span class="o">=</span> <span class="nf">dev_xdp_attach_link</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">extack</span><span class="p">,</span> <span class="n">link</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">rtnl_unlock</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">err</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">link</span><span class="o">-&gt;</span><span class="n">dev</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_link_cleanup</span><span class="p">(</span><span class="o">&amp;</span><span class="n">link_primer</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">trace_bpf_xdp_link_attach_failed</span><span class="p">(</span><span class="n">extack</span><span class="p">.</span><span class="n">_msg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">goto</span> <span class="n">out_put_dev</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 将 fd 和 file 关联起来，后面便能通过 fd 来找到对应的 link 了
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">fd</span> <span class="o">=</span> <span class="nf">bpf_link_settle</span><span class="p">(</span><span class="o">&amp;</span><span class="n">link_primer</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* link itself doesn&#39;t hold dev&#39;s refcnt to not complicate shutdown */</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">dev_put</span><span class="p">(</span><span class="n">dev</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">fd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nl">unlock</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">rtnl_unlock</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nl">out_put_dev</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">dev_put</span><span class="p">(</span><span class="n">dev</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">err</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>由 <code>bpf_xdp_link_attach()</code> 可以看出，创建 bpf link 的过程主要包括以下几个步骤：</p>
+<ol>
+<li>创建 bpf link 使用的内存。</li>
+<li>初始化 bpf link。</li>
+<li>分配 fd, ID，和创建一个匿名 file，缓存到 bpf prime 里。</li>
+<li>bpf prog 的 attach 过程。</li>
+<li>将 ID 转给 bpf link，并将 fd 和 file 关联起来。</li>
+</ol>
+<h2 id="bpf-link-更新过程">bpf link 更新过程</h2>
+<p>更新 XDP bpf prog 的实现过程如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">bpf</span><span class="p">)</span>                <span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">|--&gt;</span><span class="nf">__sys_bpf</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="nf">link_update</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|--&gt;</span><span class="n">link</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="nf">update_prog</span><span class="p">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>由 “bpf link 创建过程” 可知，<code>link-&gt;ops</code> 为 <code>&amp;bpf_xdp_link_lops</code>，因此 <code>link-&gt;ops-&gt;update_prog()</code> 实际上是调用了 <code>bpf_xdp_link_update()</code> 函数。</p>
+<p><code>link-&gt;ops-&gt;update_prog()</code> 不涉及 bpf link 本身的更新，而是由各个 bpf link 类型自己实现的。在此，就不展开各个类型的具体实现了。</p>
+<h2 id="bpf-link-卸载过程">bpf link 卸载过程</h2>
+<p>卸载 XDP bpf prog 的实现过程如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">bpf</span><span class="p">)</span>                <span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">|--&gt;</span><span class="nf">__sys_bpf</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="nf">link_detach</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|--&gt;</span><span class="n">link</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="nf">detach</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|**&gt;</span><span class="nf">bpf_xdp_link_detach</span><span class="p">()</span>   <span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="o">|</span>   <span class="o">|--&gt;</span><span class="nf">bpf_xdp_link_release</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>       <span class="o">|--&gt;</span><span class="nf">dev_xdp_detach_link</span><span class="p">()</span>   <span class="c1">// 具体的 detach 过程
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="o">|--&gt;</span><span class="nf">bpf_link_put_direct</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">            <span class="o">|--&gt;</span><span class="nf">bpf_link_free</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">                <span class="o">|--&gt;</span><span class="n">link</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="nf">dealloc</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">                <span class="o">|**&gt;</span><span class="nf">bpf_xdp_link_dealloc</span><span class="p">()</span>   <span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                    <span class="o">|--&gt;</span><span class="nf">kfree</span><span class="p">(</span><span class="n">link</span><span class="p">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在卸载过程中，具体的 detach 过程由各个 bpf link 类型自己实现。</p>
+<h2 id="获取-bpf-link-的对象信息">获取 bpf link 的对象信息</h2>
+<p>类似于 bpf prog，bpf link 也有自己的对象信息，即通过 <code>bpftool link</code> 所看到的信息。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># bpftool link</span>
+</span></span><span class="line"><span class="cl">1: tracing  prog <span class="m">2</span>
+</span></span><span class="line"><span class="cl">    prog_type tracing  attach_type modify_return
+</span></span><span class="line"><span class="cl">    target_obj_id <span class="m">1</span>  target_btf_id <span class="m">113304</span>
+</span></span><span class="line"><span class="cl">42: xdp  prog <span class="m">331</span>
+</span></span><span class="line"><span class="cl">    ifindex ens33<span class="o">(</span>2<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>还是以 XDP bpf prog 为例，获取 bpf link 的对象信息的过程如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">SYSCALL_DEFINE3</span><span class="p">(</span><span class="n">bpf</span><span class="p">)</span>                <span class="c1">// ${KERNEL}/kernel/bpf/syscall.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">|--&gt;</span><span class="nf">__sys_bpf</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="nf">bpf_obj_get_info_by_fd</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|--&gt;</span><span class="nf">bpf_link_get_info_by_fd</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>   <span class="n">info</span><span class="p">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">link</span><span class="o">-&gt;</span><span class="n">type</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>   <span class="n">info</span><span class="p">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">link</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>   <span class="k">if</span> <span class="p">(</span><span class="n">link</span><span class="o">-&gt;</span><span class="n">prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>       <span class="n">info</span><span class="p">.</span><span class="n">prog_id</span> <span class="o">=</span> <span class="n">link</span><span class="o">-&gt;</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|</span>   <span class="n">link</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="nf">fill_link_info</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">info</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|**&gt;</span><span class="nf">bpf_xdp_link_fill_link_info</span><span class="p">()</span>   <span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>            <span class="o">|--&gt;</span><span class="n">info</span><span class="o">-&gt;</span><span class="n">xdp</span><span class="p">.</span><span class="n">ifindex</span> <span class="o">=</span> <span class="n">link</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">ifindex</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>以上代码片段展示了获取 XDP bpf link 的对象信息的过程。</p>
+<ol>
+<li>通过 bpf link 获取基本的 <code>type</code> 和 <code>id</code> 信息。</li>
+<li>如果 link 有 prog，获取 prog 的 <code>id</code> 信息。</li>
+<li>调用 <code>link-&gt;ops-&gt;fill_link_info()</code> 来填充 link 具体类型对应的详细信息。</li>
+</ol>
+<h2 id="总结">总结</h2>
+<p>bpf link 的引入是为了解决 bpf prog attachment 持久化的问题，并由此引入了 bpf link fd。</p>
+<p>bpf link 的创建过程主要包括以下几个步骤：</p>
+<ol>
+<li>创建 bpf link 使用的内存。</li>
+<li>初始化 bpf link。</li>
+<li>分配 fd, ID，和创建一个匿名 file，缓存到 bpf prime 里。</li>
+<li>bpf prog 的 attach 过程。</li>
+<li>将 ID 转给 bpf link，并将 fd 和 file 关联起来。</li>
+</ol>
+<p>bpf link 的更新过程由各个 bpf link 类型自己实现。</p>
+<p>bpf link 的卸载过程由各个 bpf link 类型自己实现。</p>
+<p>bpf link 的对象信息通过 <code>bpftool link</code> 来获取。其实，也可以通过 fdinfo 来获取：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># cat /proc/728267/fdinfo/10</span>
+</span></span><span class="line"><span class="cl">pos:        <span class="m">0</span>
+</span></span><span class="line"><span class="cl">flags:      <span class="m">02000000</span>
+</span></span><span class="line"><span class="cl">mnt_id:     <span class="m">16</span>
+</span></span><span class="line"><span class="cl">ino:        <span class="m">68</span>
+</span></span><span class="line"><span class="cl">link_type:  xdp
+</span></span><span class="line"><span class="cl">link_id:    <span class="m">43</span>
+</span></span><span class="line"><span class="cl">prog_tag:   3b185187f1855c4c
+</span></span><span class="line"><span class="cl">prog_id:    <span class="m">343</span>
+</span></span><span class="line"><span class="cl">ifindex:    <span class="m">2</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><hr>
+<p>《XDP 进阶手册》里详细讲解了 XDP attachment 的源码细节。</p>
+<p>欢迎加入「eBPF Talk」知识星球，学习更多 XDP 知识。</p>
+<p><img src="/zhishixingqiu.png" alt="eBPF Talk 知识星球"></p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    <span class="item-content"></span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-05-12
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-87-introduce-tracepoint/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: introduce tracepoint</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-86-tracepoint-__data_loc/">
+        <span class="next-text nav-default">eBPF Talk: tracepoint __data_loc</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 - 
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy; 
+    2021 - 
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span><span></span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

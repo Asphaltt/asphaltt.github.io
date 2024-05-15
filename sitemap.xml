@@ -3,62 +3,195 @@
   
   <url>
     <loc>https://le0nhwan9.github.io/categories/</loc>
-    <lastmod>2024-04-05T22:45:28+08:00</lastmod>
+    <lastmod>2024-05-15T23:39:22+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/tags/ebpf/</loc>
-    <lastmod>2024-04-05T22:45:28+08:00</lastmod>
+    <lastmod>2024-05-15T23:39:22+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/categories/ebpf/</loc>
-    <lastmod>2024-04-05T22:45:28+08:00</lastmod>
+    <lastmod>2024-05-15T23:39:22+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/categories/ebpf-talk/</loc>
-    <lastmod>2024-04-05T22:45:28+08:00</lastmod>
+    <lastmod>2024-05-15T23:39:22+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/post/ebpf-talk-86-tracepoint-__data_loc/</loc>
-    <lastmod>2024-04-05T22:45:28+08:00</lastmod>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-99-tc-dump-supports-pcap-filter/</loc>
+    <lastmod>2024-05-15T23:39:22+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/</loc>
-    <lastmod>2024-04-05T22:45:28+08:00</lastmod>
+    <lastmod>2024-05-15T23:39:22+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/post/</loc>
-    <lastmod>2024-04-05T22:45:28+08:00</lastmod>
+    <lastmod>2024-05-15T23:39:22+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/tags/</loc>
-    <lastmod>2024-04-05T22:45:28+08:00</lastmod>
+    <lastmod>2024-05-15T23:39:22+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/tc-dump/</loc>
+    <lastmod>2024-05-15T23:39:22+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-98-contribute-pwru/</loc>
+    <lastmod>2024-05-15T23:38:29+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/pwru/</loc>
+    <lastmod>2024-05-15T23:38:29+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-97-analyse-xdp/</loc>
+    <lastmod>2024-05-15T23:37:46+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/xdp/</loc>
+    <lastmod>2024-05-15T23:37:46+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-96-kernel-bpf-contribution-/</loc>
+    <lastmod>2024-05-15T23:33:01+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/kernel-patch/</loc>
+    <lastmod>2024-05-15T23:33:01+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-95-kernel-bpf-contribution/</loc>
+    <lastmod>2024-05-15T23:31:03+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/tailcall/</loc>
+    <lastmod>2024-05-15T23:31:03+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-94-introduce-kfuncs/</loc>
+    <lastmod>2024-05-15T23:29:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/kfunc/</loc>
+    <lastmod>2024-05-15T23:29:42+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-93-tailcall-in-freplace-bug/</loc>
+    <lastmod>2024-05-15T23:27:52+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/freplace/</loc>
+    <lastmod>2024-05-15T23:27:52+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-92-try-trace-tailcall/</loc>
+    <lastmod>2024-05-15T23:22:40+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/tags/kernel-module/</loc>
+    <lastmod>2024-05-15T23:22:40+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</loc>
+    <lastmod>2024-05-15T23:20:40+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-87-introduce-tracepoint/</loc>
+    <lastmod>2024-05-15T23:15:33+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://le0nhwan9.github.io/tags/tracepoint/</loc>
+    <lastmod>2024-05-15T23:15:33+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-76-introduce-bpf_link/</loc>
+    <lastmod>2024-05-12T20:11:06+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://le0nhwan9.github.io/post/ebpf-talk-86-tracepoint-__data_loc/</loc>
     <lastmod>2024-04-05T22:45:28+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -107,21 +240,7 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/tags/tailcall/</loc>
-    <lastmod>2024-04-04T22:34:32+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
     <loc>https://le0nhwan9.github.io/post/ebpf-talk-82-trace-freplace-program/</loc>
-    <lastmod>2024-04-04T22:30:23+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/tags/freplace/</loc>
     <lastmod>2024-04-04T22:30:23+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -171,13 +290,6 @@
   
   <url>
     <loc>https://le0nhwan9.github.io/tags/tuplemerge/</loc>
-    <lastmod>2024-04-03T23:20:00+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/tags/xdp/</loc>
     <lastmod>2024-04-03T23:20:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -541,13 +653,6 @@
   </url>
   
   <url>
-    <loc>https://le0nhwan9.github.io/tags/pwru/</loc>
-    <lastmod>2024-03-31T21:16:34+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
     <loc>https://le0nhwan9.github.io/post/ebpf-talk-51-bpf-fd-leak/</loc>
     <lastmod>2024-03-31T21:05:34+08:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -577,13 +682,6 @@
   
   <url>
     <loc>https://le0nhwan9.github.io/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/</loc>
-    <lastmod>2024-03-31T20:47:45+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://le0nhwan9.github.io/tags/kernel-module/</loc>
     <lastmod>2024-03-31T20:47:45+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>

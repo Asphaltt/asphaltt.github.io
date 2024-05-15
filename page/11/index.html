@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
-  <meta itemprop="dateModified" content="2024-04-05T22:45:28+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-05-15T23:39:22+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -143,230 +143,238 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/go-functrace/">使用 functrace 排查 Go 函数卡顿问题</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-final-step-to-co-re/">eBPF CO-RE 的终极一步</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2021-12-15 </span>
-      <div class="post-category">
-          <a href="/categories/go/"> Go </a>
-          </div>
-        <span class="more-meta"> 约 1068 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在验证 使用 Go 对接 iptables NFQUEUE 的例子 所使用的 go-nfqueue 第三方库 go-nfnetlink 的性能的时候，发现每秒只能处理 4 个网络包，遂使用 functrace 排查了起来。以下记录了排查过程。 排查过程 根据
-    </div>
-    <div class="read-more">
-      <a href="/post/go-functrace/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/iptables-nfqueue-usage/">iptables-nfqueue 的使用</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-12-12 </span>
-      <div class="post-category">
-          <a href="/categories/iptables/"> iptables </a>
-          </div>
-        <span class="more-meta"> 约 1620 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      本文主要翻译自 Using NFQUEUE and libnetfilter_queue，将 C 代码例子换成 Go 代码例子。 介绍 NFQUEUE 是一种 iptables 和 ip6tables 的目标（an iptables and ip6tables target），将
-    </div>
-    <div class="read-more">
-      <a href="/post/iptables-nfqueue-usage/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/iptables-nfqueue/">一文吃透 iptables-nfqueue</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-12-09 </span>
-      <div class="post-category">
-          <a href="/categories/iptables/"> iptables </a>
-          </div>
-        <span class="more-meta"> 约 3152 字 </span>
-        <span class="more-meta"> 预计阅读 7 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      iptables 常用，iptables-nfqueue 少用。因需要深度理解 iptables-nfqueue，所以顺手撸了一遍 iptables-nfqueue 的源代码。 iptables-nfqueue ，aka NFQU
-    </div>
-    <div class="read-more">
-      <a href="/post/iptables-nfqueue/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/go-nfnetlink-example/">使用 Go 对接 iptables NFQUEUE 的例子</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-11-03 </span>
-      <div class="post-category">
-          <a href="/categories/iptables/"> iptables </a>
-          </div>
-        <span class="more-meta"> 约 584 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近在学习 iptables NFQUEUE 的时候，顺手使用 Go 语言写了一个例子。 源代码：github.com/Asphaltt/go-nfnetlink-example 例
-    </div>
-    <div class="read-more">
-      <a href="/post/go-nfnetlink-example/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/netlink-and-go/">netlink 是 Go 和内核模块之间优秀的通信兵</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-11-03 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 1070 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      netlink 是 Linux 系统里用户态程序、内核模块之间的一种 IPC 方式，特别是用户态程序和内核模块之间的 IPC 通信。比如在 Linux 终端里常用的 ip 命令，就是使用 netlink 去跟内核进行
-    </div>
-    <div class="read-more">
-      <a href="/post/netlink-and-go/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/skbtracer/">skbtracer: Linux 内核网络包路径追踪利器</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-11-02 </span>
+      <span class="post-time"> 2022-10-31 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-co-re/"> eBPF CO-RE </a>
           </div>
-        <span class="more-meta"> 约 872 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      skbtracer 是基于 eBPF 技术的 skb 网络包路径追踪利器，基于 goebpf , libbpf-bootstrap (required Linux Kernel 4.15+ with CONFIG_DEBUG_INFO_BTF=y, Go 1.16+) 实现，参考 Python 版本 github.com/DavadDi/skbtracer。 skbtracer
-    </div>
-    <div class="read-more">
-      <a href="/post/skbtracer/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-how-anti-synflood-works/">Linux 对抗 synflood 的实现</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-05-19 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 1571 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      synflood 介绍 synflood 是一种 TCP 半连接攻击，会消耗尽服务器资源从而导致服务器拒绝服务。 参考搜狗百科：syn flood。 Linux 中对抗 synflood 的手段 Linux 中对抗 synflood 的主要手段是
-    </div>
-    <div class="read-more">
-      <a href="/post/linux-how-anti-synflood-works/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-custom-netfilter-hook-experiment/">Linux 自定义 netfilter 钩子实验</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-04-19 </span>
-      <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
-          </div>
-        <span class="more-meta"> 约 468 字 </span>
+        <span class="more-meta"> 约 15 字 </span>
         <span class="more-meta"> 预计阅读 1 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      学习了 Linux netfilter 钩子执行过程，接下来在内核模块里实现一个自定义的 netfilter 钩子。 netfilter 的网络包处理流程 下图比较详细地描述了 iptables 和 ebtables 的规则执行时机： 图片来源：wi
+      请移步：eBPF CO-RE 的终极一步。
     </div>
     <div class="read-more">
-      <a href="/post/linux-custom-netfilter-hook-experiment/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-final-step-to-co-re/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-how-netfilter-works/">Linux netfilter 钩子执行过程</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-two-macros/">eBPF Talk: 宏的两种写法</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2021-04-18 </span>
+      <span class="post-time"> 2022-10-30 </span>
       <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 975 字 </span>
+        <span class="more-meta"> 约 564 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      netfilter 框架是 Linux 网络子系统里的一个核心模块，iptables 就是基于 netfilter 框架实现的一个网络包处理工具。 netfilter 框架原理介绍 在内核里，每个网络命名空间（ne
+      宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF 的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。 写法一
     </div>
     <div class="read-more">
-      <a href="/post/linux-how-netfilter-works/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-two-macros/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/linux-show-socket-ip_transparent-option/">knetstat：查看 socket 的 IP_TRANSPARENT 选项</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-variables-declaration-location/">eBPF Talk: 变量声明的位置</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2021-02-12 </span>
+      <span class="post-time"> 2022-10-29 </span>
       <div class="post-category">
-          <a href="/categories/linux/"> Linux </a>
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 634 字 </span>
+        <span class="more-meta"> 约 758 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      在做 Linux 代理流量回放实验 的时候，因为遇到了问题，所以想看下 socket 的 IP_TRANSPARENT 选项是否设置了。该实验使用了 Linux 透明代理的功能，而 Linux 透明代理需要用户程序在使用 socket
+      据了解（未查证），从 clang12 开始，eBPF 代码中的变量声明不再要求写在函数体的最前方，而是可以按需声明并初始化。 写法一：一次性声明全部的变量 1 2 3
     </div>
     <div class="read-more">
-      <a href="/post/linux-show-socket-ip_transparent-option/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-variables-declaration-location/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-black-magic-correct/">为 eBPF 程序注入黑魔法 【正确姿势】</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-08-24 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          </div>
+        <span class="more-meta"> 约 1263 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      为 eBPF 程序注入黑魔法 【错误姿势】 中提出的在加载阶段中动态变更常量值的办法并不可靠，毕竟在 cilium/ebpf 中已提供了重写常量的函数 RewriteConstan
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-black-magic-correct/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-black-magic/">为 eBPF 程序注入黑魔法 【错误姿势】</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-06-11 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          </div>
+        <span class="more-meta"> 约 1276 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在 Kubernetes 集群环境下，如果跨节点的 Pod 需要组成多个 VPC 网络，使用 eBPF 的时候，该如何在 CNI 层面动态地为每个 Pod 分配 VXLAN VNI 或者 VLAN ID 呢？ 一个简单可行的办法是，每次 CNI
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-black-magic/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/iptables-bpf-acl/">demo for 「eBPF 技术实践：高性能 ACL」</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-04-01 </span>
+      <div class="post-category">
+          <a href="/categories/iptables/"> iptables </a>
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1231 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在阅读了字节跳动发出的公众号文章 eBPF 技术实践：高性能 ACL 后，对其中提出的 O(1) 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，
+    </div>
+    <div class="read-more">
+      <a href="/post/iptables-bpf-acl/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/linux-how-nsenter-works/">一文吃透 Linux nsenter</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-01-22 </span>
+      <div class="post-category">
+          <a href="/categories/linux/"> Linux </a>
+          </div>
+        <span class="more-meta"> 约 1946 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      nsenter 套娃 在 Linux 系统里，nsenter 是一个命令行工具，用于进入到另一个 namespace。譬如，nsenter -n -t 1 bash 就是进入到 pid 为 1 的进程所在
+    </div>
+    <div class="read-more">
+      <a href="/post/linux-how-nsenter-works/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/linux-how-tproxy-works/">一文吃透 Linux TProxy 透明代理</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-12-24 </span>
+      <div class="post-category">
+          <a href="/categories/linux/"> Linux </a>
+          <a href="/categories/iptables/"> iptables </a>
+          </div>
+        <span class="more-meta"> 约 2671 字 </span>
+        <span class="more-meta"> 预计阅读 6 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      Linux 透明代理并不是一个独立的功能模块，而是一个功能特性。在使用 Linux 透明代理的时候，需要 iptables, ip-rule, ip-route 和应用程序一起协同工作。 Linux 透明代理相关博客： knet
+    </div>
+    <div class="read-more">
+      <a href="/post/linux-how-tproxy-works/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/kernel-module-with-bpf/">在内核模块里运行 bpf 程序</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-12-19 </span>
+      <div class="post-category">
+          <a href="/categories/linux/"> Linux </a>
+          <a href="/categories/ebpf/"> eBPF </a>
+          </div>
+        <span class="more-meta"> 约 620 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序源代码： iptables-bpf 内核模块源代码：Kernel module fun 效果 1 2 3 4 5 6 7 8 9 10
+    </div>
+    <div class="read-more">
+      <a href="/post/kernel-module-with-bpf/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/iptables-bpf-source-code-reading/">iptables-bpf 的实现原理分析</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2021-12-19 </span>
+      <div class="post-category">
+          <a href="/categories/iptables/"> iptables </a>
+          <a href="/categories/ebpf/"> eBPF </a>
+          </div>
+        <span class="more-meta"> 约 554 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      该如此玩转 iptables-bpf 原始魔杖 iptables 配上新发明的药水 eBPF，这是怎么做到的呢？让我们一探 iptables-bpf 究竟。 实现原理 用法：iptables -I OUTPUT -m bpf --object-pinned $(EBPF_PINNED) -j DROP bpf 是 iptables 的一
+    </div>
+    <div class="read-more">
+      <a href="/post/iptables-bpf-source-code-reading/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

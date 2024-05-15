@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
-  <meta itemprop="dateModified" content="2024-04-05T22:45:28+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-05-15T23:39:22+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -143,240 +143,240 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-57-kprobe.multi-and-fprobe/">eBPF Talk: kprobe.multi 与 fprobe</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-68-xdp-shit-on-mellanox/">eBPF Talk: 踩坑 XDP on Mellanox</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1022 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      对 XDP 了解得越多，对 XDP 的信心越是膨胀。最近在 XDP on Mellanox 上踩了个坑，让我对 XDP 的认识又有了新的提升：就是需要保持对技术的敬畏之心，不要过于自信。 P.S. Mellanox 网
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-68-xdp-shit-on-mellanox/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-67-redirect-pkt-with-tc-bpf/">eBPF Talk: tc-bpf 转发网络包</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 518 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在 tc-bpf 里转发网络包，跟 XDP 里转发网络包有什么不同呢？ eBPF Talk: XDP 转发失败了 eBPF Talk: 揭秘 XDP 转发网络包 eBPF Talk: 揭秘 XDP 转发网络包【续】 呃，其实还是那个奇葩的需求，不
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-67-redirect-pkt-with-tc-bpf/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/">eBPF Talk: eBPF 程序模块化与单测构想</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 768 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      我们来复习一下以下两篇文章： eBPF Talk: freplace on x86【汇编慎入】 eBPF Talk: 给 XDP 程序写 unittest 一个构想：使用 replace 实现 eBPF 程序的模块化，使用 BPF_PROG_TEST_RUN 对 eBPF 程序模块进行单测。 eBPF 程序
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-65-write-unittest-for-xdp/">eBPF Talk: 给 XDP 程序写 unittest</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 932 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      我们都知道写 unittest 是非常必要的，但是在 eBPF 程序里，该如何给 XDP 程序写 unittest 呢？ bpf: introduce BPF_PROG_TEST_RUN command since 4.12 kernel 在 4.12 内核中，引入了 BPF_PROG_TEST_RUN 命令，可以用来给 XDP 和 tc-bpf 等 eBPF 程序写 unit
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-65-write-unittest-for-xdp/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/">eBPF Talk: 使用 metadata 将信息从 XDP 传给 AF_XDP</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 706 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      学习了 XDP metadata 和 AF_XDP，是否可以使用 metadata 将信息从 XDP 传给 AF_XDP 呢？ eBPF Talk: XDP metadata 实战指南 eBPF Talk: 使用 AF_XDP 注入延时 TL;DR 答案是可以的，复制网络包内容时将 metadata 一起进行复
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-63-helpers-for-bpf-map/">eBPF Talk: helpers for bpf map</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1018 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      通过学习 eBPF Talk: eBPF helpers 的另一面，我们知道 eBPF helpers 是通过 bpf_func_proto 结构体来实现的，不同的 helpers 函数对应不同的 bpf_func_proto；甚至，对于同一个 helpers 函数，不
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-63-helpers-for-bpf-map/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-62-verifier-core-in-3.18-kernel/">eBPF Talk: 3.18 kernel 里的 verifier 核心内容</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2024-04-01 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1257 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
+        <span class="more-meta"> 约 487 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      在『eBPF Talk 读者群』里讨论起 kfuncs、kprobe、fentry/fexit 等，聊到 kprobe.multi 与 fprobe；我立刻学习了一下 kprobe.multi 和 fprobe
+      在 eBPF Talk: 3.18 kernel 里的 CFG 检查 里，我们学习了如何检查 bpf prog 的控制流程图（CFG，Control Flow Graph）是不是一个有向无环图（DAG，Directe
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-57-kprobe.multi-and-fprobe/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-62-verifier-core-in-3.18-kernel/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-56-latency-injection-with-af_xdp/">eBPF Talk: 使用 AF_XDP 注入延时</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-61-cfg-check-in-3.18-kernel/">eBPF Talk: 3.18 kernel 里的 CFG 检查</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2024-03-31 </span>
+      <span class="post-time"> 2024-04-01 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 531 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      学习了 AF_XDP 后，一时手痒弄了个 ping-latency-injector。 eBPF Talk: 使用 AF_XDP 加速网络【译】 eBPF Talk: XDP redirect to AF_XDP ping-latency-injector 它可以用来混淆使用 ping 实现的网络距
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-56-latency-injection-with-af_xdp/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-55-xdp-on-veth/">eBPF Talk: XDP on veth</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-03-31 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1614 字 </span>
+        <span class="more-meta"> 约 1666 字 </span>
         <span class="more-meta"> 预计阅读 4 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      veth 是一种虚拟网络设备，并支持在驱动里运行 XDP 程序。 eBPF Talk: XDP on Mellanox 与 Mellanox 物理网卡对比，veth 上运行 XDP 程序有和区别呢？ ndo_xdp on veth 这是将 XDP 程序下发到 veth 驱动里
+      为了克服对 bpf verifier 的恐惧，打算从 verifier.c 最初的 commit 开始学习 verifier；这是因为最初版本的 verifier 并不复杂。相对而言，理解起来会容易一些。 bpf: verifier (add branch/goto checks) 在该 commit
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-55-xdp-on-veth/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-61-cfg-check-in-3.18-kernel/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-54-xdp-on-mellanox/">eBPF Talk: XDP on Mellanox</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-60-introduce-spinlock/">eBPF Talk: spinlock 详解</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2024-03-31 </span>
+      <span class="post-time"> 2024-04-01 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 2003 字 </span>
+        <span class="more-meta"> 约 1638 字 </span>
         <span class="more-meta"> 预计阅读 4 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      为了更高的性能，需要将 XDP 程序下沉到网卡驱动里去运行。 因为服务器使用的物理网卡是 Mellanox，所以就研究一下 Mellanox 驱动里是怎么运行 XDP 程序的。 XDP
+      此 spinlock 指的是 eBPF 代码里使用的 struct bpf_spin_lock。 bpf: introduce bpf_spin_lock since kernel 5.1 从 eBPF Talk: 正确地进行统计 里学习到可以使用 spinlock 对统计进行保护。 spinlock 的用法就是那么简单
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-54-xdp-on-mellanox/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-60-introduce-spinlock/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-53-dup-bpf-fd/">eBPF Talk: 大佬教我 dup bpf-FD</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-59-stats-bpf-prog-correctly/">eBPF Talk: 正确地进行统计</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2024-03-31 </span>
+      <span class="post-time"> 2024-04-01 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1496 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      上个星期在做 eBPF Talk: 实战经验之 bpf FD 泄漏分析 的时候，发现 GitHub cilium/ebpf 库不支持从 FD 获取 bpf link 的信息。于是，我提了个 Issue 来讨论这事： Issue link: get info from FD Issue：get
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-53-dup-bpf-fd/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-52-eat-dog-food-of-pwru/">eBPF Talk: pwru 自己挖坑自己填</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-03-31 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 924 字 </span>
+        <span class="more-meta"> 约 721 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      当遇上 cilium/pwru 时，我便放弃维护自己的 skbtracer 了。 挖坑 之前，学习了 eBPF Talk: 全局变量实战指南，就打算在开源项目 GitHub cilium/pwru 上一展身手： PR bpf: make config as a constant 2023 年 2 月 4 日提了 PR
+      在 bpf prog 里进行统计，该怎么做呢？ PERCPU bpf map 在 bpf prog 里使用 PERCPU bpf map 进行统计，在用户态应用程序里就可以读取该 bpf map 获取从而能够计算出最终的统计数据。 使用 PERCPU bpf
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-52-eat-dog-food-of-pwru/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-51-bpf-fd-leak/">eBPF Talk: 实战经验之 bpf FD 泄漏分析</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-03-31 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1736 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      不经意间，基于 XDP 的网关已写了 1w 行 Go 代码；特别是其中 ACL 模块较为复杂。 因而，担心因复杂性而带来的一些资源管理隐患，特别是不好管理的 FD 资源，专门打
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-51-bpf-fd-leak/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-50-iptables-trace/">eBPF Talk: iptables-trace</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-03-31 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1114 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      填坑 eBPF Talk: skbtracer-iptables 中的 One more thing. 源代码：GitHub iptables-trace 前置知识： eBPF Talk: skbtracer-iptables eBPF Talk: 在内核模块里运行 bpf 程序 kprobes in kernel module 因为 eBPF 不支持修改 skb-&gt;nf_trace 字段和 struct pt_regs（出于安
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-50-iptables-trace/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/">eBPF Talk: 在内核模块里运行 bpf 程序</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-03-31 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 668 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在 Linux 内核模块里把玩 bpf map P.S. 旧文一篇，请笑纳。 参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序源代码： iptables-bpf 内核模块源代码
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-48-kprobe-nth-argument/">eBPF Talk: kprobe 获取第 n 个参数</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-03-29 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1234 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      此次来填 eBPF Talk: skbtracer-iptables 中的坑了：在开发一个基于 eBPF 的 iptables TRACE 的替代工具。 不过，遇到的第一个纸老虎是 kprobe 中获取 nf_log_trace() 的诸多参数。 nf_log_trace() 且看下函数声明： 1 2 3 4 5 6 7 8
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-48-kprobe-nth-argument/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-59-stats-bpf-prog-correctly/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

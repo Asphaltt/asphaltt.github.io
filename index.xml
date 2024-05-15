@@ -6,8 +6,85 @@
     <description>Recent content on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 05 Apr 2024 22:45:28 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 15 May 2024 23:39:22 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: tc-dump 支持 pcap-filter</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-99-tc-dump-supports-pcap-filter/</link>
+      <pubDate>Wed, 15 May 2024 23:39:22 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-99-tc-dump-supports-pcap-filter/</guid>
+      <description>tc-dump 是一个基于 eBPF 的 tc 抓包工具，支持抓取 tc 的 ingress 和 egress 方向的包。 最近，tc-dump 支持了 pcap-filter，即支持了 pcap 的过滤语法。 与此同时，t</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 给 pwru 添砖加瓦</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-98-contribute-pwru/</link>
+      <pubDate>Wed, 15 May 2024 23:38:29 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-98-contribute-pwru/</guid>
+      <description>近来，没怎么学习 eBPF，就给 pwru 做下贡献。 Replace objs with collection Support tracing tc-bpf Support tracking skb clones Accelerate attaching/detaching kprobes WIP Replace objs with collection 该 PR 重构了一下 pwru 中管理 bpf 对象的代码，将 bpf 对象的管理从 struct 改成 c</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 手撕 XDP 程序</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-97-analyse-xdp/</link>
+      <pubDate>Wed, 15 May 2024 23:37:46 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-97-analyse-xdp/</guid>
+      <description>前段时间，老板让我 手撕 分析 一个陌生的 XDP 程序。 责任重过山头，莫敢推辞，只能硬着头皮上了。 陌生的 XDP 程序 没有源代码，且发现该 XDP 程序还没带上 debug 信息；</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 内核 bpf 子系统贡献&#43;&#43;</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-96-kernel-bpf-contribution-/</link>
+      <pubDate>Wed, 15 May 2024 23:33:01 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-96-kernel-bpf-contribution-/</guid>
+      <description>最近在忙着些什么呢？没有发表 eBPF 技术文章了。 本公众号并没有被封号、也没有被禁言；其实，最近在忙着向内核 bpf 子系统贡献 patch，在不断完善 tailcall 这个</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 内核 bpf 子系统贡献之修复 tailcall 无限循环</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-95-kernel-bpf-contribution/</link>
+      <pubDate>Wed, 15 May 2024 23:31:03 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-95-kernel-bpf-contribution/</guid>
+      <description>梅开二度，再次向内核 bpf 子系统贡献 patch。 bpf, x64: Fix tailcall infinite loop 此次修复的是 x64 平台的一个 bug，该 bug 会导致 tailcall 陷入无限循环，最终导致宕机。 tailcall 无限循环 如</description>
+    </item>
+    <item>
+      <title>eBPF Talk: introduce kfuncs</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-94-introduce-kfuncs/</link>
+      <pubDate>Wed, 15 May 2024 23:29:42 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-94-introduce-kfuncs/</guid>
+      <description>通过 bpf: Support bpf program calling kernel function 学习 kfuncs 的实现。 不过，此 kfuncs 不是 bpftrace kfunc/kretfunc: Kernel Functions Tracing。bpftrace 的 kfunc 是的底层是 fentry/fexit。 BPF Kernel Functions (kfuncs) 该内核</description>
+    </item>
+    <item>
+      <title>eBPF Talk: tailcall in freplace 有 BUG</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-93-tailcall-in-freplace-bug/</link>
+      <pubDate>Wed, 15 May 2024 23:27:52 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-93-tailcall-in-freplace-bug/</guid>
+      <description>tailcall in freplace 有 BUG？真的？假的！ 最近，偶然发现在 freplace 里使用 tailcall 有 BUG。尽管，我的同事早就发现了有问题，但不确定是不是内核的问题。所以，我就花了点时</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 尝试 trace tailcall 程序？！</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-92-try-trace-tailcall/</link>
+      <pubDate>Wed, 15 May 2024 23:22:40 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-92-try-trace-tailcall/</guid>
+      <description>在 eBPF Talk: trace tailcall 程序？NO！ 里，我们知道 tailcall 程序是不能直接使用 fentry/fexit 进行 trace 的。 如果通过内核模块，使用比较 hack 的方式，能否 trace tailcall 程序呢？ TL;DR 能对静态 tailcall 进行 tra</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 达成内核 bpf 子系统贡献者成就</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</link>
+      <pubDate>Wed, 15 May 2024 23:20:40 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</guid>
+      <description>给 XDP 新增了一个 tracepoint；历时一个月，终不负所望。 bpf, xdp: Add tracepoint to xdp attaching failure 年份：2023 年。 需求来源 说来惭愧，需求不来自公司、也不来自我自</description>
+    </item>
+    <item>
+      <title>eBPF Talk: introduce tracepoint</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-87-introduce-tracepoint/</link>
+      <pubDate>Wed, 15 May 2024 23:15:33 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-87-introduce-tracepoint/</guid>
+      <description>想弄清楚 tracepoint 的工作原理，实在太难了；网络上的资料比较少，而且不够深入，甚至是 kernel 文档。 Using the Linux Kernel Tracepoints 本文尝试从源代码的角度来分析 tracepoint 的工作原理。 抛砖引</description>
+    </item>
+    <item>
+      <title>eBPF Talk: bpf link 简介</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-76-introduce-bpf_link/</link>
+      <pubDate>Sun, 12 May 2024 20:11:06 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-76-introduce-bpf_link/</guid>
+      <description>bpf link 的引入是为了解决 bpf prog attachment 持久化的问题，并由此引入了 bpf link fd。 bpf: Introduce pinnable bpf_link abstraction since kernel 5.7 在引入了 bpf link 之后，常用的 bpf prog attachment 都实现了对应的 bpf link，比如 TRACING,</description>
+    </item>
     <item>
       <title>eBPF Talk: tracepoint __data_loc</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-86-tracepoint-__data_loc/</link>

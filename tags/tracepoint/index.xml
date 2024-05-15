@@ -6,8 +6,15 @@
     <description>Recent content in Tracepoint on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
-    <lastBuildDate>Fri, 05 Apr 2024 22:45:28 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 15 May 2024 23:15:33 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/tracepoint/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: introduce tracepoint</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-87-introduce-tracepoint/</link>
+      <pubDate>Wed, 15 May 2024 23:15:33 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-87-introduce-tracepoint/</guid>
+      <description>想弄清楚 tracepoint 的工作原理，实在太难了；网络上的资料比较少，而且不够深入，甚至是 kernel 文档。 Using the Linux Kernel Tracepoints 本文尝试从源代码的角度来分析 tracepoint 的工作原理。 抛砖引</description>
+    </item>
     <item>
       <title>eBPF Talk: tracepoint __data_loc</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-86-tracepoint-__data_loc/</link>

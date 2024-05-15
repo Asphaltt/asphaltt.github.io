@@ -6,8 +6,15 @@
     <description>Recent content in Pwru on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
-    <lastBuildDate>Sun, 31 Mar 2024 21:16:34 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 15 May 2024 23:38:29 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/pwru/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 给 pwru 添砖加瓦</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-98-contribute-pwru/</link>
+      <pubDate>Wed, 15 May 2024 23:38:29 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-98-contribute-pwru/</guid>
+      <description>近来，没怎么学习 eBPF，就给 pwru 做下贡献。 Replace objs with collection Support tracing tc-bpf Support tracking skb clones Accelerate attaching/detaching kprobes WIP Replace objs with collection 该 PR 重构了一下 pwru 中管理 bpf 对象的代码，将 bpf 对象的管理从 struct 改成 c</description>
+    </item>
     <item>
       <title>eBPF Talk: pwru 自己挖坑自己填</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-52-eat-dog-food-of-pwru/</link>

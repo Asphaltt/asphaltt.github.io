@@ -6,8 +6,22 @@
     <description>Recent content in XDP on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 03 Apr 2024 23:20:00 +0800</lastBuildDate>
+    <lastBuildDate>Wed, 15 May 2024 23:37:46 +0800</lastBuildDate>
     <atom:link href="https://le0nhwan9.github.io/tags/xdp/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 手撕 XDP 程序</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-97-analyse-xdp/</link>
+      <pubDate>Wed, 15 May 2024 23:37:46 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-97-analyse-xdp/</guid>
+      <description>前段时间，老板让我 手撕 分析 一个陌生的 XDP 程序。 责任重过山头，莫敢推辞，只能硬着头皮上了。 陌生的 XDP 程序 没有源代码，且发现该 XDP 程序还没带上 debug 信息；</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 达成内核 bpf 子系统贡献者成就</title>
+      <link>https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</link>
+      <pubDate>Wed, 15 May 2024 23:20:40 +0800</pubDate>
+      <guid>https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</guid>
+      <description>给 XDP 新增了一个 tracepoint；历时一个月，终不负所望。 bpf, xdp: Add tracepoint to xdp attaching failure 年份：2023 年。 需求来源 说来惭愧，需求不来自公司、也不来自我自</description>
+    </item>
     <item>
       <title>eBPF Talk: XDP ACL 进阶之 TupleMerge</title>
       <link>https://le0nhwan9.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</link>
