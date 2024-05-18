@@ -52,7 +52,7 @@
   <meta itemprop="description" content="本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】">
   <meta itemprop="datePublished" content="2023-05-23T23:02:47+08:00">
   <meta itemprop="dateModified" content="2023-05-23T23:02:47+08:00">
-  <meta itemprop="wordCount" content="1254">
+  <meta itemprop="wordCount" content="1279">
   <meta itemprop="keywords" content="EBPF,Trampoline,X86"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: trampoline stack on x86【汇编慎入】"/>
 <meta name="twitter:description" content="本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】"/>
 
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 1254 字 </span>
+      <span class="more-meta"> 约 1279 字 </span>
       <span class="more-meta"> 预计阅读 3 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -349,11 +349,12 @@
 <td style="text-align:center">第五个参数</td>
 </tr>
 <tr>
-<td style="text-align:center">r9</td>
+<td style="text-align:center">rbx</td>
 <td style="text-align:center">第六个参数</td>
 </tr>
 </tbody>
 </table>
+<p>参考：<a href="https://github.com/iovisor/bpf-docs/blob/master/bpf-internals-2.md#architecture">bpf-docs/bpf-internals</a></p>
 <p>P.S. <code>%cl</code> 指一个字节大小的第四个参数。</p>
 <p><img src="/eBPF_Talk_44_trampoline_stack_on_x86_3.png" alt="来源：网络"></p>
 <blockquote>
