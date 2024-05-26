@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
-  <meta itemprop="dateModified" content="2024-05-26T16:28:58+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-05-26T16:30:37+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-two-map-helpers/">eBPF Talk: 两个简单好用的 map 处理函数</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-12-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 460 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近在用 eBPF 造轮子的时候，发现其中一个处理函数；而后，自己有样学样地封装了另外一个函数。 bpf_map_lookup_or_try_init 函数名称有点长。 该函数是用来查询某个 key 对应的 valu
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-two-map-helpers/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-asm-and-insn/">eBPF Talk: 此汇编非彼汇编</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-two-macros/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-variables-declaration-location/">eBPF Talk: 变量声明的位置</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-10-29 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 758 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      据了解（未查证），从 clang12 开始，eBPF 代码中的变量声明不再要求写在函数体的最前方，而是可以按需声明并初始化。 写法一：一次性声明全部的变量 1 2 3
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-variables-declaration-location/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

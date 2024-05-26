@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: vista 支持对 XDP/tc-bpf 进行抓包 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="对内核 skb 进行 trace 是一种时髦，使用 eBPF 进行抓包是另一种时髦。本文介绍 vista 是如何赶另一种时髦的。 了解到 eBPF 能够实现抓包后，心痒不已，而且 vista 已支持对 XDP/tc-bpf 进行" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-117-pcap-in-vista/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: vista 支持对 XDP/tc-bpf 进行抓包" />
+<meta property="og:description" content="对内核 skb 进行 trace 是一种时髦，使用 eBPF 进行抓包是另一种时髦。本文介绍 vista 是如何赶另一种时髦的。 了解到 eBPF 能够实现抓包后，心痒不已，而且 vista 已支持对 XDP/tc-bpf 进行" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-117-pcap-in-vista/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-05-26T16:30:37+08:00" />
+<meta property="article:modified_time" content="2024-05-26T16:30:37+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: vista 支持对 XDP/tc-bpf 进行抓包">
+  <meta itemprop="description" content="对内核 skb 进行 trace 是一种时髦，使用 eBPF 进行抓包是另一种时髦。本文介绍 vista 是如何赶另一种时髦的。 了解到 eBPF 能够实现抓包后，心痒不已，而且 vista 已支持对 XDP/tc-bpf 进行">
+  <meta itemprop="datePublished" content="2024-05-26T16:30:37+08:00">
+  <meta itemprop="dateModified" content="2024-05-26T16:30:37+08:00">
+  <meta itemprop="wordCount" content="1578">
+  <meta itemprop="keywords" content="EBPF,Vista,Gopacket"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: vista 支持对 XDP/tc-bpf 进行抓包"/>
+<meta name="twitter:description" content="对内核 skb 进行 trace 是一种时髦，使用 eBPF 进行抓包是另一种时髦。本文介绍 vista 是如何赶另一种时髦的。 了解到 eBPF 能够实现抓包后，心痒不已，而且 vista 已支持对 XDP/tc-bpf 进行"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: vista 支持对 XDP/tc-bpf 进行抓包</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1578 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#抓包效果">抓包效果</a></li>
+        <li><a href="#ebpf-抓包">eBPF 抓包</a></li>
+        <li><a href="#使用-gopacket-保存网络包">使用 gopacket 保存网络包</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>对内核 skb 进行 trace 是一种时髦，使用 eBPF 进行抓包是另一种时髦。本文介绍 vista 是如何赶另一种时髦的。</p>
+<p>了解到 eBPF 能够实现抓包后，心痒不已，而且 vista 已支持对 XDP/tc-bpf 进行 trace 的能力，于是便给 vista 支持了对 XDP/tc-bpf 抓包的能力。</p>
+<h2 id="抓包效果">抓包效果</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./vista --filter-trace-xdp --filter-trace-tc --output-meta --output-tuple --output-limit-lines <span class="m">4</span> --pcap-file vista.pcapng icmp
+</span></span><span class="line"><span class="cl">2024/05/25 13:08:37 Tracing tc progs..
+</span></span><span class="line"><span class="cl">2024/05/25 13:08:37 Tracing xdp progs..
+</span></span><span class="line"><span class="cl">2024/05/25 13:08:37 Listening <span class="k">for</span> events..
+</span></span><span class="line"><span class="cl">            SKB/SK    CPU          PROCESS                     FUNC
+</span></span><span class="line"><span class="cl">0xffff990282314000      <span class="m">2</span>     <span class="o">[</span>&lt;empty&gt;<span class="o">(</span>0<span class="o">)]</span>               dummy<span class="o">(</span>xdp<span class="o">)</span> <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span>2<span class="o">(</span>ens33<span class="o">)</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">1500</span> <span class="nv">len</span><span class="o">=</span><span class="m">98</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.1-&gt;192.168.241.133<span class="o">(</span>icmp request <span class="nv">id</span><span class="o">=</span><span class="m">23089</span> <span class="nv">seq</span><span class="o">=</span>0<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Saving this packet to vista.pcapng..
+</span></span><span class="line"><span class="cl">0xffff990282314000      <span class="m">2</span>     <span class="o">[</span>&lt;empty&gt;<span class="o">(</span>0<span class="o">)]</span>               dummy<span class="o">(</span>xdp<span class="o">)</span> <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span>2<span class="o">(</span>ens33<span class="o">)</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">1500</span> <span class="nv">len</span><span class="o">=</span><span class="m">98</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.1-&gt;192.168.241.133<span class="o">(</span>icmp request <span class="nv">id</span><span class="o">=</span><span class="m">23089</span> <span class="nv">seq</span><span class="o">=</span>0<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Saving this packet to vista.pcapng..
+</span></span><span class="line"><span class="cl">0xffff990282314000      <span class="m">2</span>     <span class="o">[</span>&lt;empty&gt;<span class="o">(</span>0<span class="o">)]</span>                dummy<span class="o">(</span>tc<span class="o">)</span> <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span>2<span class="o">(</span>ens33<span class="o">)</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">1500</span> <span class="nv">len</span><span class="o">=</span><span class="m">98</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.1-&gt;192.168.241.133<span class="o">(</span>icmp request <span class="nv">id</span><span class="o">=</span><span class="m">23089</span> <span class="nv">seq</span><span class="o">=</span>0<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Saving this packet to vista.pcapng..
+</span></span><span class="line"><span class="cl">0xffff990282314000      <span class="m">2</span>     <span class="o">[</span>&lt;empty&gt;<span class="o">(</span>0<span class="o">)]</span>                dummy<span class="o">(</span>tc<span class="o">)</span> <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span>2<span class="o">(</span>ens33<span class="o">)</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">1500</span> <span class="nv">len</span><span class="o">=</span><span class="m">98</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.1-&gt;192.168.241.133<span class="o">(</span>icmp request <span class="nv">id</span><span class="o">=</span><span class="m">23089</span> <span class="nv">seq</span><span class="o">=</span>0<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Saving this packet to vista.pcapng..
+</span></span><span class="line"><span class="cl">2024/05/25 13:08:39 Printed <span class="m">4</span> events, exiting program..
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>vista.pcapng</code> 文件内容如下：</p>
+<p><img src="/talk-117-vista-pcapng.png" alt="vista.pcapng"></p>
+<p>从上图中，可以看到 vista 抓到了四个 ICMP 请求包；其中展示的第二个包包含有 XDP prog 的返回值 <code>XDP_PASS</code>。</p>
+<p>对比 tcpdump 的 pcapng 文件，可以看到 vista 的 pcapng 文件中包含了更多的元数据信息：</p>
+<ol>
+<li><code>Packet comments</code>：包含 prog 返回值、bpf prog 是 XDP 还是 tc、网口名称、trace 方式是 <code>fentry</code> 还是 <code>fexit</code>。</li>
+<li><code>Interface queue</code>：收包的 queue ID。</li>
+<li><code>Verdict</code>：XDP/tc prog 的返回值。</li>
+</ol>
+<h2 id="ebpf-抓包">eBPF 抓包</h2>
+<p>使用 eBPF 进行抓包，基本依赖于 <code>bpf_xdp_outpu()</code> 和 <code>bpf_skb_output()</code> 这 2 个 helper 函数。<code>bpf_xdp_output()</code> 用于 XDP prog，<code>bpf_skb_output()</code> 用于 tc prog。</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/commit/d831ee84bfc9173eecf30dbbc2553ae81b996c60">bpf_xdp_output()</a> since 5.7 kernel.</li>
+<li><a href="https://github.com/torvalds/linux/commit/a7658e1a4164ce2b9eb4a11aadbba38586e93bd6">bpf_skb_output()</a> since 5.5 kernel.</li>
+</ul>
+<p><code>bpf_xdp_output()</code> 的用法如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// https://github.com/Asphaltt/vista/blob/a913db0d623202a0d5e94522c7d604d0c3197250/bpf/vista.c#L733
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">output_xdp_pcap_event</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_buff</span> <span class="o">*</span><span class="n">xdp</span><span class="p">,</span> <span class="k">struct</span> <span class="kt">event_t</span> <span class="o">*</span><span class="n">event</span><span class="p">,</span> <span class="n">u32</span> <span class="n">len</span><span class="p">,</span> <span class="kt">int</span> <span class="n">action</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">is_fexit</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">set_xdp_pcap_meta</span><span class="p">(</span><span class="n">xdp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">event</span><span class="o">-&gt;</span><span class="n">pcap</span><span class="p">,</span> <span class="n">len</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">is_fexit</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">u64</span> <span class="n">flags</span> <span class="o">=</span> <span class="p">(((</span><span class="n">u64</span><span class="p">)</span> <span class="n">event</span><span class="o">-&gt;</span><span class="n">pcap</span><span class="p">.</span><span class="n">cap_len</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="n">BPF_F_CURRENT_CPU</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_xdp_output</span><span class="p">(</span><span class="n">xdp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pcap_events</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">__sizeof_pcap_event</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>bpf_skb_output()</code> 的用法如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// https://github.com/Asphaltt/vista/blob/a913db0d623202a0d5e94522c7d604d0c3197250/bpf/vista.c#L573
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">output_skb_pcap_event</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="kt">event_t</span> <span class="o">*</span><span class="n">event</span><span class="p">,</span> <span class="kt">int</span> <span class="n">action</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">is_fexit</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u64</span> <span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">set_skb_pcap_meta</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">event</span><span class="o">-&gt;</span><span class="n">pcap</span><span class="p">,</span> <span class="n">action</span><span class="p">,</span> <span class="n">is_fexit</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">flags</span> <span class="o">=</span> <span class="p">(((</span><span class="n">u64</span><span class="p">)</span> <span class="n">event</span><span class="o">-&gt;</span><span class="n">pcap</span><span class="p">.</span><span class="n">cap_len</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="n">BPF_F_CURRENT_CPU</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_skb_output</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pcap_events</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">__sizeof_pcap_event</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在用户态程序里，网络包数据在 perf event 里的后半部分，即读取到 event 数据后，就能读取到网络包数据。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">+-----------------+-----------------+
+</span></span><span class="line"><span class="cl">| event data      | packet data     |
+</span></span><span class="line"><span class="cl">+-----------------+-----------------+
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>所以，在处理完 event 数据后，就能读取到网络包数据，然后写入 pcap 文件。</p>
+<h2 id="使用-gopacket-保存网络包">使用 gopacket 保存网络包</h2>
+<p>据了解，<a href="https://github.com/gopacket/gopacket">gopacket</a> 并不支持在 <code>WritePacket()</code> 时写入更多 pcapng 的元数据信息，即使 <a href="https://github.com/google/gopacket">google/gopacket</a> 亦是如此。</p>
+<p>因此，需要自己实现 pcapng 的元数据信息写入。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-diff" data-lang="diff"><span class="line"><span class="cl"><span class="gd">-// WritePacket writes out packet with the given data and capture info. The given InterfaceIndex must already be added to the file. InterfaceIndex 0 is automatically added by the NewWriter* methods.
+</span></span></span><span class="line"><span class="cl"><span class="gd">-func (w *NgWriter) WritePacket(ci gopacket.CaptureInfo, data []byte) error {
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+// WritePacket writes out packet with the given data, capture info and some
+</span></span></span><span class="line"><span class="cl"><span class="gi">+// options. The given InterfaceIndex must already be added to the file.
+</span></span></span><span class="line"><span class="cl"><span class="gi">+// InterfaceIndex 0 is automatically added by the NewWriter* methods. The
+</span></span></span><span class="line"><span class="cl"><span class="gi">+// additional options are written with the packet. But the additional option can
+</span></span></span><span class="line"><span class="cl"><span class="gi">+// not be empty, or it will panic.
+</span></span></span><span class="line"><span class="cl"><span class="gi">+func (w *NgWriter) WritePacket(ci gopacket.CaptureInfo, data []byte, options ...NgOption) error {
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>        if ci.InterfaceIndex &gt;= int(w.intf) || ci.InterfaceIndex &lt; 0 {
+</span></span><span class="line"><span class="cl">                return fmt.Errorf(&#34;Can&#39;t send statistics for non existent interface %d; have only %d interfaces&#34;, ci.InterfaceIndex, w.intf)
+</span></span><span class="line"><span class="cl">        }
+</span></span><span class="line"><span class="cl"><span class="gu">@@ -367,6 +371,7 @@ func (w *NgWriter) WritePacket(ci gopacket.CaptureInfo, data []byte) error {
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>        length := uint32(len(data)) + 32
+</span></span><span class="line"><span class="cl">        padding := (4 - length&amp;3) &amp; 3
+</span></span><span class="line"><span class="cl">        length += padding
+</span></span><span class="line"><span class="cl"><span class="gi">+       length += prepareNgOptions(options)
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>
+</span></span><span class="line"><span class="cl">        ts := ci.Timestamp.UnixNano()
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="gu">@@ -387,7 +392,15 @@ func (w *NgWriter) WritePacket(ci gopacket.CaptureInfo, data []byte) error {
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>        }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        binary.LittleEndian.PutUint32(w.buf[:4], 0)
+</span></span><span class="line"><span class="cl"><span class="gd">-       _, err := w.w.Write(w.buf[4-padding : 8]) // padding + length
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+       if _, err := w.w.Write(w.buf[4-padding : 4]); err != nil { // padding
+</span></span></span><span class="line"><span class="cl"><span class="gi">+               return err
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       }
+</span></span></span><span class="line"><span class="cl"><span class="gi">+
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       if err := w.writeOptions(options); err != nil {
+</span></span></span><span class="line"><span class="cl"><span class="gi">+               return err
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       }
+</span></span></span><span class="line"><span class="cl"><span class="gi">+
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       _, err := w.w.Write(w.buf[4:8]) // length
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>        return err
+</span></span><span class="line"><span class="cl"> }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>此 diff 给 <code>NgWriter</code> 的 <code>WritePacket()</code> 方法增加了 <code>options</code> 参数，用于写入 pcapng 的元数据信息。</p>
+<p>与此同时，新增几个 <code>NewOptionXXX()</code> 函数，用于生成 pcapng 的元数据信息。</p>
+<p>更多细节，请看 commit <a href="https://github.com/Asphaltt/gopacket/commit/7b4421d025150a7fd41a93c15a3db5f9686f4c05">Write packet with options for NgWriter</a>。</p>
+<p>最终，在 vista 里，生成 <code>options</code> 并写入 pcapng 文件里：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="c1">// https://github.com/Asphaltt/vista/blob/main/internal/vista/output_pcap.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">p</span> <span class="o">*</span><span class="nx">pcapWriter</span><span class="p">)</span> <span class="nf">meta2options</span><span class="p">(</span><span class="nx">ev</span> <span class="o">*</span><span class="nx">Event</span><span class="p">,</span> <span class="nx">meta</span> <span class="o">*</span><span class="nx">PcapMeta</span><span class="p">,</span> <span class="nx">iface</span> <span class="kt">string</span><span class="p">)</span> <span class="p">[]</span><span class="nx">pcapgo</span><span class="p">.</span><span class="nx">NgOption</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kd">var</span> <span class="nx">opts</span> <span class="p">[]</span><span class="nx">pcapgo</span><span class="p">.</span><span class="nx">NgOption</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">info</span> <span class="o">:=</span> <span class="kd">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">string</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">isFexit</span> <span class="o">:=</span> <span class="nx">meta</span><span class="p">.</span><span class="nx">IsFexit</span> <span class="o">==</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">isFexit</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">info</span><span class="p">[</span><span class="s">&#34;tracing&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="s">&#34;fexit&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">info</span><span class="p">[</span><span class="s">&#34;tracing&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="s">&#34;fentry&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">isXdp</span> <span class="o">:=</span> <span class="nx">ev</span><span class="p">.</span><span class="nx">Type</span> <span class="o">==</span> <span class="nx">eventTypeTracingXdp</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">isXdp</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">info</span><span class="p">[</span><span class="s">&#34;bpf&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="s">&#34;xdp&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">info</span><span class="p">[</span><span class="s">&#34;bpf&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="s">&#34;tc&#34;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">isFexit</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">action</span> <span class="o">:=</span> <span class="nx">meta</span><span class="p">.</span><span class="nx">Action</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nx">isXdp</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">info</span><span class="p">[</span><span class="s">&#34;action&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nf">xdpAction</span><span class="p">(</span><span class="nx">action</span><span class="p">).</span><span class="nf">Action</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">info</span><span class="p">[</span><span class="s">&#34;action&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nf">tcAction</span><span class="p">(</span><span class="nx">action</span><span class="p">).</span><span class="nf">Action</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">iface</span> <span class="o">!=</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">info</span><span class="p">[</span><span class="s">&#34;iface&#34;</span><span class="p">]</span> <span class="p">=</span> <span class="nx">iface</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">data</span><span class="p">,</span> <span class="nx">_</span> <span class="o">:=</span> <span class="nx">json</span><span class="p">.</span><span class="nf">Marshal</span><span class="p">(</span><span class="nx">info</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">comment</span> <span class="o">:=</span> <span class="nb">string</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">opts</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">opts</span><span class="p">,</span> <span class="nx">pcapgo</span><span class="p">.</span><span class="nf">NewOptionComment</span><span class="p">(</span><span class="nx">comment</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">isFexit</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// Ref:
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="c1">// https://www.ietf.org/archive/id/draft-tuexen-opsawg-pcapng-03.html#section-4.3-19.2.1
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="c1">//
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="c1">// The verdict type can be: Hardware (type octet = 0, size = variable),
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="c1">// Linux_eBPF_TC (type octet = 1, size = 8 (64-bit unsigned integer),
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="c1">// value = TC_ACT_* as defined in the Linux pck_cls.h include),
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="c1">// Linux_eBPF_XDP (type octet = 2, size = 8 (64-bit unsigned integer),
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="c1">// value = xdp_action as defined in the Linux pbf.h include).
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="nx">verdict</span> <span class="o">:=</span> <span class="p">[</span><span class="mi">9</span><span class="p">]</span><span class="kt">byte</span><span class="p">{}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nx">isXdp</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">verdict</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">=</span> <span class="mi">2</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">verdict</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">=</span> <span class="mi">1</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">binary</span><span class="p">.</span><span class="nx">NativeEndian</span><span class="p">.</span><span class="nf">PutUint64</span><span class="p">(</span><span class="nx">verdict</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="nb">uint64</span><span class="p">(</span><span class="nx">meta</span><span class="p">.</span><span class="nx">Action</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="nx">opts</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">opts</span><span class="p">,</span> <span class="nx">pcapgo</span><span class="p">.</span><span class="nf">NewOptionEnhancedPacketVerdict</span><span class="p">(</span><span class="nx">verdict</span><span class="p">[:]))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">opts</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">opts</span><span class="p">,</span> <span class="nx">pcapgo</span><span class="p">.</span><span class="nf">NewOptionEnhancedPacketQueueID</span><span class="p">(</span><span class="nx">meta</span><span class="p">.</span><span class="nx">RxQueue</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">opts</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">p</span> <span class="o">*</span><span class="nx">pcapWriter</span><span class="p">)</span> <span class="nf">writePacket</span><span class="p">(</span><span class="nx">ev</span> <span class="nx">OutputEvent</span><span class="p">,</span> <span class="nx">iface</span> <span class="kt">string</span><span class="p">)</span> <span class="kt">error</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">meta</span> <span class="o">:=</span> <span class="nx">ev</span><span class="p">.</span><span class="nx">Event</span><span class="p">.</span><span class="nf">Pcap</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">info</span> <span class="o">:=</span> <span class="nx">gopacket</span><span class="p">.</span><span class="nx">CaptureInfo</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Timestamp</span><span class="p">:</span>     <span class="nx">time</span><span class="p">.</span><span class="nf">Now</span><span class="p">(),</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">CaptureLength</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="nx">meta</span><span class="p">.</span><span class="nx">CapLen</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">Length</span><span class="p">:</span>        <span class="nb">int</span><span class="p">(</span><span class="nx">ev</span><span class="p">.</span><span class="nx">Event</span><span class="p">.</span><span class="nx">Meta</span><span class="p">.</span><span class="nx">Len</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kd">var</span> <span class="nx">err</span> <span class="kt">error</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">p</span><span class="p">.</span><span class="nx">ngw</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">opts</span> <span class="o">:=</span> <span class="nx">p</span><span class="p">.</span><span class="nf">meta2options</span><span class="p">(</span><span class="nx">ev</span><span class="p">.</span><span class="nx">Event</span><span class="p">,</span> <span class="nx">meta</span><span class="p">,</span> <span class="nx">iface</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">err</span> <span class="p">=</span> <span class="nx">p</span><span class="p">.</span><span class="nx">ngw</span><span class="p">.</span><span class="nf">WritePacket</span><span class="p">(</span><span class="nx">info</span><span class="p">,</span> <span class="nx">ev</span><span class="p">.</span><span class="nx">Packet</span><span class="p">,</span> <span class="nx">opts</span><span class="o">...</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其实，支持写入 comment 元数据信息的功能后，能新增更多的元数据信息，毕竟 comment 的内容是自定义的。</p>
+<h2 id="总结">总结</h2>
+<p>vista 支持对 XDP/tc-bpf 进行抓包，这是一种时髦的做法。使用 eBPF 进行抓包，基本依赖于 <code>bpf_xdp_output()</code> 和 <code>bpf_skb_output()</code> 这 2 个 helper 函数。而使用 gopacket 保存网络包时，需要增强其写入 pcapng 的元数据信息的能力。</p>
+<hr>
+<p>更多 XDP 资料，请加入「eBPF Talk」知识星球来学习《XDP 进阶手册》吧。</p>
+<p><img src="/zhishixingqiu.png" alt="eBPF Talk 知识星球"></p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-05-26
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/vista/">vista</a>
+      <a href="/%20tags/gopacket/">gopacket</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-116-upgrade-xdp-costlessly/">
+        <span class="next-text nav-default">eBPF Talk: 混部环境下无损升级 XDP 程序的思路</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

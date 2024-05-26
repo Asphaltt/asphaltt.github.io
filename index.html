@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
-  <meta itemprop="dateModified" content="2024-05-26T16:28:58+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-05-26T16:30:37+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-117-pcap-in-vista/">eBPF Talk: vista 支持对 XDP/tc-bpf 进行抓包</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1578 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      对内核 skb 进行 trace 是一种时髦，使用 eBPF 进行抓包是另一种时髦。本文介绍 vista 是如何赶另一种时髦的。 了解到 eBPF 能够实现抓包后，心痒不已，而且 vista 已支持对 XDP/tc-bpf 进行
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-117-pcap-in-vista/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-116-upgrade-xdp-costlessly/">eBPF Talk: 混部环境下无损升级 XDP 程序的思路</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-108-ecapture-supports-pcap-filter/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-107-introduce-socketrace/">eBPF Talk: 打造自己的 socket 跟踪工具 socketrace</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-05-26 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 816 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      忽而蹦出个想法：何不参考 pwru 那样，跟踪所有带有 struct sock *sk 参数的函数？ 既然脱胎于 pwru，那么就直接复用 pwru 的代码，快速实现一个 socketrace 工具。 1 2 3 4 5 6 7
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-107-introduce-socketrace/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

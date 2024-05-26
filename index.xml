@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 26 May 2024 16:28:58 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 26 May 2024 16:30:37 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: vista 支持对 XDP/tc-bpf 进行抓包</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-117-pcap-in-vista/</link>
+      <pubDate>Sun, 26 May 2024 16:30:37 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-117-pcap-in-vista/</guid>
+      <description>对内核 skb 进行 trace 是一种时髦，使用 eBPF 进行抓包是另一种时髦。本文介绍 vista 是如何赶另一种时髦的。 了解到 eBPF 能够实现抓包后，心痒不已，而且 vista 已支持对 XDP/tc-bpf 进行</description>
+    </item>
     <item>
       <title>eBPF Talk: 混部环境下无损升级 XDP 程序的思路</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-116-upgrade-xdp-costlessly/</link>
