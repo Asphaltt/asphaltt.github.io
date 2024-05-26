@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Bpfbak on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/bpfbak/</link>
+    <description>Recent content in Bpfbak on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo 0.125.0-DEV</generator>
+    <language>zh</language>
+    <copyright>Leon Hwang</copyright>
+    <lastBuildDate>Sun, 26 May 2024 16:28:58 +0800</lastBuildDate>
+    <atom:link href="https://asphaltt.github.io/tags/bpfbak/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 混部环境下无损升级 XDP 程序的思路</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-116-upgrade-xdp-costlessly/</link>
+      <pubDate>Sun, 26 May 2024 16:28:58 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-116-upgrade-xdp-costlessly/</guid>
+      <description>混部环境指的是当前服务器不是 XDP 程序独占的，部署有其它的网络服务。 如果服务器使用的是 Intel 网卡、而且 XDP 程序采用 Native 模式挂载到网卡上，那么在挂载和卸载</description>
+    </item>
+  </channel>
+</rss>

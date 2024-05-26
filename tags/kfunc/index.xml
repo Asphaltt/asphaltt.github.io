@@ -2,17 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kfunc on LeonHwang&#39;s Blogs</title>
-    <link>https://le0nhwan9.github.io/tags/kfunc/</link>
+    <link>https://asphaltt.github.io/tags/kfunc/</link>
     <description>Recent content in Kfunc on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
+    <copyright>Leon Hwang</copyright>
     <lastBuildDate>Wed, 15 May 2024 23:29:42 +0800</lastBuildDate>
-    <atom:link href="https://le0nhwan9.github.io/tags/kfunc/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://asphaltt.github.io/tags/kfunc/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: introduce kfuncs</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-94-introduce-kfuncs/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-94-introduce-kfuncs/</link>
       <pubDate>Wed, 15 May 2024 23:29:42 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-94-introduce-kfuncs/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-94-introduce-kfuncs/</guid>
       <description>通过 bpf: Support bpf program calling kernel function 学习 kfuncs 的实现。 不过，此 kfuncs 不是 bpftrace kfunc/kretfunc: Kernel Functions Tracing。bpftrace 的 kfunc 是的底层是 fentry/fexit。 BPF Kernel Functions (kfuncs) 该内核</description>
     </item>
   </channel>

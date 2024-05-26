@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 善用 TCP option 来支持网关 ping - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="这里的网关 ping 指的是对虚拟网络网关发包，确认网关的数据面能够符合预期地转发网络包。 在部署、升级网关的时候，需要对网关进行 ping 测试，以确认网关的数" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-111-tcp-option-for-gateway-ping/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 善用 TCP option 来支持网关 ping" />
+<meta property="og:description" content="这里的网关 ping 指的是对虚拟网络网关发包，确认网关的数据面能够符合预期地转发网络包。 在部署、升级网关的时候，需要对网关进行 ping 测试，以确认网关的数" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-111-tcp-option-for-gateway-ping/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-05-26T16:20:37+08:00" />
+<meta property="article:modified_time" content="2024-05-26T16:20:37+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 善用 TCP option 来支持网关 ping">
+  <meta itemprop="description" content="这里的网关 ping 指的是对虚拟网络网关发包，确认网关的数据面能够符合预期地转发网络包。 在部署、升级网关的时候，需要对网关进行 ping 测试，以确认网关的数">
+  <meta itemprop="datePublished" content="2024-05-26T16:20:37+08:00">
+  <meta itemprop="dateModified" content="2024-05-26T16:20:37+08:00">
+  <meta itemprop="wordCount" content="777">
+  <meta itemprop="keywords" content="EBPF,TCP Option,Gateway Ping,Gopacket"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 善用 TCP option 来支持网关 ping"/>
+<meta name="twitter:description" content="这里的网关 ping 指的是对虚拟网络网关发包，确认网关的数据面能够符合预期地转发网络包。 在部署、升级网关的时候，需要对网关进行 ping 测试，以确认网关的数"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 善用 TCP option 来支持网关 ping</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 777 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#选择-tcp-option">选择 TCP option</a></li>
+        <li><a href="#网关对该-tcp-option-的支持">网关对该 TCP option 的支持</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>这里的网关 ping 指的是对虚拟网络网关发包，确认网关的数据面能够符合预期地转发网络包。</p>
+<p>在部署、升级网关的时候，需要对网关进行 ping 测试，以确认网关的数据面符合预期地转发网络包。目前，发的 ping 包是 tcp SYN 包。</p>
+<p>然而，存在一个网关跟业务节点混部的场景，导致网关的数据面不知道该将 SYN 包转发出去，还是放行到内核协议栈。</p>
+<p>近来，研究了一下解决办法：</p>
+<ol>
+<li>将 MAGIC 存放在 SYN 包的 payload 中；</li>
+<li>将 MAGIC 存放在 TCP option 中;</li>
+</ol>
+<p>网关判断 magic number 是不是网关 ping 包：</p>
+<ol>
+<li>如果是 MAGIC，则将 MAGIC 减一，然后转发出去；</li>
+<li>如果是 MAGIC-1，则放行到内核协议栈。</li>
+</ol>
+<p>经过 POC 验证，方法 1 不可行；因为取决于内核协议栈的行为，可能直接丢包，也有可能回包。</p>
+<p>经过 POC 验证，方法 2 可行。</p>
+<h2 id="选择-tcp-option">选择 TCP option</h2>
+<p>因为需要存放 MAGIC，所以需要选择能支持值为 4 个字节长度的 option。</p>
+<p>快速了解了一下 TCP options，看到 <a href="https://en.wikipedia.org/wiki/Transmission_Control_Protocol#TCP_timestamps">TCP timestamps option</a> 符合需求，就它了。</p>
+<p>使用 <a href="https://pkg.go.dev/github.com/google/gopacket@v1.1.19/layers#TCP">gopacket</a> 发包时，将 MAGIC 写入该 TCP option 即可：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="kd">const</span> <span class="nx">MAGIC</span> <span class="p">=</span> <span class="mh">0xdeadbeef</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nx">optData</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="kt">byte</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="nx">binary</span><span class="p">.</span><span class="nx">BigEndian</span><span class="p">.</span><span class="nf">PutUint32</span><span class="p">(</span><span class="nx">optData</span><span class="p">[:</span><span class="mi">4</span><span class="p">],</span> <span class="nx">MAGIC</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nx">tcpLayer</span> <span class="o">:=</span> <span class="nx">layers</span><span class="p">.</span><span class="nx">TCP</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="nx">Options</span><span class="p">:</span> <span class="p">[]</span><span class="nx">layers</span><span class="p">.</span><span class="nx">TCPOption</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="p">{</span><span class="nx">OptionType</span><span class="p">:</span> <span class="nx">layers</span><span class="p">.</span><span class="nx">TCPOptionKindTimestamps</span><span class="p">,</span> <span class="nx">OptionLength</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="nx">OptionData</span><span class="p">:</span> <span class="nx">optData</span><span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="p">},</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="网关对该-tcp-option-的支持">网关对该 TCP option 的支持</h2>
+<p>因为是 tcp SYN 包，所以在判断协议、SYN 等之后，就需要做如下处理：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="cp">#define MAGIC       0xdeadbeef
+</span></span></span><span class="line"><span class="cl"><span class="cp">#define MAGIC_PASS  0xddadbeef
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">tcp_option_timestamps</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u8</span> <span class="n">type</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u8</span> <span class="n">len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u32</span> <span class="n">magic</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u32</span> <span class="n">pad</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">__packed</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl"><span class="nf">pass_to_kernel</span><span class="p">(</span><span class="k">struct</span> <span class="n">iphdr</span> <span class="o">*</span><span class="n">iph</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">tcphdr</span> <span class="o">*</span><span class="n">tcph</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">tcph</span><span class="p">))</span> <span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">iph</span> <span class="o">+</span> <span class="p">(</span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">ihl</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">tcp_option_timestamps</span> <span class="o">*</span><span class="n">topt</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">topt</span><span class="p">))</span> <span class="p">(</span><span class="n">tcph</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">topt</span><span class="o">-&gt;</span><span class="n">magic</span> <span class="o">==</span> <span class="n">MAGIC_PASS</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">topt</span><span class="o">-&gt;</span><span class="n">magic</span> <span class="o">!=</span> <span class="n">MAGIC</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// Update tcp checksum.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">u32</span> <span class="n">check</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span> <span class="n">tcph</span><span class="o">-&gt;</span><span class="n">check</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">check</span> <span class="o">+=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span> <span class="nf">bpf_htons</span><span class="p">(</span><span class="mh">0x0100</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">tcp</span><span class="o">-&gt;</span><span class="n">check</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span> <span class="p">(</span><span class="n">check</span> <span class="o">+</span> <span class="p">(</span><span class="n">check</span><span class="o">&gt;=</span><span class="mh">0xFFFF</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">topt</span><span class="o">-&gt;</span><span class="n">magic</span><span class="o">--</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol>
+<li>MAGIC_PASS 是 MAGIC 以大端存放在 option 里而后在小端服务器上减一的结果。</li>
+<li>判断 magic 是 MAGIC_PASS，则放行到内核协议栈。</li>
+<li>判断 magic 不是 MAGIC，则跳过对 magic 的处理。</li>
+<li>参考 IP 头部 TTL 减一时的校验和更新方法，更新 TCP 头部的校验和。</li>
+<li>magic 减一。</li>
+</ol>
+<p>如此，网关便可判断出一个 ping 包该放行到内核协议栈还是该转发走了。</p>
+<h2 id="小结">小结</h2>
+<p>通过将 MAGIC 保存到 TCP timestamps option 的方式，巧妙地让网关正确地判断出 ping 包、并正确地处理 ping 包。</p>
+<p>以此，更好地支持网关跟业务节点混部的场景。毕竟，得降本增效嘛。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-05-26
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/tcp-option/">TCP option</a>
+      <a href="/%20tags/gateway-ping/">gateway ping</a>
+      <a href="/%20tags/gopacket/">gopacket</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-112-use-netns-to-keep-away-from-iptables/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 使用隔离的 netns 避免 iptables 规则干扰收发 ping 包</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-110-source-code-of-ebpf-vm-on-ebpf/">
+        <span class="next-text nav-default">eBPF Talk: 开放 eBPF vm on eBPF 源代码</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>EBPF Vm on EBPF on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/ebpf-vm-on-ebpf/</link>
+    <description>Recent content in EBPF Vm on EBPF on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo 0.125.0-DEV</generator>
+    <language>zh</language>
+    <copyright>Leon Hwang</copyright>
+    <lastBuildDate>Sun, 26 May 2024 16:17:08 +0800</lastBuildDate>
+    <atom:link href="https://asphaltt.github.io/tags/ebpf-vm-on-ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 开放 eBPF vm on eBPF 源代码</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-110-source-code-of-ebpf-vm-on-ebpf/</link>
+      <pubDate>Sun, 26 May 2024 16:17:08 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-110-source-code-of-ebpf-vm-on-ebpf/</guid>
+      <description>在 eBPF Talk: 巨献 eBPF vm on eBPF 一文中，简要介绍了 eBPF vm on eBPF；经过一番考虑后，决定将 eBPF vm on eBPF 的源代码开放出来。 TL;DR 源代码：eBPF vm on eBPF。 eBPF vm 该 vm</description>
+    </item>
+    <item>
+      <title>eBPF Talk: 巨献 eBPF vm on eBPF</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-103-ebpf-vm-on-ebpf/</link>
+      <pubDate>Sun, 26 May 2024 15:42:24 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-103-ebpf-vm-on-ebpf/</guid>
+      <description>花了几天时间，将 eBPF vm on eBPF 的想法实现了一下，这是一个非常有趣的想法。以前用 Go 实现过 eBPF vm，所以这回轻车熟路，很快就实现了一个 eBPF vm on eBPF demo。</description>
+    </item>
+  </channel>
+</rss>

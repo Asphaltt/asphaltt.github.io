@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: ethtool 跟踪工具 ethtoolsnoop - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="在 eBPF Talk: 记录一次网络抖动排障 中，遇到了 ethtool -m XXX 导致的网络抖动问题。因为没有趁手的工具直接排查出问题的原因，所以，我写了一个 ethtool 跟踪工具 ethtoo" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-106-introduce-ethtoolsnoop/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: ethtool 跟踪工具 ethtoolsnoop" />
+<meta property="og:description" content="在 eBPF Talk: 记录一次网络抖动排障 中，遇到了 ethtool -m XXX 导致的网络抖动问题。因为没有趁手的工具直接排查出问题的原因，所以，我写了一个 ethtool 跟踪工具 ethtoo" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-106-introduce-ethtoolsnoop/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-05-26T15:51:23+08:00" />
+<meta property="article:modified_time" content="2024-05-26T15:51:23+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: ethtool 跟踪工具 ethtoolsnoop">
+  <meta itemprop="description" content="在 eBPF Talk: 记录一次网络抖动排障 中，遇到了 ethtool -m XXX 导致的网络抖动问题。因为没有趁手的工具直接排查出问题的原因，所以，我写了一个 ethtool 跟踪工具 ethtoo">
+  <meta itemprop="datePublished" content="2024-05-26T15:51:23+08:00">
+  <meta itemprop="dateModified" content="2024-05-26T15:51:23+08:00">
+  <meta itemprop="wordCount" content="1247">
+  <meta itemprop="keywords" content="EBPF,Ethtool,Ethtoolsnoop"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: ethtool 跟踪工具 ethtoolsnoop"/>
+<meta name="twitter:description" content="在 eBPF Talk: 记录一次网络抖动排障 中，遇到了 ethtool -m XXX 导致的网络抖动问题。因为没有趁手的工具直接排查出问题的原因，所以，我写了一个 ethtool 跟踪工具 ethtoo"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: ethtool 跟踪工具 ethtoolsnoop</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1247 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#ethtoolsnoop-用法"><code>ethtoolsnoop</code> 用法</a></li>
+        <li><a href="#ethtoolsnoop-实现"><code>ethtoolsnoop</code> 实现</a></li>
+        <li><a href="#ethtoolsnoop-源代码"><code>ethtoolsnoop</code> 源代码</a></li>
+        <li><a href="#ethtoolsnoop-实现时踩的坑"><code>ethtoolsnoop</code> 实现时踩的坑</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>在 <a href="/post/ebpf-talk-105-network-jitter/">eBPF Talk: 记录一次网络抖动排障</a> 中，遇到了 <code>ethtool -m XXX</code> 导致的网络抖动问题。因为没有趁手的工具直接排查出问题的原因，所以，我写了一个 <code>ethtool</code> 跟踪工具 <code>ethtoolsnoop</code>。即使 exporter 通过 library 的方式去实现 <code>ethtool -m XXX</code>，也能跟踪到。</p>
+<h2 id="ethtoolsnoop-用法"><code>ethtoolsnoop</code> 用法</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># echo Execute `ethtool -i enp0s1; ethtool -l enp0s1; ethtool -g enp0s1` in another terminal.</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ./ethtoolsnoop</span>
+</span></span><span class="line"><span class="cl">Interface             PID:Process                          IOCTL_CMD/GENL_CMD             ethtool args
+</span></span><span class="line"><span class="cl">enp0s1              11198:ethtool<span class="o">(</span>parent 6373:zsh<span class="o">)</span>         ETHTOOL_GDRVINFO               -d<span class="p">|</span>--register-dump<span class="o">(</span>Do a register dump<span class="o">)</span>, -e<span class="p">|</span>--eeprom-dump<span class="o">(</span>Do a EEPROM dump<span class="o">)</span>, -i<span class="p">|</span>--driver<span class="o">(</span>Show driver information<span class="o">)</span>
+</span></span><span class="line"><span class="cl">enp0s1              11199:ethtool<span class="o">(</span>parent 6373:zsh<span class="o">)</span>         ETHTOOL_MSG_CHANNELS_GET       -l<span class="p">|</span>--show-channels<span class="o">(</span>Query Channels<span class="o">)</span>
+</span></span><span class="line"><span class="cl">enp0s1              11200:ethtool<span class="o">(</span>parent 6373:zsh<span class="o">)</span>         ETHTOOL_MSG_RINGS_GET          -g<span class="p">|</span>--show-ring<span class="o">(</span>Query RX/TX ring parameters<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在输出中，</p>
+<ul>
+<li><code>Interface</code>：网卡名称，不区分 netns</li>
+<li><code>PID:Process</code>：执行 <code>ethtool</code> 的进程信息；如果是 <code>ethtool</code> 本身，同时给出执行 <code>ethtool</code> 命令的父进程信息</li>
+<li><code>IOCTL_CMD/GENL_CMD</code>：<code>ethtool</code> 提供给内核执行的 <code>ioctl()</code> 命令或者 genetlink message 命令</li>
+<li><code>ethtool args</code>: <code>IOCTL_CMD/GENL_CMD</code> 对应的 <code>ethtool</code> 命令行参数（可能不全）</li>
+</ul>
+<h2 id="ethtoolsnoop-实现"><code>ethtoolsnoop</code> 实现</h2>
+<p>大概翻阅了一下 <code>ethtool</code> 的源代码，发现 <code>ethtool</code> 可以通过 <code>ioctl()</code> 或者 genetlink message 与内核通信。于是，我继续翻阅内核里面 <code>ethtool</code> 的 <code>ioctl()</code> 和 genetlink message 的实现：</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/blob/v6.7/net/ethtool/ioctl.c#L3067">ethtool ioctl dev_tool()</a></li>
+<li><a href="https://github.com/torvalds/linux/blob/v6.7/net/ethtool/netlink.c#L370">ethtool genetlink ethnl_default_doit()</a></li>
+</ul>
+<p>所以，对于 <code>ethtool</code> <code>ioctl()</code> 的跟踪，只需要 <code>kprobe</code> <code>dev_ethtool()</code> 即可；对于 <code>ethtool</code> genetlink message 的跟踪，需要 <code>kprobe</code> <code>ethnl_default_doit()</code>，同时对 <code>ethnl_default_doit()</code> 进行 <code>kprobe</code> 和 <code>kretprobe</code>（为了拿到 Interface）。或许对 <code>ethtool</code> genetlink message 的跟踪不够全面，但已经足够了。</p>
+<h2 id="ethtoolsnoop-源代码"><code>ethtoolsnoop</code> 源代码</h2>
+<p>最终，<code>ethtoolsnoop</code> 的 bpf 代码比较简单：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span><span class="lnt">82
+</span><span class="lnt">83
+</span><span class="lnt">84
+</span><span class="lnt">85
+</span><span class="lnt">86
+</span><span class="lnt">87
+</span><span class="lnt">88
+</span><span class="lnt">89
+</span><span class="lnt">90
+</span><span class="lnt">91
+</span><span class="lnt">92
+</span><span class="lnt">93
+</span><span class="lnt">94
+</span><span class="lnt">95
+</span><span class="lnt">96
+</span><span class="lnt">97
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="n">u32</span>
+</span></span><span class="line"><span class="cl"><span class="nf">get_ethcmd</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">useraddr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u32</span> <span class="n">cmd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_probe_read_user</span><span class="p">(</span><span class="o">&amp;</span><span class="n">cmd</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">cmd</span><span class="p">),</span> <span class="n">useraddr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">cmd</span> <span class="o">==</span> <span class="n">ETHTOOL_PERQUEUE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">cmd</span> <span class="o">=</span> <span class="nf">bpf_probe_read_user</span><span class="p">(</span><span class="o">&amp;</span><span class="n">cmd</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">cmd</span><span class="p">),</span> <span class="n">useraddr</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">cmd</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">cmd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__kp_dev_ethtool</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net</span> <span class="o">*</span><span class="n">net</span><span class="p">,</span> <span class="k">struct</span> <span class="n">ifreq</span> <span class="o">*</span><span class="n">ifr</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">useraddr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">event</span> <span class="n">ev</span> <span class="o">=</span> <span class="p">{};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="p">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">EVENT_TYPE_IOCTL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="p">.</span><span class="n">ethcmd</span> <span class="o">=</span> <span class="nf">get_ethcmd</span><span class="p">(</span><span class="n">useraddr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="p">.</span><span class="n">pid</span> <span class="o">=</span> <span class="nf">bpf_get_current_pid_tgid</span><span class="p">()</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_probe_read_kernel_str</span><span class="p">(</span><span class="n">ev</span><span class="p">.</span><span class="n">ifname</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ev</span><span class="p">.</span><span class="n">ifname</span><span class="p">),</span> <span class="n">ifr</span><span class="o">-&gt;</span><span class="n">ifr_ifrn</span><span class="p">.</span><span class="n">ifrn_name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_get_current_comm</span><span class="p">(</span><span class="n">ev</span><span class="p">.</span><span class="n">comm</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ev</span><span class="p">.</span><span class="n">comm</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_perf_event_output</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">events</span><span class="p">,</span> <span class="n">BPF_F_CURRENT_CPU</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ev</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ev</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/dev_ethtool&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">kp_dev_ethtool</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">net</span> <span class="o">*</span><span class="n">net</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">net</span><span class="p">))(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">u64</span><span class="p">)</span> <span class="nf">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">ifreq</span> <span class="o">*</span><span class="n">ifr</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">ifr</span><span class="p">))(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">u64</span><span class="p">)</span> <span class="nf">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">useraddr</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">useraddr</span><span class="p">))(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">u64</span><span class="p">)</span> <span class="nf">PT_REGS_PARM3</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">__kp_dev_ethtool</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">ifr</span><span class="p">,</span> <span class="n">useraddr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__get_dev_name</span><span class="p">(</span><span class="k">struct</span> <span class="n">event</span> <span class="o">*</span><span class="n">ev</span><span class="p">,</span> <span class="k">struct</span> <span class="n">ethnl_req_info</span> <span class="o">*</span><span class="n">req</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span> <span class="o">=</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">dev</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">likely</span><span class="p">(</span><span class="n">dev</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_probe_read_kernel_str</span><span class="p">(</span><span class="n">ev</span><span class="o">-&gt;</span><span class="n">ifname</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ev</span><span class="o">-&gt;</span><span class="n">ifname</span><span class="p">),</span> <span class="n">dev</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/ethnl_default_doit&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">kp_ethnl_doit</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">genl_info</span> <span class="o">*</span><span class="n">info</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">info</span><span class="p">))(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">u64</span><span class="p">)</span> <span class="nf">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u8</span> <span class="n">cmd</span> <span class="o">=</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">info</span><span class="p">,</span> <span class="n">genlhdr</span><span class="p">,</span> <span class="n">cmd</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">event</span> <span class="o">*</span><span class="n">ev</span> <span class="o">=</span> <span class="nf">__get_or_init_event</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="o">!</span><span class="n">ev</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="o">-&gt;</span><span class="n">type</span> <span class="o">=</span> <span class="n">EVENT_TYPE_GENL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="o">-&gt;</span><span class="n">genlhdr_cmd</span> <span class="o">=</span> <span class="n">cmd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="o">-&gt;</span><span class="n">req</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/ethnl_parse_header_dev_get&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">kp_ethnl_dev</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">ethnl_req_info</span> <span class="o">*</span><span class="n">req</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">req</span><span class="p">))(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">u64</span><span class="p">)</span> <span class="nf">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">event</span> <span class="o">*</span><span class="n">ev</span> <span class="o">=</span> <span class="nf">__get_event</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="o">!</span><span class="n">ev</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="o">-&gt;</span><span class="n">req</span> <span class="o">=</span> <span class="n">req</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kretprobe/ethnl_parse_header_dev_get&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">krp_ethnl_dev</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">event</span> <span class="o">*</span><span class="n">ev</span> <span class="o">=</span> <span class="nf">__get_and_del_event</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="o">!</span><span class="n">ev</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">likely</span><span class="p">(</span><span class="n">ev</span><span class="o">-&gt;</span><span class="n">req</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">__get_dev_name</span><span class="p">(</span><span class="n">ev</span><span class="p">,</span> <span class="n">ev</span><span class="o">-&gt;</span><span class="n">req</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ev</span><span class="o">-&gt;</span><span class="n">pid</span> <span class="o">=</span> <span class="nf">bpf_get_current_pid_tgid</span><span class="p">()</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_get_current_comm</span><span class="p">(</span><span class="n">ev</span><span class="o">-&gt;</span><span class="n">comm</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ev</span><span class="o">-&gt;</span><span class="n">comm</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_perf_event_output</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">events</span><span class="p">,</span> <span class="n">BPF_F_CURRENT_CPU</span><span class="p">,</span> <span class="n">ev</span><span class="p">,</span> <span class="n">SIZEOF_EVENT</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>P.S. 完整 bpf 代码在 <a href="https://github.com/Asphaltt/ethtoolsnoop/blob/main/bpf/ethtool.c">GitHub ethtoolsnoop ethtool.c</a>。</p>
+<p>其中，为什么需要对 <code>ethnl_parse_header_dev_get()</code> 进行 <code>kprobe</code> 和 <code>kretprobe</code> 呢？</p>
+<p>因为 <code>ethnl_parse_header_dev_get()</code> 会解析 genetlink message，并将解析得到的网络设备信息保存到 <code>struct ethnl_req_info</code> 里面的 <code>struct net_device *dev</code>。所以，需要在 <code>kprobe</code> <code>ethnl_parse_header_dev_get()</code> 时，将 <code>struct ethnl_req_info</code> 缓存一下，然后在 <code>kretprobe</code> <code>ethnl_parse_header_dev_get()</code> 时，从缓存中取出 <code>struct ethnl_req_info</code>，并从中取出 <code>struct net_device *dev</code>，然后再从 <code>struct net_device *dev</code> 中取出网卡名称。</p>
+<p>同时，也是因为使用 bpf 解析 genetlink message 比较复杂，实现起来并不容易。</p>
+<h2 id="ethtoolsnoop-实现时踩的坑"><code>ethtoolsnoop</code> 实现时踩的坑</h2>
+<p>尽管 bpf 代码比较简单，但其 Go 代码实现时，还是踩了一个大坑。</p>
+<p>为了拿到 <code>IOCTL_CMD/GENL_CMD</code> 这些 cmd 对应的名称，我“复制”了它们的定义，然后在 Go 代码中进行了映射时，就踩在“复制”这一步；在 <code>IOCTL_CMD</code> 中，有一个断点 <code>0x0000000d</code>，这个断点在内核中是没有使用的，所以在 Go 中使用 <code>[]string</code> 进行映射时，就未能一一映射上；而且，<code>0x00000000</code> 也没有被使用。</p>
+<p>然后，为了提升 <code>ethtoolsnoop</code> 的使用效果，还需要将 <code>IOCTL_CMD/GENL_CMD</code> 映射到 <code>ethtool</code> 命令行参数上。但未能全部一一映射起来，毕竟是个脏活累活。</p>
+<h2 id="小结">小结</h2>
+<p><code>ethtoolsnoop</code> 的实现比较简单，但也有一些坑需要注意。如果你有更好的想法，欢迎在 <a href="https://github.com/Asphaltt/ethtoolsnoop">GitHub ethtoolsnoop</a> 上提 issue 或者 PR。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-05-26
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/ethtool/">ethtool</a>
+      <a href="/%20tags/ethtoolsnoop/">ethtoolsnoop</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-107-introduce-socketrace/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 打造自己的 socket 跟踪工具 socketrace</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-105-network-jitter/">
+        <span class="next-text nav-default">eBPF Talk: 记录一次网络抖动排障</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

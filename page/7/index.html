@@ -28,9 +28,9 @@
 <meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
 
 
-<link rel="canonical" href="https://le0nhwan9.github.io/" />
-<link href="https://le0nhwan9.github.io/index.xml" rel="alternate" type="application/rss+xml" title="LeonHwang&#39;s Blogs" />
-<link href="https://le0nhwan9.github.io/index.xml" rel="feed" type="application/rss+xml" title="LeonHwang&#39;s Blogs" />
+<link rel="canonical" href="https://asphaltt.github.io/" />
+<link href="https://asphaltt.github.io/index.xml" rel="alternate" type="application/rss+xml" title="LeonHwang&#39;s Blogs" />
+<link href="https://asphaltt.github.io/index.xml" rel="feed" type="application/rss+xml" title="LeonHwang&#39;s Blogs" />
 <link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
@@ -46,11 +46,11 @@
 <meta property="og:title" content="LeonHwang&#39;s Blogs" />
 <meta property="og:description" content="Run eBPF with Go, run eBPF in kernel space" />
 <meta property="og:type" content="website" />
-<meta property="og:url" content="https://le0nhwan9.github.io/" />
+<meta property="og:url" content="https://asphaltt.github.io/" />
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
-  <meta itemprop="dateModified" content="2024-05-15T23:39:22+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-05-26T16:28:58+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
 
 
@@ -143,240 +143,240 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-41-freplace-on-x86/">eBPF Talk: freplace on x86【汇编慎入】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-55-xdp-on-veth/">eBPF Talk: XDP on veth</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
+      <span class="post-time"> 2024-03-31 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1304 字 </span>
+        <span class="more-meta"> 约 1614 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      veth 是一种虚拟网络设备，并支持在驱动里运行 XDP 程序。 eBPF Talk: XDP on Mellanox 与 Mellanox 物理网卡对比，veth 上运行 XDP 程序有和区别呢？ ndo_xdp on veth 这是将 XDP 程序下发到 veth 驱动里
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-55-xdp-on-veth/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-54-xdp-on-mellanox/">eBPF Talk: XDP on Mellanox</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-03-31 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 2003 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      为了更高的性能，需要将 XDP 程序下沉到网卡驱动里去运行。 因为服务器使用的物理网卡是 Mellanox，所以就研究一下 Mellanox 驱动里是怎么运行 XDP 程序的。 XDP
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-54-xdp-on-mellanox/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-53-dup-bpf-fd/">eBPF Talk: 大佬教我 dup bpf-FD</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-03-31 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1496 字 </span>
         <span class="more-meta"> 预计阅读 3 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】
+      上个星期在做 eBPF Talk: 实战经验之 bpf FD 泄漏分析 的时候，发现 GitHub cilium/ebpf 库不支持从 FD 获取 bpf link 的信息。于是，我提了个 Issue 来讨论这事： Issue link: get info from FD Issue：get
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-41-freplace-on-x86/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-53-dup-bpf-fd/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-40-perilogue-on-x86/">eBPF Talk: perilogue on x86【汇编慎入】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-52-eat-dog-food-of-pwru/">eBPF Talk: pwru 自己挖坑自己填</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
+      <span class="post-time"> 2024-03-31 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 736 字 </span>
+        <span class="more-meta"> 约 924 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】
+      当遇上 cilium/pwru 时，我便放弃维护自己的 skbtracer 了。 挖坑 之前，学习了 eBPF Talk: 全局变量实战指南，就打算在开源项目 GitHub cilium/pwru 上一展身手： PR bpf: make config as a constant 2023 年 2 月 4 日提了 PR
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-40-perilogue-on-x86/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-52-eat-dog-food-of-pwru/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-39-poke-on-x86/">eBPF Talk: poke on x86【汇编慎入】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-51-bpf-fd-leak/">eBPF Talk: 实战经验之 bpf FD 泄漏分析</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
+      <span class="post-time"> 2024-03-31 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1866 字 </span>
+        <span class="more-meta"> 约 1736 字 </span>
         <span class="more-meta"> 预计阅读 4 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】
+      不经意间，基于 XDP 的网关已写了 1w 行 Go 代码；特别是其中 ACL 模块较为复杂。 因而，担心因复杂性而带来的一些资源管理隐患，特别是不好管理的 FD 资源，专门打
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-39-poke-on-x86/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-51-bpf-fd-leak/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-38-kernel-version/">eBPF Talk: 学习经验之确认 kernel version</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-50-iptables-trace/">eBPF Talk: iptables-trace</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
+      <span class="post-time"> 2024-03-31 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1170 字 </span>
+        <span class="more-meta"> 约 1114 字 </span>
         <span class="more-meta"> 预计阅读 3 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      当我们想要在项目特定版本内核中落地某个 eBPF 特性时，需要确认该版本内核是否支持该 eBPF 特性。 与此同时，也想知道，该 eBPF 特性最低要求哪个版本的内核。 前置
+      填坑 eBPF Talk: skbtracer-iptables 中的 One more thing. 源代码：GitHub iptables-trace 前置知识： eBPF Talk: skbtracer-iptables eBPF Talk: 在内核模块里运行 bpf 程序 kprobes in kernel module 因为 eBPF 不支持修改 skb-&gt;nf_trace 字段和 struct pt_regs（出于安
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-38-kernel-version/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-50-iptables-trace/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-37-loop/">eBPF Talk: 实战经验之 loop</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/">eBPF Talk: 在内核模块里运行 bpf 程序</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
+      <span class="post-time"> 2024-03-31 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1821 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近刚好打算使用 for 遍历 CIDR 数组的方式替换性能较差的 LPM trie bpf map，就顺便总结一下 loop 相关经验。 在 eBPF 中，出于性能、安全考虑，并不支持无限循环。这并不
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-37-loop/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-36-xdp-redirect-to-af_xdp/">eBPF Talk: XDP redirect to AF_XDP</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 2515 字 </span>
-        <span class="more-meta"> 预计阅读 6 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      通过学习 eBPF Talk: AF_XDP，我们掌握了 AF_XDP 的那些基础知识。 提问：对于如下高性能场景，在网卡收到网络包后，该网络包会被哪个 AF_XDP socket 处理呢？ 该网卡独占一
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-36-xdp-redirect-to-af_xdp/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/">eBPF Talk: bpf2bpf &amp; tailcall 报错分析</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 864 字 </span>
+        <span class="more-meta"> 约 668 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      终于要将 bpf2bpf &amp; tailcall 的组合落地到项目中了。 不过，当头一棒的是：tail_calls are not allowed when call stack of previous frames is 256 bytes. Too large。 幸好学习过 eBPF Talk: tailcall on x86，
+      在 Linux 内核模块里把玩 bpf map P.S. 旧文一篇，请笑纳。 参考 iptables-bpf 的源代码实现，尝试在自定义的内核模块里运行指定的 bpf 程序。 使用的 bpf 程序源代码： iptables-bpf 内核模块源代码
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-49-run-bpf-prog-in-kernel-module/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-34-af_xdp/">eBPF Talk: 使用 AF_XDP 加速网络【译】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-48-kprobe-nth-argument/">eBPF Talk: kprobe 获取第 n 个参数</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
+      <span class="post-time"> 2024-03-29 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 2170 字 </span>
-        <span class="more-meta"> 预计阅读 5 分钟 </span>
+        <span class="more-meta"> 约 1234 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      本文翻译自 2018 年的 LWN: Accelerating networking with AF_XDP。 以下为译文。 Linux 网络栈不缺乏特性，且对于大部分使用场景都有不错的性能表现。不过，随着网络的高速发展，对网
+      此次来填 eBPF Talk: skbtracer-iptables 中的坑了：在开发一个基于 eBPF 的 iptables TRACE 的替代工具。 不过，遇到的第一个纸老虎是 kprobe 中获取 nf_log_trace() 的诸多参数。 nf_log_trace() 且看下函数声明： 1 2 3 4 5 6 7 8
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-34-af_xdp/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-48-kprobe-nth-argument/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-33-tailcall-on-x86/">eBPF Talk: tailcall on x86【汇编慎入】【译】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-47-syscalldist-and-bpfsyscalldist/">eBPF Talk: syscalldist 与 bpfsyscalldist</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
+      <span class="post-time"> 2024-03-29 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 5190 字 </span>
-        <span class="more-meta"> 预计阅读 11 分钟 </span>
+        <span class="more-meta"> 约 1005 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf【译】 以下为译文。 最初我们学习编程的时候，我们就学
+      因为 XDP ACL 需要不断操作数据面的 XDP，担心 Go 代码逻辑会导致一些性能问题，所以参考 syscalldist 开发了一个专门针对 BPF 系统调用的 bpfsyscalldist。
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-33-tailcall-on-x86/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-47-syscalldist-and-bpfsyscalldist/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
 
     <article class="post">
   <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-32-tailcall-and-bpf2bpf/">eBPF Talk: tailcall 与 bpf2bpf【译】</a></h1>
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/">eBPF Talk: kprobe, frace 与 trampoline</a></h1>
     <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
+      <span class="post-time"> 2024-03-29 </span>
       <div class="post-category">
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 1921 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
+        <span class="more-meta"> 约 493 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      本文翻译自 Cilium 出品的 BPF and XDP Reference Guide，翻译了其中的 tailcall 和 bpf2bpf 部分。 tailcall：尾调用。 bpf2bpf：BPF 到 BPF 函数调用。 tailcall tailcall 可以看作允许
+      听闻 ftrace 也是基于 trampoline 实现的。而且，最近打算使用 kprobe 开发个工具，所以就将快速翻看了一下 ftrace 和 kprobe 的底层源代码。 P.S. 不介绍 ftrace 的使用，使用文档请看 ftrace - Function Tra
     </div>
     <div class="read-more">
-      <a href="/post/ebpf-talk-32-tailcall-and-bpf2bpf/" class="read-more-link">阅读更多</a>
+      <a href="/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
@@ -403,7 +403,7 @@
       <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
       <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
       <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
-  <a href="https://le0nhwan9.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
 </div>
 
 <div class="copyright">

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: pwru 继承者 vista - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="花了点时间，将 pwru、skbtracer-iptables、 socketrace 和几个 TCP bpftrace 脚本缝合了起来，形成了一个新的工具，叫做 vista。 GitHub: vista vista 简介 1 2" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-115-introduce-vista/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: pwru 继承者 vista" />
+<meta property="og:description" content="花了点时间，将 pwru、skbtracer-iptables、 socketrace 和几个 TCP bpftrace 脚本缝合了起来，形成了一个新的工具，叫做 vista。 GitHub: vista vista 简介 1 2" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-115-introduce-vista/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-05-26T16:28:14+08:00" />
+<meta property="article:modified_time" content="2024-05-26T16:28:14+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: pwru 继承者 vista">
+  <meta itemprop="description" content="花了点时间，将 pwru、skbtracer-iptables、 socketrace 和几个 TCP bpftrace 脚本缝合了起来，形成了一个新的工具，叫做 vista。 GitHub: vista vista 简介 1 2">
+  <meta itemprop="datePublished" content="2024-05-26T16:28:14+08:00">
+  <meta itemprop="dateModified" content="2024-05-26T16:28:14+08:00">
+  <meta itemprop="wordCount" content="1616">
+  <meta itemprop="keywords" content="EBPF,Vista"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: pwru 继承者 vista"/>
+<meta name="twitter:description" content="花了点时间，将 pwru、skbtracer-iptables、 socketrace 和几个 TCP bpftrace 脚本缝合了起来，形成了一个新的工具，叫做 vista。 GitHub: vista vista 简介 1 2"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: pwru 继承者 vista</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1616 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#vista-简介">vista 简介</a></li>
+        <li><a href="#vista-使用示例">vista 使用示例</a>
+          <ul>
+            <li><a href="#跟踪-tcp-生命周期">跟踪 TCP 生命周期</a></li>
+            <li><a href="#跟踪-iptables-执行">跟踪 iptables 执行</a></li>
+            <li><a href="#跟踪-sock-结构体指针为参数的函数">跟踪 sock 结构体指针为参数的函数</a></li>
+          </ul>
+        </li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>花了点时间，将 <code>pwru</code>、<code>skbtracer-iptables</code>、 <code>socketrace</code> 和几个 TCP bpftrace 脚本缝合了起来，形成了一个新的工具，叫做 <code>vista</code>。</p>
+<ul>
+<li><a href="https://github.com/Asphaltt/vista">GitHub: vista</a></li>
+</ul>
+<h2 id="vista-简介">vista 简介</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ vista -h
+</span></span><span class="line"><span class="cl">Usage: ./vista <span class="o">[</span>options<span class="o">]</span> <span class="o">[</span>pcap-filter<span class="o">]</span>
+</span></span><span class="line"><span class="cl">    Available pcap-filter: see <span class="s2">&#34;man 7 pcap-filter&#34;</span>
+</span></span><span class="line"><span class="cl">    Available options:
+</span></span><span class="line"><span class="cl">      --all-kmods                      attach to all available kernel modules
+</span></span><span class="line"><span class="cl">      --filter-addr string             filter IP address
+</span></span><span class="line"><span class="cl">      --filter-ifname string           filter skb ifname in --filter-netns <span class="o">(</span><span class="k">if</span> not specified, use current netns<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --filter-kprobe-batch uint       batch size <span class="k">for</span> kprobe attaching/detaching <span class="o">(</span>default 10<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --filter-netns string            filter netns <span class="o">(</span><span class="s2">&#34;/proc/&lt;pid&gt;/ns/net&#34;</span>, <span class="s2">&#34;inode:&lt;inode&gt;&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --filter-port uint16             filter port
+</span></span><span class="line"><span class="cl">      --filter-protocol string         filter protocol, tcp, udp, icmp, empty <span class="k">for</span> any
+</span></span><span class="line"><span class="cl">      --filter-sk-func string          filter kernel sk functions to be probed by name <span class="o">(</span>exact match, supports RE2 regular expression<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --filter-sk-mark uint32          filter sk mark
+</span></span><span class="line"><span class="cl">      --filter-skb-drop-stack          trace kfree_skb and print skb drop stack
+</span></span><span class="line"><span class="cl">      --filter-skb-func string         filter kernel skb functions to be probed by name <span class="o">(</span>exact match, supports RE2 regular expression<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --filter-skb-mark uint32         filter skb mark
+</span></span><span class="line"><span class="cl">      --filter-tcp-lifetime duration   filter TCP lifetime greater than or equal to the given duration <span class="o">(</span>e.g., 100ms, 1s, 1m<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --filter-trace-iptables          trace iptables
+</span></span><span class="line"><span class="cl">      --filter-trace-sk                trace sock
+</span></span><span class="line"><span class="cl">      --filter-trace-skb               trace skb
+</span></span><span class="line"><span class="cl">      --filter-trace-tc                trace TC bpf progs
+</span></span><span class="line"><span class="cl">      --filter-trace-tcp               trace tcp socket lifetime
+</span></span><span class="line"><span class="cl">      --filter-trace-xdp               trace XDP bpf progs
+</span></span><span class="line"><span class="cl">      --filter-track-skb               trace a packet even <span class="k">if</span> it does not match given filters <span class="o">(</span>e.g., after NAT or tunnel decapsulation<span class="o">)</span>
+</span></span><span class="line"><span class="cl">  -h, --help                           display this message and <span class="nb">exit</span>
+</span></span><span class="line"><span class="cl">      --kernel-btf string              specify kernel BTF file
+</span></span><span class="line"><span class="cl">      --kmods strings                  list of kernel modules names to attach to
+</span></span><span class="line"><span class="cl">      --kprobe-backend string          Tracing backend<span class="o">(</span><span class="s1">&#39;kprobe&#39;</span>, <span class="s1">&#39;kprobe-multi&#39;</span><span class="o">)</span>. Will auto-detect <span class="k">if</span> not specified.
+</span></span><span class="line"><span class="cl">      --output-file string             write traces to file
+</span></span><span class="line"><span class="cl">      --output-iptables                print iptables
+</span></span><span class="line"><span class="cl">      --output-limit-lines uint        <span class="nb">exit</span> the program after the number of events has been received/printed
+</span></span><span class="line"><span class="cl">      --output-meta                    print skb metadata
+</span></span><span class="line"><span class="cl">      --output-sk                      print sock
+</span></span><span class="line"><span class="cl">      --output-skb                     print skb
+</span></span><span class="line"><span class="cl">      --output-stack                   print stack
+</span></span><span class="line"><span class="cl">      --output-tcp                     print TCP
+</span></span><span class="line"><span class="cl">      --output-tuple                   print L4 tuple
+</span></span><span class="line"><span class="cl">      --timestamp string               print timestamp per event <span class="o">(</span><span class="s2">&#34;relative&#34;</span>, <span class="s2">&#34;absolute&#34;</span>, <span class="s2">&#34;none&#34;</span><span class="o">)</span> <span class="o">(</span>default <span class="s2">&#34;none&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --version                        show vista version and <span class="nb">exit</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>除了 <code>pwru</code> 原有的功能，<code>vista</code> 还支持了更多的过滤选项，比如：</p>
+<ul>
+<li><code>--filter-addr</code>：过滤 IP 地址，为了支持 <code>--filter-trace-tcp</code>。</li>
+<li><code>--filter-port</code>：过滤端口，为了支持 <code>--filter-trace-tcp</code>。</li>
+<li><code>--filter-skb-drop-stack</code>：打印 skb drop 的 stack，便利性选项，效果等同于 <code>--filter-skb-func __kfree_skb --output-stack</code>。</li>
+<li><code>--filter-tcp-lifetime</code>：过滤 TCP 生命周期大于等于给定的时间，便于分析 tcp 长连接。</li>
+<li><code>--filter-trace-tcp</code>：跟踪 TCP 生命周期，包括连接建立、连接关闭等事件。</li>
+<li><code>--filter-trace-iptables</code>：跟踪 iptables 执行，包括规则匹配、规则动作等事件，即 <code>skbtracer-iptables</code> 的功能。</li>
+<li><code>--filter-trace-sk</code>：类似 <code>--filter-trace-skb</code>，跟踪 sock 结构体指针为参数的函数。</li>
+<li><code>--filter-trace-xdp</code>: 跟踪 XDP bpf progs。</li>
+</ul>
+<p>更多输出选项：</p>
+<ul>
+<li><code>--output-iptables</code>：打印 iptables 规则信息。</li>
+<li><code>--output-sk</code>：打印 sock 信息。</li>
+<li><code>--output-tcp</code>：打印 TCP 生命周期信息。</li>
+</ul>
+<h2 id="vista-使用示例">vista 使用示例</h2>
+<h3 id="跟踪-tcp-生命周期">跟踪 TCP 生命周期</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./vista --filter-trace-tcp --output-meta --output-tuple --output-tcp
+</span></span><span class="line"><span class="cl">2024/05/12 12:52:21 Attached tcp kprobes/tracepoints
+</span></span><span class="line"><span class="cl">2024/05/12 12:52:21 Listening <span class="k">for</span> events..
+</span></span><span class="line"><span class="cl">            SKB/SK    CPU          PROCESS                     FUNC
+</span></span><span class="line"><span class="cl">0xffff8c1f06684600      <span class="m">2</span>    <span class="o">[</span>gdbus<span class="o">(</span>2000<span class="o">)]</span>                      TCP <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:63174<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">rx</span><span class="o">=</span>5.326KiB <span class="nv">tx</span><span class="o">=</span>5.747KiB <span class="nv">lifetime</span><span class="o">=</span>939.570803ms <span class="nv">srtt</span><span class="o">=</span>240µs <span class="nv">retrans</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">cong</span><span class="o">=</span>cubic
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="跟踪-iptables-执行">跟踪 iptables 执行</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./vista --filter-trace-iptables --output-meta --output-tuple --output-iptables --output-limit-lines <span class="m">10</span>
+</span></span><span class="line"><span class="cl">2024/05/12 14:11:08 Attached iptables kprobes
+</span></span><span class="line"><span class="cl">2024/05/12 14:11:08 Listening <span class="k">for</span> events..
+</span></span><span class="line"><span class="cl">            SKB/SK    CPU          PROCESS                     FUNC
+</span></span><span class="line"><span class="cl">0xffff98ce06243700      <span class="m">1</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>727984<span class="o">)]</span>             ipt_do_table <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">184</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.128:22-&gt;192.168.241.1:51170<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span> <span class="nv">hook</span><span class="o">=</span>OUTPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>5.932µs
+</span></span><span class="line"><span class="cl">0xffff98ce06243700      <span class="m">1</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>727984<span class="o">)]</span>             ipt_do_table <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span>2<span class="o">(</span>ens33<span class="o">)</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">1500</span> <span class="nv">len</span><span class="o">=</span><span class="m">184</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.128:22-&gt;192.168.241.1:51170<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span> <span class="nv">hook</span><span class="o">=</span>POSTROUTING <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>930ns
+</span></span><span class="line"><span class="cl">0xffff98ce06242580      <span class="m">1</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>727984<span class="o">)]</span>             ipt_do_table <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">160</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.128:22-&gt;192.168.241.1:51170<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span> <span class="nv">hook</span><span class="o">=</span>OUTPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>6.258µs
+</span></span><span class="line"><span class="cl">0xffff98ce06242580      <span class="m">1</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>727984<span class="o">)]</span>             ipt_do_table <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span>2<span class="o">(</span>ens33<span class="o">)</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">1500</span> <span class="nv">len</span><span class="o">=</span><span class="m">160</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.128:22-&gt;192.168.241.1:51170<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span> <span class="nv">hook</span><span class="o">=</span>POSTROUTING <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>1.417µs
+</span></span><span class="line"><span class="cl">0xffff98ce06241680      <span class="m">1</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>727984<span class="o">)]</span>             ipt_do_table <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">344</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.128:22-&gt;192.168.241.1:51170<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span> <span class="nv">hook</span><span class="o">=</span>OUTPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>3.165µs
+</span></span><span class="line"><span class="cl">0xffff98ce06241680      <span class="m">1</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>727984<span class="o">)]</span>             ipt_do_table <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span>2<span class="o">(</span>ens33<span class="o">)</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">1500</span> <span class="nv">len</span><span class="o">=</span><span class="m">344</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.128:22-&gt;192.168.241.1:51170<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span> <span class="nv">hook</span><span class="o">=</span>POSTROUTING <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>979ns
+</span></span><span class="line"><span class="cl">0xffff98ce06242580      <span class="m">1</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>727984<span class="o">)]</span>             ipt_do_table <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">360</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.128:22-&gt;192.168.241.1:51170<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span> <span class="nv">hook</span><span class="o">=</span>OUTPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>3.019µs
+</span></span><span class="line"><span class="cl">0xffff98ce06242580      <span class="m">1</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>727984<span class="o">)]</span>             ipt_do_table <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span>2<span class="o">(</span>ens33<span class="o">)</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">1500</span> <span class="nv">len</span><span class="o">=</span><span class="m">360</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.128:22-&gt;192.168.241.1:51170<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span> <span class="nv">hook</span><span class="o">=</span>POSTROUTING <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>1.001µs
+</span></span><span class="line"><span class="cl">0xffff98ce06241680      <span class="m">1</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>727984<span class="o">)]</span>             ipt_do_table <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">344</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.128:22-&gt;192.168.241.1:51170<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span> <span class="nv">hook</span><span class="o">=</span>OUTPUT <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>2.548µs
+</span></span><span class="line"><span class="cl">0xffff98ce06241680      <span class="m">1</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>727984<span class="o">)]</span>             ipt_do_table <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span>2<span class="o">(</span>ens33<span class="o">)</span> <span class="nv">proto</span><span class="o">=</span>0x0800 <span class="nv">mtu</span><span class="o">=</span><span class="m">1500</span> <span class="nv">len</span><span class="o">=</span><span class="m">344</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.128:22-&gt;192.168.241.1:51170<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">pf</span><span class="o">=</span>PF_INET <span class="nv">table</span><span class="o">=</span> <span class="nv">hook</span><span class="o">=</span>POSTROUTING <span class="nv">verdict</span><span class="o">=</span>ACCEPT <span class="nv">cost</span><span class="o">=</span>957ns
+</span></span><span class="line"><span class="cl">2024/05/12 14:11:08 Printed <span class="m">10</span> events, exiting program..
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="跟踪-sock-结构体指针为参数的函数">跟踪 sock 结构体指针为参数的函数</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./vista --filter-trace-sk --output-meta --output-tuple --output-sk --output-limit-lines <span class="m">10</span>
+</span></span><span class="line"><span class="cl">2024/05/12 13:30:11 Attaching sk kprobes <span class="o">(</span>via kprobe-multi<span class="o">)</span>...
+</span></span><span class="line"><span class="cl"><span class="m">1196</span> / <span class="m">1196</span> <span class="o">[</span>---------------------------------------------------------------------------------------------<span class="o">]</span> 100.00% ? p/s
+</span></span><span class="line"><span class="cl">2024/05/12 13:30:11 Attached sk kprobes <span class="o">(</span>ignored 0<span class="o">)</span>
+</span></span><span class="line"><span class="cl">2024/05/12 13:30:11 Listening <span class="k">for</span> events..
+</span></span><span class="line"><span class="cl">            SKB/SK    CPU          PROCESS                     FUNC
+</span></span><span class="line"><span class="cl">0xffff8c1f06683200      <span class="m">4</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>1407<span class="o">)]</span>        inet_send_prepare <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:60271<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">skc_state</span><span class="o">=</span>ESTABLISHED <span class="nv">skc_reuseport</span><span class="o">=</span><span class="nb">false</span> <span class="nv">skc_bound_ifindex</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_backlog</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_rcv_buff</span><span class="o">=</span><span class="m">614849</span> <span class="nv">sk_snd_buff</span><span class="o">=</span><span class="m">87040</span> <span class="nv">sk_priority</span><span class="o">=</span><span class="m">6</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">sk_type</span><span class="o">=</span>SOCK_STREAM <span class="nv">socket_state</span><span class="o">=</span>CONNECTED <span class="nv">socket_file_inode</span><span class="o">=</span><span class="m">15100</span> <span class="nv">socket_flags</span><span class="o">=</span><span class="m">32</span>
+</span></span><span class="line"><span class="cl">0xffff8c1f06683200      <span class="m">4</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>1407<span class="o">)]</span>              tcp_sendmsg <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:60271<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">skc_state</span><span class="o">=</span>ESTABLISHED <span class="nv">skc_reuseport</span><span class="o">=</span><span class="nb">false</span> <span class="nv">skc_bound_ifindex</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_backlog</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_rcv_buff</span><span class="o">=</span><span class="m">614849</span> <span class="nv">sk_snd_buff</span><span class="o">=</span><span class="m">87040</span> <span class="nv">sk_priority</span><span class="o">=</span><span class="m">6</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">sk_type</span><span class="o">=</span>SOCK_STREAM <span class="nv">socket_state</span><span class="o">=</span>CONNECTED <span class="nv">socket_file_inode</span><span class="o">=</span><span class="m">15100</span> <span class="nv">socket_flags</span><span class="o">=</span><span class="m">32</span>
+</span></span><span class="line"><span class="cl">0xffff8c1f06683200      <span class="m">4</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>1407<span class="o">)]</span>         lock_sock_nested <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:60271<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">skc_state</span><span class="o">=</span>ESTABLISHED <span class="nv">skc_reuseport</span><span class="o">=</span><span class="nb">false</span> <span class="nv">skc_bound_ifindex</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_backlog</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_rcv_buff</span><span class="o">=</span><span class="m">614849</span> <span class="nv">sk_snd_buff</span><span class="o">=</span><span class="m">87040</span> <span class="nv">sk_priority</span><span class="o">=</span><span class="m">6</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">sk_type</span><span class="o">=</span>SOCK_STREAM <span class="nv">socket_state</span><span class="o">=</span>CONNECTED <span class="nv">socket_file_inode</span><span class="o">=</span><span class="m">15100</span> <span class="nv">socket_flags</span><span class="o">=</span><span class="m">32</span>
+</span></span><span class="line"><span class="cl">0xffff8c1f06683200      <span class="m">4</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>1407<span class="o">)]</span>       tcp_sendmsg_locked <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:60271<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">skc_state</span><span class="o">=</span>ESTABLISHED <span class="nv">skc_reuseport</span><span class="o">=</span><span class="nb">false</span> <span class="nv">skc_bound_ifindex</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_backlog</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_rcv_buff</span><span class="o">=</span><span class="m">614849</span> <span class="nv">sk_snd_buff</span><span class="o">=</span><span class="m">87040</span> <span class="nv">sk_priority</span><span class="o">=</span><span class="m">6</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">sk_type</span><span class="o">=</span>SOCK_STREAM <span class="nv">socket_state</span><span class="o">=</span>CONNECTED <span class="nv">socket_file_inode</span><span class="o">=</span><span class="m">15100</span> <span class="nv">socket_flags</span><span class="o">=</span><span class="m">32</span>
+</span></span><span class="line"><span class="cl">0xffff8c1f06683200      <span class="m">4</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>1407<span class="o">)]</span> tcp_rate_check_app_limited <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:60271<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">skc_state</span><span class="o">=</span>ESTABLISHED <span class="nv">skc_reuseport</span><span class="o">=</span><span class="nb">false</span> <span class="nv">skc_bound_ifindex</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_backlog</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_rcv_buff</span><span class="o">=</span><span class="m">614849</span> <span class="nv">sk_snd_buff</span><span class="o">=</span><span class="m">87040</span> <span class="nv">sk_priority</span><span class="o">=</span><span class="m">6</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">sk_type</span><span class="o">=</span>SOCK_STREAM <span class="nv">socket_state</span><span class="o">=</span>CONNECTED <span class="nv">socket_file_inode</span><span class="o">=</span><span class="m">15100</span> <span class="nv">socket_flags</span><span class="o">=</span><span class="m">32</span>
+</span></span><span class="line"><span class="cl">0xffff8c1f06683200      <span class="m">4</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>1407<span class="o">)]</span>             tcp_send_mss <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:60271<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">skc_state</span><span class="o">=</span>ESTABLISHED <span class="nv">skc_reuseport</span><span class="o">=</span><span class="nb">false</span> <span class="nv">skc_bound_ifindex</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_backlog</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_rcv_buff</span><span class="o">=</span><span class="m">614849</span> <span class="nv">sk_snd_buff</span><span class="o">=</span><span class="m">87040</span> <span class="nv">sk_priority</span><span class="o">=</span><span class="m">6</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">sk_type</span><span class="o">=</span>SOCK_STREAM <span class="nv">socket_state</span><span class="o">=</span>CONNECTED <span class="nv">socket_file_inode</span><span class="o">=</span><span class="m">15100</span> <span class="nv">socket_flags</span><span class="o">=</span><span class="m">32</span>
+</span></span><span class="line"><span class="cl">0xffff8c1f06683200      <span class="m">4</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>1407<span class="o">)]</span>          tcp_current_mss <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:60271<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">skc_state</span><span class="o">=</span>ESTABLISHED <span class="nv">skc_reuseport</span><span class="o">=</span><span class="nb">false</span> <span class="nv">skc_bound_ifindex</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_backlog</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_rcv_buff</span><span class="o">=</span><span class="m">614849</span> <span class="nv">sk_snd_buff</span><span class="o">=</span><span class="m">87040</span> <span class="nv">sk_priority</span><span class="o">=</span><span class="m">6</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">sk_type</span><span class="o">=</span>SOCK_STREAM <span class="nv">socket_state</span><span class="o">=</span>CONNECTED <span class="nv">socket_file_inode</span><span class="o">=</span><span class="m">15100</span> <span class="nv">socket_flags</span><span class="o">=</span><span class="m">32</span>
+</span></span><span class="line"><span class="cl">0xffff8c1f06683200      <span class="m">4</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>1407<span class="o">)]</span>  tcp_established_options <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:60271<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">skc_state</span><span class="o">=</span>ESTABLISHED <span class="nv">skc_reuseport</span><span class="o">=</span><span class="nb">false</span> <span class="nv">skc_bound_ifindex</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_backlog</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_rcv_buff</span><span class="o">=</span><span class="m">614849</span> <span class="nv">sk_snd_buff</span><span class="o">=</span><span class="m">87040</span> <span class="nv">sk_priority</span><span class="o">=</span><span class="m">6</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">sk_type</span><span class="o">=</span>SOCK_STREAM <span class="nv">socket_state</span><span class="o">=</span>CONNECTED <span class="nv">socket_file_inode</span><span class="o">=</span><span class="m">15100</span> <span class="nv">socket_flags</span><span class="o">=</span><span class="m">32</span>
+</span></span><span class="line"><span class="cl">0xffff8c1f06683200      <span class="m">4</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>1407<span class="o">)]</span>     tcp_stream_alloc_skb <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:60271<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">skc_state</span><span class="o">=</span>ESTABLISHED <span class="nv">skc_reuseport</span><span class="o">=</span><span class="nb">false</span> <span class="nv">skc_bound_ifindex</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_backlog</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_rcv_buff</span><span class="o">=</span><span class="m">614849</span> <span class="nv">sk_snd_buff</span><span class="o">=</span><span class="m">87040</span> <span class="nv">sk_priority</span><span class="o">=</span><span class="m">6</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">sk_type</span><span class="o">=</span>SOCK_STREAM <span class="nv">socket_state</span><span class="o">=</span>CONNECTED <span class="nv">socket_file_inode</span><span class="o">=</span><span class="m">15100</span> <span class="nv">socket_flags</span><span class="o">=</span><span class="m">32</span>
+</span></span><span class="line"><span class="cl">0xffff8c1f06683200      <span class="m">4</span> <span class="o">[</span>/usr/sbin/sshd<span class="o">(</span>1407<span class="o">)]</span>   sk_forced_mem_schedule <span class="nv">netns</span><span class="o">=</span><span class="m">4026531840</span> <span class="nv">mark</span><span class="o">=</span>0x0 <span class="nv">iface</span><span class="o">=</span><span class="m">0</span> <span class="nv">proto</span><span class="o">=</span>0x0000 <span class="nv">mtu</span><span class="o">=</span><span class="m">0</span> <span class="nv">len</span><span class="o">=</span><span class="m">0</span> <span class="nv">pkt_type</span><span class="o">=</span>HOST 192.168.241.133:22-&gt;192.168.241.1:60271<span class="o">(</span>tcp<span class="o">)</span> <span class="nv">skc_state</span><span class="o">=</span>ESTABLISHED <span class="nv">skc_reuseport</span><span class="o">=</span><span class="nb">false</span> <span class="nv">skc_bound_ifindex</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_backlog</span><span class="o">=</span><span class="m">0</span> <span class="nv">sk_rcv_buff</span><span class="o">=</span><span class="m">614849</span> <span class="nv">sk_snd_buff</span><span class="o">=</span><span class="m">87040</span> <span class="nv">sk_priority</span><span class="o">=</span><span class="m">6</span> <span class="nv">sk_mark</span><span class="o">=</span>0x0 <span class="nv">sk_type</span><span class="o">=</span>SOCK_STREAM <span class="nv">socket_state</span><span class="o">=</span>CONNECTED <span class="nv">socket_file_inode</span><span class="o">=</span><span class="m">15100</span> <span class="nv">socket_flags</span><span class="o">=</span><span class="m">32</span>
+</span></span><span class="line"><span class="cl">2024/05/12 13:30:11 Printed <span class="m">10</span> events, exiting program..
+</span></span><span class="line"><span class="cl">2024/05/12 13:30:11 Detaching sk kprobes...
+</span></span><span class="line"><span class="cl"><span class="m">5</span> / <span class="m">5</span> <span class="o">[</span>--------------------------------------------------------------------------------------------------<span class="o">]</span> 100.00% <span class="m">15</span> p/s
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="总结">总结</h2>
+<p><code>vista</code> 是一个集成了 <code>pwru</code>、<code>skbtracer-iptables</code>、<code>socketrace</code> 和几个 TCP bpftrace 脚本的工具，支持更多的过滤选项和输出选项，方便用户进行更多的网络跟踪和分析。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-05-26
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/vista/">vista</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-116-upgrade-xdp-costlessly/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 混部环境下无损升级 XDP 程序的思路</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-114-introduce-xdp-dispatcher/">
+        <span class="next-text nav-default">eBPF Talk: XDP dispatcher 简介</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

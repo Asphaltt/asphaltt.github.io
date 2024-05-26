@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 从一个 pwru issue 谈起 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="有位 pwru 的用户在 GitHub 上提了一个 issue，说 --filter-trace-tc 不能正常工作。 option &amp;ndash;filter-trace-tc not support 1 2 3 4 5 6 7 8 9 ...... ; event.addr = bpf_get_func_ip(ctx); 26: (bf) r1 = r6 27: R0=invP1 R1_w=ctx(id=0,off=0,imm=0) R6=ctx(id=0,off=0,imm=0) R7=ptr_sk_buff(id=0,off=0,imm=0) R10=fp0 fp-8=????mmmm fp-16=00000000 fp-24=00000000 fp-32=0mm0mmmm fp-40=mmmmmmmm fp-48=mmmmmmmm fp-56=mmmmmmmm fp-64=mmmmmmmm fp-72=00000000 fp-80=00000000 fp-88=00000000 fp-96=00000000 fp-104=mmmmmmmm" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-100-talk-from-a-pwru-issue/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 从一个 pwru issue 谈起" />
+<meta property="og:description" content="有位 pwru 的用户在 GitHub 上提了一个 issue，说 --filter-trace-tc 不能正常工作。 option &ndash;filter-trace-tc not support 1 2 3 4 5 6 7 8 9 ...... ; event.addr = bpf_get_func_ip(ctx); 26: (bf) r1 = r6 27: R0=invP1 R1_w=ctx(id=0,off=0,imm=0) R6=ctx(id=0,off=0,imm=0) R7=ptr_sk_buff(id=0,off=0,imm=0) R10=fp0 fp-8=????mmmm fp-16=00000000 fp-24=00000000 fp-32=0mm0mmmm fp-40=mmmmmmmm fp-48=mmmmmmmm fp-56=mmmmmmmm fp-64=mmmmmmmm fp-72=00000000 fp-80=00000000 fp-88=00000000 fp-96=00000000 fp-104=mmmmmmmm" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-100-talk-from-a-pwru-issue/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-05-26T15:35:08+08:00" />
+<meta property="article:modified_time" content="2024-05-26T15:35:08+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 从一个 pwru issue 谈起">
+  <meta itemprop="description" content="有位 pwru 的用户在 GitHub 上提了一个 issue，说 --filter-trace-tc 不能正常工作。 option &ndash;filter-trace-tc not support 1 2 3 4 5 6 7 8 9 ...... ; event.addr = bpf_get_func_ip(ctx); 26: (bf) r1 = r6 27: R0=invP1 R1_w=ctx(id=0,off=0,imm=0) R6=ctx(id=0,off=0,imm=0) R7=ptr_sk_buff(id=0,off=0,imm=0) R10=fp0 fp-8=????mmmm fp-16=00000000 fp-24=00000000 fp-32=0mm0mmmm fp-40=mmmmmmmm fp-48=mmmmmmmm fp-56=mmmmmmmm fp-64=mmmmmmmm fp-72=00000000 fp-80=00000000 fp-88=00000000 fp-96=00000000 fp-104=mmmmmmmm">
+  <meta itemprop="datePublished" content="2024-05-26T15:35:08+08:00">
+  <meta itemprop="dateModified" content="2024-05-26T15:35:08+08:00">
+  <meta itemprop="wordCount" content="842">
+  <meta itemprop="keywords" content="EBPF,Pwru"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 从一个 pwru issue 谈起"/>
+<meta name="twitter:description" content="有位 pwru 的用户在 GitHub 上提了一个 issue，说 --filter-trace-tc 不能正常工作。 option &ndash;filter-trace-tc not support 1 2 3 4 5 6 7 8 9 ...... ; event.addr = bpf_get_func_ip(ctx); 26: (bf) r1 = r6 27: R0=invP1 R1_w=ctx(id=0,off=0,imm=0) R6=ctx(id=0,off=0,imm=0) R7=ptr_sk_buff(id=0,off=0,imm=0) R10=fp0 fp-8=????mmmm fp-16=00000000 fp-24=00000000 fp-32=0mm0mmmm fp-40=mmmmmmmm fp-48=mmmmmmmm fp-56=mmmmmmmm fp-64=mmmmmmmm fp-72=00000000 fp-80=00000000 fp-88=00000000 fp-96=00000000 fp-104=mmmmmmmm"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 从一个 pwru issue 谈起</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 842 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#bpf_get_func_ip-helper">bpf_get_func_ip() helper</a></li>
+        <li><a href="#bpf-prog-在-prockallsyms-中的信息">bpf prog 在 /proc/kallsyms 中的信息</a></li>
+        <li><a href="#tag---addr---name">tag -&gt; addr -&gt; name</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>有位 pwru 的用户在 GitHub 上提了一个 issue，说 <code>--filter-trace-tc</code> 不能正常工作。</p>
+<ul>
+<li><a href="https://github.com/cilium/pwru/issues/293">option &ndash;filter-trace-tc not support</a></li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">......
+</span></span><span class="line"><span class="cl">        <span class="p">;</span> event.addr <span class="o">=</span> bpf_get_func_ip<span class="o">(</span>ctx<span class="o">)</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        26: <span class="o">(</span>bf<span class="o">)</span> <span class="nv">r1</span> <span class="o">=</span> r6
+</span></span><span class="line"><span class="cl">        27: <span class="nv">R0</span><span class="o">=</span>invP1 <span class="nv">R1_w</span><span class="o">=</span>ctx<span class="o">(</span><span class="nv">id</span><span class="o">=</span>0,off<span class="o">=</span>0,imm<span class="o">=</span>0<span class="o">)</span> <span class="nv">R6</span><span class="o">=</span>ctx<span class="o">(</span><span class="nv">id</span><span class="o">=</span>0,off<span class="o">=</span>0,imm<span class="o">=</span>0<span class="o">)</span> <span class="nv">R7</span><span class="o">=</span>ptr_sk_buff<span class="o">(</span><span class="nv">id</span><span class="o">=</span>0,off<span class="o">=</span>0,imm<span class="o">=</span>0<span class="o">)</span> <span class="nv">R10</span><span class="o">=</span>fp0 fp-8<span class="o">=</span>????mmmm fp-16<span class="o">=</span><span class="m">00000000</span> fp-24<span class="o">=</span><span class="m">00000000</span> fp-32<span class="o">=</span>0mm0mmmm fp-40<span class="o">=</span>mmmmmmmm fp-48<span class="o">=</span>mmmmmmmm fp-56<span class="o">=</span>mmmmmmmm fp-64<span class="o">=</span>mmmmmmmm fp-72<span class="o">=</span><span class="m">00000000</span> fp-80<span class="o">=</span><span class="m">00000000</span> fp-88<span class="o">=</span><span class="m">00000000</span> fp-96<span class="o">=</span><span class="m">00000000</span> fp-104<span class="o">=</span>mmmmmmmm fp-112_w<span class="o">=</span>ptr_ fp-120<span class="o">=</span><span class="m">00000000</span> fp-128<span class="o">=</span>0000mmmm
+</span></span><span class="line"><span class="cl">        27: <span class="o">(</span>85<span class="o">)</span> call bpf_get_func_ip#173
+</span></span><span class="line"><span class="cl">        func bpf_get_func_ip#173 not supported <span class="k">for</span> program <span class="nb">type</span> <span class="m">3</span>
+</span></span><span class="line"><span class="cl">        processed <span class="m">437</span> insns <span class="o">(</span>limit 1000000<span class="o">)</span> max_states_per_insn <span class="m">1</span> total_states <span class="m">28</span> peak_states <span class="m">28</span> mark_read <span class="m">28</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">program fentry_tc: load program: operation not supported: func bpf_get_func_ip#173 not supported <span class="k">for</span> program <span class="nb">type</span> <span class="m">3</span> <span class="o">(</span><span class="m">1020</span> line<span class="o">(</span>s<span class="o">)</span> omitted<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个 issue 的原因是 <code>--filter-trace-tc</code> 选项使用了 <code>bpf_get_func_ip()</code>，而 <code>bpf_get_func_ip()</code> 在 5.15 版本的内核中才支持。</p>
+<p>噢，<code>--filter-trace-tc</code> 是我给 <code>pwru</code> 添加的一个功能。</p>
+<ul>
+<li><a href="/post/ebpf-talk-98-contribute-pwru/">eBPF Talk: 给 pwru 添砖加瓦</a></li>
+</ul>
+<p>所以，我得想个办法避免使用 <code>bpf_get_func_ip()</code> 的情况下去支持 <code>--filter-trace-tc</code>。</p>
+<h2 id="bpf_get_func_ip-helper">bpf_get_func_ip() helper</h2>
+<p><code>bpf_get_func_ip()</code> 是 5.15 内核中新增的一个 helper，它的作用是获取当前被跟踪函数/bpf prog 的地址。</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/commit/9b99edcae5c80c8fb9f8e7149bae528c9e610a72">bpf: Add bpf_get_func_ip helper for tracing programs</a></li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl">        <span class="cm">/* Implement bpf_get_func_ip inline. */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">prog_type</span> <span class="o">==</span> <span class="n">BPF_PROG_TYPE_TRACING</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">insn</span><span class="o">-&gt;</span><span class="n">imm</span> <span class="o">==</span> <span class="n">BPF_FUNC_get_func_ip</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="cm">/* Load IP address from ctx - 8 */</span>
+</span></span><span class="line"><span class="cl">            <span class="n">insn_buf</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nf">BPF_LDX_MEM</span><span class="p">(</span><span class="n">BPF_DW</span><span class="p">,</span> <span class="n">BPF_REG_0</span><span class="p">,</span> <span class="n">BPF_REG_1</span><span class="p">,</span> <span class="o">-</span><span class="mi">8</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>不过，先不深究该 helper 函数的实现，看下如何在不使用 <code>bpf_get_func_ip()</code> 的情况下实现 <code>--filter-trace-tc</code>。</p>
+<h2 id="bpf-prog-在-prockallsyms-中的信息">bpf prog 在 /proc/kallsyms 中的信息</h2>
+<p>在 <code>/proc/kallsyms</code> 中，bpf prog 的信息是这样子的：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># tail -n 4 /proc/kallsyms</span>
+</span></span><span class="line"><span class="cl">ffffffffc0024020 t bpf_prog_a04f5eef06a7f555_dummy  <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl">ffffffffc0024094 t bpf_prog_a04f5eef06a7f555_dummy  <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl">ffffffffc002ac4c t bpf_prog_0b3a2ce7164b50f3_fentry_tc  <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl">ffffffffc002add0 t bpf_prog_0ca2b1941f84fe9b_fexit_tc   <span class="o">[</span>bpf<span class="o">]</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>大概是这个格式：<code>&lt;addr&gt; t bpf_prog_&lt;tag&gt;_&lt;name&gt;\t[bpf]</code>.</p>
+<p>何以见得？</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/kernel/bpf/core.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">bpf_prog_ksym_set_name</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="n">sym</span> <span class="o">+=</span> <span class="nf">snprintf</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">KSYM_NAME_LEN</span><span class="p">,</span> <span class="s">&#34;bpf_prog_&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sym</span>  <span class="o">=</span> <span class="nf">bin2hex</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="n">prog</span><span class="o">-&gt;</span><span class="n">tag</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">tag</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* prog-&gt;aux-&gt;name will be ignored if full btf name is available */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">func_info_cnt</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">type</span> <span class="o">=</span> <span class="nf">btf_type_by_id</span><span class="p">(</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">btf</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                      <span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">func_info</span><span class="p">[</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">func_idx</span><span class="p">].</span><span class="n">type_id</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">func_name</span> <span class="o">=</span> <span class="nf">btf_name_by_offset</span><span class="p">(</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">btf</span><span class="p">,</span> <span class="n">type</span><span class="o">-&gt;</span><span class="n">name_off</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">snprintf</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="p">(</span><span class="kt">size_t</span><span class="p">)(</span><span class="n">end</span> <span class="o">-</span> <span class="n">sym</span><span class="p">),</span> <span class="s">&#34;_%s&#34;</span><span class="p">,</span> <span class="n">func_name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">snprintf</span><span class="p">(</span><span class="n">sym</span><span class="p">,</span> <span class="p">(</span><span class="kt">size_t</span><span class="p">)(</span><span class="n">end</span> <span class="o">-</span> <span class="n">sym</span><span class="p">),</span> <span class="s">&#34;_%s&#34;</span><span class="p">,</span> <span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">else</span>
+</span></span><span class="line"><span class="cl">        <span class="o">*</span><span class="n">sym</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>所以，确定了 bpf prog 在 <code>/proc/kallsyms</code> 中的信息后，就可以通过 <code>/proc/kallsyms</code> 来获取 bpf prog 的地址了。</p>
+<h2 id="tag---addr---name">tag -&gt; addr -&gt; name</h2>
+<p>原先使用 <code>bpf_get_func_ip()</code> 的目的是获取当前被跟踪 bpf prog 的地址，然后通过该地址去获取被跟踪 bpf prog 的名字。</p>
+<p>既然避免使用 <code>bpf_get_func_ip()</code>，那么就可以通过 <code>/proc/kallsyms</code> 来获取被跟踪 bpf prog 的 tag -&gt; addr 信息。</p>
+<p>然后，因为 bpf prog 的 <a href="https://pkg.go.dev/github.com/cilium/ebpf#ProgramInfo">ProgramInfo</a> 中有 tag 信息，就可以通过 tag 来获取 bpf prog 的地址。</p>
+<p>最终，将 bpf prog 的地址通过 <code>spec.RewriteConstants()</code> 注入到 bpf prog 中，从而替换了 <code>bpf_get_func_ip()</code> 的作用。</p>
+<ul>
+<li><a href="https://github.com/cilium/pwru/pull/294/files">Fix get_func_ip for &ndash;filter-trace-tc</a></li>
+</ul>
+<p>因为在打印事件信息的时候，已经有了 addr -&gt; name 的信息，所以就不需要额外去获取被跟踪 bpf prog 的名字了。</p>
+<h2 id="小结">小结</h2>
+<p><code>bpf_get_func_ip()</code> 是 5.15 内核中新增的一个 helper，它的作用是获取当前被跟踪函数/bpf prog 的地址。</p>
+<p>当 <code>bpf_get_func_ip()</code> 不可用时，可以通过 <code>/proc/kallsyms</code> 来获取被跟踪函数/bpf prog 的地址。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-05-26
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/pwru/">pwru</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-101-xdp-supports-traceroute/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: XDP 支持 traceroute</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-99-tc-dump-supports-pcap-filter/">
+        <span class="next-text nav-default">eBPF Talk: tc-dump 支持 pcap-filter</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

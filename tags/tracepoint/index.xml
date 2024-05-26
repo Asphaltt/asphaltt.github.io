@@ -2,31 +2,32 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tracepoint on LeonHwang&#39;s Blogs</title>
-    <link>https://le0nhwan9.github.io/tags/tracepoint/</link>
+    <link>https://asphaltt.github.io/tags/tracepoint/</link>
     <description>Recent content in Tracepoint on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
+    <copyright>Leon Hwang</copyright>
     <lastBuildDate>Wed, 15 May 2024 23:15:33 +0800</lastBuildDate>
-    <atom:link href="https://le0nhwan9.github.io/tags/tracepoint/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://asphaltt.github.io/tags/tracepoint/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: introduce tracepoint</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-87-introduce-tracepoint/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-87-introduce-tracepoint/</link>
       <pubDate>Wed, 15 May 2024 23:15:33 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-87-introduce-tracepoint/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-87-introduce-tracepoint/</guid>
       <description>想弄清楚 tracepoint 的工作原理，实在太难了；网络上的资料比较少，而且不够深入，甚至是 kernel 文档。 Using the Linux Kernel Tracepoints 本文尝试从源代码的角度来分析 tracepoint 的工作原理。 抛砖引</description>
     </item>
     <item>
       <title>eBPF Talk: tracepoint __data_loc</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-86-tracepoint-__data_loc/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-86-tracepoint-__data_loc/</link>
       <pubDate>Fri, 05 Apr 2024 22:45:28 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-86-tracepoint-__data_loc/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-86-tracepoint-__data_loc/</guid>
       <description>书接上回：eBPF Talk: trace tracepoint 程序，本文将介绍在 bpf 里如何处理 tracepoint 中 __data_loc 描述的字段。 关于 tracepoint __data_loc 的资料超级少，网络上能找到的资料如下： tracepoint arguments are missing __data_loc char strings tracepoint: Support __data_loc fields</description>
     </item>
     <item>
       <title>eBPF Talk: trace tracepoint 程序</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-85-trace-tracepoint-program/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-85-trace-tracepoint-program/</link>
       <pubDate>Thu, 04 Apr 2024 22:38:55 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-85-trace-tracepoint-program/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-85-trace-tracepoint-program/</guid>
       <description>此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程</description>
     </item>
   </channel>

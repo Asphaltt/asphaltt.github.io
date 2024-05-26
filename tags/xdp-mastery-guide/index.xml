@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>XDP Mastery Guide on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/xdp-mastery-guide/</link>
+    <description>Recent content in XDP Mastery Guide on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo 0.125.0-DEV</generator>
+    <language>zh</language>
+    <copyright>Leon Hwang</copyright>
+    <lastBuildDate>Sun, 26 May 2024 16:25:19 +0800</lastBuildDate>
+    <atom:link href="https://asphaltt.github.io/tags/xdp-mastery-guide/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: XDP 进阶手册</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-113-xdp-mastery-guide/</link>
+      <pubDate>Sun, 26 May 2024 16:25:19 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-113-xdp-mastery-guide/</guid>
+      <description>XDP，全称为 eXpress Data Path，是 Linux 内核 4.8 版本引入的一种高性能网络数据包处理技术。 XDP 只能用来处理网卡接收到的网络包，可对网络包进行修改、丢弃、转</description>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Xdpsnoop on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/xdpsnoop/</link>
+    <description>Recent content in Xdpsnoop on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo 0.125.0-DEV</generator>
+    <language>zh</language>
+    <copyright>Leon Hwang</copyright>
+    <lastBuildDate>Sun, 26 May 2024 16:15:57 +0800</lastBuildDate>
+    <atom:link href="https://asphaltt.github.io/tags/xdpsnoop/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: xdpsnoop 一个 XDP 安装过程的跟踪工具</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-109-xdpsnoop/</link>
+      <pubDate>Sun, 26 May 2024 16:15:57 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-109-xdpsnoop/</guid>
+      <description>想起 eBPF Talk: 达成内核 bpf 子系统贡献者成就 给内核新增了一个 XDP 安装失败的 tracepoint；现在想来，这个 tracepoint 有点鸡肋，因为可以通过 kprobe 一些函数就能解决</description>
+    </item>
+  </channel>
+</rss>

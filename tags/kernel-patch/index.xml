@@ -2,31 +2,32 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kernel-Patch on LeonHwang&#39;s Blogs</title>
-    <link>https://le0nhwan9.github.io/tags/kernel-patch/</link>
+    <link>https://asphaltt.github.io/tags/kernel-patch/</link>
     <description>Recent content in Kernel-Patch on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
+    <copyright>Leon Hwang</copyright>
     <lastBuildDate>Wed, 15 May 2024 23:33:01 +0800</lastBuildDate>
-    <atom:link href="https://le0nhwan9.github.io/tags/kernel-patch/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://asphaltt.github.io/tags/kernel-patch/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: 内核 bpf 子系统贡献&#43;&#43;</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-96-kernel-bpf-contribution-/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-96-kernel-bpf-contribution-/</link>
       <pubDate>Wed, 15 May 2024 23:33:01 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-96-kernel-bpf-contribution-/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-96-kernel-bpf-contribution-/</guid>
       <description>最近在忙着些什么呢？没有发表 eBPF 技术文章了。 本公众号并没有被封号、也没有被禁言；其实，最近在忙着向内核 bpf 子系统贡献 patch，在不断完善 tailcall 这个</description>
     </item>
     <item>
       <title>eBPF Talk: 内核 bpf 子系统贡献之修复 tailcall 无限循环</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-95-kernel-bpf-contribution/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-95-kernel-bpf-contribution/</link>
       <pubDate>Wed, 15 May 2024 23:31:03 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-95-kernel-bpf-contribution/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-95-kernel-bpf-contribution/</guid>
       <description>梅开二度，再次向内核 bpf 子系统贡献 patch。 bpf, x64: Fix tailcall infinite loop 此次修复的是 x64 平台的一个 bug，该 bug 会导致 tailcall 陷入无限循环，最终导致宕机。 tailcall 无限循环 如</description>
     </item>
     <item>
       <title>eBPF Talk: 达成内核 bpf 子系统贡献者成就</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</link>
       <pubDate>Wed, 15 May 2024 23:20:40 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</guid>
       <description>给 XDP 新增了一个 tracepoint；历时一个月，终不负所望。 bpf, xdp: Add tracepoint to xdp attaching failure 年份：2023 年。 需求来源 说来惭愧，需求不来自公司、也不来自我自</description>
     </item>
   </channel>

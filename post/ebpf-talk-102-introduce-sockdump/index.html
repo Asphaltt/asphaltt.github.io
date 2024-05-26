@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: Unix Socket 抓包工具 sockdump - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="犹如 2 年前抄狄老师的 skbtracer 一样，当看到 sockdump 时，又抄了一回作业。原 sockdump 也是基于 bcc 的项目，我把它改造成了基于 Go&#43;eBPF CO-RE 的项目，下载二进制文件即可立马用起来。 skbtracer" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-102-introduce-sockdump/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: Unix Socket 抓包工具 sockdump" />
+<meta property="og:description" content="犹如 2 年前抄狄老师的 skbtracer 一样，当看到 sockdump 时，又抄了一回作业。原 sockdump 也是基于 bcc 的项目，我把它改造成了基于 Go&#43;eBPF CO-RE 的项目，下载二进制文件即可立马用起来。 skbtracer" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-102-introduce-sockdump/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-05-26T15:40:38+08:00" />
+<meta property="article:modified_time" content="2024-05-26T15:40:38+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: Unix Socket 抓包工具 sockdump">
+  <meta itemprop="description" content="犹如 2 年前抄狄老师的 skbtracer 一样，当看到 sockdump 时，又抄了一回作业。原 sockdump 也是基于 bcc 的项目，我把它改造成了基于 Go&#43;eBPF CO-RE 的项目，下载二进制文件即可立马用起来。 skbtracer">
+  <meta itemprop="datePublished" content="2024-05-26T15:40:38+08:00">
+  <meta itemprop="dateModified" content="2024-05-26T15:40:38+08:00">
+  <meta itemprop="wordCount" content="1598">
+  <meta itemprop="keywords" content="EBPF,Sockdump"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: Unix Socket 抓包工具 sockdump"/>
+<meta name="twitter:description" content="犹如 2 年前抄狄老师的 skbtracer 一样，当看到 sockdump 时，又抄了一回作业。原 sockdump 也是基于 bcc 的项目，我把它改造成了基于 Go&#43;eBPF CO-RE 的项目，下载二进制文件即可立马用起来。 skbtracer"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: Unix Socket 抓包工具 sockdump</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1598 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#sockdump-用法"><code>sockdump</code> 用法</a></li>
+        <li><a href="#sockdump-效果"><code>sockdump</code> 效果</a></li>
+        <li><a href="#sockdump-实现"><code>sockdump</code> 实现</a></li>
+        <li><a href="#filter---pid">filter &ndash;pid</a></li>
+        <li><a href="#filter---sock">filter &ndash;sock</a></li>
+        <li><a href="#dump-packet-from-iovec">dump packet from iovec</a></li>
+        <li><a href="#sockdump-小结"><code>sockdump</code> 小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>犹如 2 年前抄狄老师的 <code>skbtracer</code> 一样，当看到 <code>sockdump</code> 时，又抄了一回作业。原 <code>sockdump</code> 也是基于 bcc 的项目，我把它改造成了基于 Go+eBPF CO-RE 的项目，下载二进制文件即可立马用起来。</p>
+<ul>
+<li><a href="https://github.com/Asphaltt/skbtracer">skbtracer</a></li>
+<li><a href="https://github.com/Asphaltt/sockdump">sockdump</a></li>
+</ul>
+<blockquote>
+<p>我并不了解 Unix Socket 的实现，所以就纯粹的抄作业了。</p>
+</blockquote>
+<h2 id="sockdump-用法"><code>sockdump</code> 用法</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ./sockdump -h</span>
+</span></span><span class="line"><span class="cl">Usage of ./sockdump:
+</span></span><span class="line"><span class="cl">      --format string         output format <span class="o">(</span>string, hex, hexstring, pcap<span class="o">)</span> <span class="o">(</span>default <span class="s2">&#34;hex&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --output string         output file, default stdout
+</span></span><span class="line"><span class="cl">      --pid uint              pid of the process to trace
+</span></span><span class="line"><span class="cl">      --seg-size uint         max segment size, increase this number <span class="k">if</span> packet size is longer than captured size <span class="o">(</span>default 51200<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --segs-in-buffer uint   max number of segs in perf event buffer, increate this number <span class="k">if</span> message is dropped <span class="o">(</span>default 100<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --segs-per-msg uint     max number of iovec segments <span class="o">(</span>default 10<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      --sock string           unix socket path.
+</span></span><span class="line"><span class="cl">                              Matches all sockets starting with the given path.
+</span></span><span class="line"><span class="cl">                              Note that the path must be the same string used in the application, instead of the actual file path.
+</span></span><span class="line"><span class="cl">                              If the application used a relative path, the same relative path should be used here.
+</span></span><span class="line"><span class="cl">                              If the application runs inside a container, the path inside the container should be used here.
+</span></span><span class="line"><span class="cl">pflag: <span class="nb">help</span> requested
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中，<code>--sock</code> 参数是可选的；如果不指定，会抓取所有的 Unix Socket 的报文；如果指定，则使用前缀匹配的方式抓取匹配到的 Unix Socket 的报文。</p>
+<h2 id="sockdump-效果"><code>sockdump</code> 效果</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># echo &#34;go run ./cmd/sockdump-example/main.go&#34; in another terminal</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># ./sockdump --format string</span>
+</span></span><span class="line"><span class="cl">2023/12/08 12:21:37 Attached fentry to unix_stream_sendmsg
+</span></span><span class="line"><span class="cl">2023/12/08 12:21:37 Attached fentry to unix_dgram_sendmsg
+</span></span><span class="line"><span class="cl">2023/12/08 12:21:37 Read data from perf event...
+</span></span><span class="line"><span class="cl">2023-12-08 12:21:39 &gt;&gt;&gt; process sockdump-exampl <span class="o">[</span><span class="m">48125</span> -&gt; 48125<span class="o">]</span> path /tmp/sockdump.sock len 86<span class="o">(</span>86<span class="o">)</span>
+</span></span><span class="line"><span class="cl">GET // HTTP/1.1
+</span></span><span class="line"><span class="cl">Host: unix
+</span></span><span class="line"><span class="cl">User-Agent: Go-http-client/1.1
+</span></span><span class="line"><span class="cl">Accept-Encoding: gzip
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">2023-12-08 12:21:39 &gt;&gt;&gt; process sockdump-exampl <span class="o">[</span><span class="m">48125</span> -&gt; 48125<span class="o">]</span> path /tmp/sockdump.sock len 944<span class="o">(</span>944<span class="o">)</span>
+</span></span><span class="line"><span class="cl">HTTP/1.1 <span class="m">200</span> OK
+</span></span><span class="line"><span class="cl">Content-Type: text/html<span class="p">;</span> <span class="nv">charset</span><span class="o">=</span>utf-8
+</span></span><span class="line"><span class="cl">Last-Modified: Fri, <span class="m">08</span> Dec <span class="m">2023</span> 12:21:39 GMT
+</span></span><span class="line"><span class="cl">Date: Fri, <span class="m">08</span> Dec <span class="m">2023</span> 12:21:39 GMT
+</span></span><span class="line"><span class="cl">Content-Length: <span class="m">781</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">&lt;pre&gt;
+</span></span><span class="line"><span class="cl">&lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&#34;.ICE-unix/&#34;</span>&gt;.ICE-unix/&lt;/a&gt;
+</span></span><span class="line"><span class="cl">&lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&#34;.X11-unix/&#34;</span>&gt;.X11-unix/&lt;/a&gt;
+</span></span><span class="line"><span class="cl">&lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&#34;.XIM-unix/&#34;</span>&gt;.XIM-unix/&lt;/a&gt;
+</span></span><span class="line"><span class="cl">&lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&#34;.font-unix/&#34;</span>&gt;.font-unix/&lt;/a&gt;
+</span></span><span class="line"><span class="cl">&lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&#34;snap-private-tmp/&#34;</span>&gt;snap-private-tmp/&lt;/a&gt;
+</span></span><span class="line"><span class="cl">&lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&#34;systemd-private-9dda0a49b49843b994907c3790385fd7-systemd-logind.service-atspfy/&#34;</span>&gt;systemd-private-9dda0a49b49843b994907c3790385fd7-systemd-logind.service-atspfy/&lt;/a&gt;
+</span></span><span class="line"><span class="cl">&lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&#34;systemd-private-9dda0a49b49843b994907c3790385fd7-systemd-resolved.service-0mw7GZ/&#34;</span>&gt;systemd-private-9dda0a49b49843b994907c3790385fd7-systemd-resolved.service-0mw7GZ/&lt;/a&gt;
+</span></span><span class="line"><span class="cl">&lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&#34;systemd-private-9dda0a49b49843b994907c3790385fd7-systemd-timesyncd.service-n6Px1k/&#34;</span>&gt;systemd-private-9dda0a49b49843b994907c3790385fd7-systemd-timesyncd.service-n6Px1k/&lt;/a&gt;
+</span></span><span class="line"><span class="cl">&lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&#34;sockdump.sock&#34;</span>&gt;sockdump.sock&lt;/a&gt;
+</span></span><span class="line"><span class="cl">&lt;/pre&gt;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">^C
+</span></span><span class="line"><span class="cl">2023/12/08 12:21:40 Captured <span class="m">2</span> packets
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>除了命令行输出，还可以使用 <code>--format pcap</code> 输出 pcap 文件，然后使用 WireShark 打开。</p>
+<h2 id="sockdump-实现"><code>sockdump</code> 实现</h2>
+<p><code>sockdump</code> 通过 hook <code>unix_stream_sendmsg</code> 和 <code>unix_dgram_sendmsg</code>，抓取 Unix Socket 的报文。这两个 hook 的实现非常类似，都是先匹配 <code>--sock</code> 参数，然后抓取报文。</p>
+<p>这 2 个函数的函数原型如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/unix/af_unix.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">unix_stream_sendmsg</span><span class="p">(</span><span class="k">struct</span> <span class="n">socket</span> <span class="o">*</span><span class="n">sock</span><span class="p">,</span> <span class="k">struct</span> <span class="n">msghdr</span> <span class="o">*</span><span class="n">msg</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">unix_dgram_sendmsg</span><span class="p">(</span><span class="k">struct</span> <span class="n">socket</span> <span class="o">*</span><span class="n">sock</span><span class="p">,</span> <span class="k">struct</span> <span class="n">msghdr</span> <span class="o">*</span><span class="n">msg</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到，它们的参数是一致的，所以可以抽象出一个函数，同时 hook 这两个函数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__usk_sendmsg</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="k">struct</span> <span class="n">socket</span> <span class="o">*</span><span class="n">sock</span><span class="p">,</span> <span class="k">struct</span> <span class="n">msghdr</span> <span class="o">*</span><span class="n">msg</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// filter --pid
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// filter --sock
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// dump packet from iovec
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__kprobe_unix_sendmsg</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">socket</span> <span class="o">*</span><span class="n">sock</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="nf">PT_REGS_PARM1</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">msghdr</span> <span class="o">*</span><span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="nf">PT_REGS_PARM2</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">size_t</span> <span class="n">len</span> <span class="o">=</span> <span class="nf">PT_REGS_PARM3</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">__usk_sendmsg</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">len</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/unix_stream_sendmsg&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">kprobe__unix_stream_sendmsg</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">__kprobe_unix_sendmsg</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/unix_dgram_sendmsg&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">kprobe__unix_dgram_sendmsg</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">__kprobe_unix_sendmsg</span><span class="p">(</span><span class="n">ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fentry/unix_stream_sendmsg&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fentry__unix_stream_sendmsg</span><span class="p">,</span> <span class="k">struct</span> <span class="n">socket</span> <span class="o">*</span><span class="n">sock</span><span class="p">,</span> <span class="k">struct</span> <span class="n">msghdr</span> <span class="o">*</span><span class="n">msg</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">__usk_sendmsg</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="kt">long</span><span class="p">)</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">len</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fentry/unix_dgram_sendmsg&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fentry__unix_dgram_sendmsg</span><span class="p">,</span> <span class="k">struct</span> <span class="n">socket</span> <span class="o">*</span><span class="n">sock</span><span class="p">,</span> <span class="k">struct</span> <span class="n">msghdr</span> <span class="o">*</span><span class="n">msg</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">__usk_sendmsg</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="kt">long</span><span class="p">)</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">sock</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">len</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如果当前内核支持 <code>fentry</code>，则使用 <code>fentry</code> hook；否则使用 <code>kprobe</code> hook。</p>
+<h2 id="filter---pid">filter &ndash;pid</h2>
+<p><code>sockdump</code> 通过 <code>--pid</code> 参数，过滤指定的进程。这里使用 <code>bpf_get_current_pid_tgid()</code> 获取当前进程的 pid，然后与 <code>--pid</code> 参数进行比较。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl">    <span class="n">pid</span> <span class="o">=</span> <span class="nf">bpf_get_current_pid_tgid</span><span class="p">()</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">cfg</span><span class="o">-&gt;</span><span class="n">pid</span> <span class="o">&amp;&amp;</span> <span class="n">cfg</span><span class="o">-&gt;</span><span class="n">pid</span> <span class="o">!=</span> <span class="n">pid</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="filter---sock">filter &ndash;sock</h2>
+<p><code>sockdump</code> 通过 <code>--sock</code> 参数，过滤指定的 Unix Socket；既要匹配本端的 <code>sock_path</code>，也要匹配对端的 <code>sock_path</code>。</p>
+<p>不过，这里需要注意：使用 <code>bpf_skc_to_unix_sock()</code> 将 <code>struct socket *sock</code> 转换成 <code>struct unix_sock *usk</code>，然后再获取 <code>usk</code> 里的 <code>sock_path</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
+</span><span class="lnt">81
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cp">#define SOCK_PATH_OFFSET    \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    (offsetof(struct unix_address, name) + offsetof(struct sockaddr_un, sun_path))
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__is_str_prefix</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">prefix</span><span class="p">,</span> <span class="kt">int</span> <span class="n">siz</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">siz</span> <span class="o">&amp;&amp;</span> <span class="n">prefix</span><span class="p">[</span><span class="n">i</span><span class="p">];</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">str</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">prefix</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__is_path_matched</span><span class="p">(</span><span class="n">__u64</span> <span class="o">*</span><span class="n">path</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u64</span> <span class="o">*</span><span class="n">sock_path</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u64</span> <span class="o">*</span><span class="p">)</span> <span class="n">cfg</span><span class="o">-&gt;</span><span class="n">sock_path</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 1. 使用 __u64 减少遍历次数
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="c1">// 2. 再使用 __u8 判断是否匹配前缀
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">UNIX_PATH_MAX</span> <span class="o">/</span> <span class="mi">8</span> <span class="o">&amp;&amp;</span> <span class="n">sock_path</span><span class="p">[</span><span class="n">i</span><span class="p">];</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">sock_path</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nf">__is_str_prefix</span><span class="p">((</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+</span></span><span class="line"><span class="cl">                                   <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">sock_path</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mi">8</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="n">UNIX_PATH_MAX</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">__is_str_prefix</span><span class="p">((</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">path</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+</span></span><span class="line"><span class="cl">                               <span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="o">&amp;</span><span class="n">sock_path</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mi">4</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl"><span class="nf">match_path_of_usk</span><span class="p">(</span><span class="k">struct</span> <span class="n">unix_sock</span> <span class="o">*</span><span class="n">usk</span><span class="p">,</span> <span class="n">__u64</span> <span class="o">*</span><span class="n">path</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">unix_address</span> <span class="o">*</span><span class="n">addr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u8</span> <span class="n">one_byte</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">char</span> <span class="o">*</span><span class="n">sock_path</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// addr-&gt;len == 0 则跳过本次抓包
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="n">addr</span> <span class="o">=</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">usk</span><span class="p">,</span> <span class="n">addr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">addr</span><span class="p">,</span> <span class="n">len</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 1. 通过偏移读取 sock_path
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="c1">// 2. 如果第一个字节是 0（@/path/to/unix.sock），则多偏移一个字节再读取 sock_path
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="n">sock_path</span> <span class="o">=</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="n">addr</span> <span class="o">+</span> <span class="n">SOCK_PATH_OFFSET</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_probe_read_kernel</span><span class="p">(</span><span class="o">&amp;</span><span class="n">one_byte</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">sock_path</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">one_byte</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_probe_read_kernel_str</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">UNIX_PATH_MAX</span><span class="p">,</span> <span class="n">sock_path</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">else</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_probe_read_kernel_str</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">UNIX_PATH_MAX</span><span class="p">,</span> <span class="n">sock_path</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">__is_path_matched</span><span class="p">(</span><span class="n">path</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__is_sock_path_matched</span><span class="p">(</span><span class="k">struct</span> <span class="n">unix_sock</span> <span class="o">*</span><span class="n">usk</span><span class="p">,</span> <span class="n">__u64</span> <span class="o">*</span><span class="n">path</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">usk</span> <span class="o">&amp;&amp;</span> <span class="nf">match_path_of_usk</span><span class="p">(</span><span class="n">usk</span><span class="p">,</span> <span class="n">path</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__usk_sendmsg</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="k">struct</span> <span class="n">socket</span> <span class="o">*</span><span class="n">sock</span><span class="p">,</span> <span class="k">struct</span> <span class="n">msghdr</span> <span class="o">*</span><span class="n">msg</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="n">usk</span> <span class="o">=</span> <span class="nf">bpf_skc_to_unix_sock</span><span class="p">(</span><span class="n">sock</span><span class="o">-&gt;</span><span class="n">sk</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">peer</span> <span class="o">=</span> <span class="n">usk</span> <span class="o">?</span> <span class="nf">bpf_skc_to_unix_sock</span><span class="p">(</span><span class="n">usk</span><span class="o">-&gt;</span><span class="n">peer</span><span class="p">)</span> <span class="o">:</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nf">__is_sock_path_matched</span><span class="p">(</span><span class="n">usk</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">!</span><span class="nf">__is_sock_path_matched</span><span class="p">(</span><span class="n">peer</span><span class="p">,</span> <span class="n">path</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="dump-packet-from-iovec">dump packet from iovec</h2>
+<p>从 <code>iovec</code> 中读取报文：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">collect_data</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ctx</span><span class="p">,</span> <span class="k">struct</span> <span class="n">packet</span> <span class="o">*</span><span class="n">pkt</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">buf</span><span class="p">,</span> <span class="n">__u32</span> <span class="n">len</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">seg_size</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">-&gt;</span><span class="n">seg_size</span><span class="p">,</span> <span class="n">n</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">pkt</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">pkt</span><span class="o">-&gt;</span><span class="n">len</span> <span class="o">=</span> <span class="n">len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// 此处需要 if 判断 n 的上限，否则 verifier 会报错
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="n">n</span> <span class="o">=</span> <span class="n">len</span> <span class="o">&gt;</span> <span class="n">seg_size</span> <span class="o">?</span> <span class="nl">seg_size</span> <span class="p">:</span> <span class="n">len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">n</span> <span class="o">&lt;</span> <span class="n">SS_MAX_SEG_SIZE</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_probe_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pkt</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">else</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_probe_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">pkt</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">SS_MAX_SEG_SIZE</span><span class="p">,</span> <span class="n">buf</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">pkt</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">[</span><span class="n">n</span> <span class="o">&lt;</span> <span class="n">SS_MAX_SEG_SIZE</span> <span class="o">?</span> <span class="nl">n</span> <span class="p">:</span> <span class="n">SS_MAX_SEG_SIZE</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_perf_event_output</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">events</span><span class="p">,</span> <span class="n">BPF_F_CURRENT_CPU</span><span class="p">,</span> <span class="n">pkt</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">pkt</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><blockquote>
+<p>此处跳过 Go 代码讲解。。。</p>
+</blockquote>
+<h2 id="sockdump-小结"><code>sockdump</code> 小结</h2>
+<p><code>sockdump</code> 通过 hook <code>unix_stream_sendmsg</code> 和 <code>unix_dgram_sendmsg</code>，抓取 Unix Socket 的报文。这两个 hook 的实现非常类似，都是先匹配 <code>--sock</code> 参数，然后抓取报文。</p>
+<p>这里需要注意的是，使用 <code>bpf_skc_to_unix_sock()</code> 将 <code>struct socket *sock</code> 转换成 <code>struct unix_sock *usk</code>，然后再获取 <code>usk</code> 里的 <code>sock_path</code>。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-05-26
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/sockdump/">sockdump</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-103-ebpf-vm-on-ebpf/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 巨献 eBPF vm on eBPF</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-101-xdp-supports-traceroute/">
+        <span class="next-text nav-default">eBPF Talk: XDP 支持 traceroute</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

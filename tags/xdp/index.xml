@@ -2,157 +2,186 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>XDP on LeonHwang&#39;s Blogs</title>
-    <link>https://le0nhwan9.github.io/tags/xdp/</link>
+    <link>https://asphaltt.github.io/tags/xdp/</link>
     <description>Recent content in XDP on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
-    <lastBuildDate>Wed, 15 May 2024 23:37:46 +0800</lastBuildDate>
-    <atom:link href="https://le0nhwan9.github.io/tags/xdp/index.xml" rel="self" type="application/rss+xml" />
+    <copyright>Leon Hwang</copyright>
+    <lastBuildDate>Sun, 26 May 2024 16:28:58 +0800</lastBuildDate>
+    <atom:link href="https://asphaltt.github.io/tags/xdp/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 混部环境下无损升级 XDP 程序的思路</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-116-upgrade-xdp-costlessly/</link>
+      <pubDate>Sun, 26 May 2024 16:28:58 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-116-upgrade-xdp-costlessly/</guid>
+      <description>混部环境指的是当前服务器不是 XDP 程序独占的，部署有其它的网络服务。 如果服务器使用的是 Intel 网卡、而且 XDP 程序采用 Native 模式挂载到网卡上，那么在挂载和卸载</description>
+    </item>
+    <item>
+      <title>eBPF Talk: XDP dispatcher 简介</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-114-introduce-xdp-dispatcher/</link>
+      <pubDate>Sun, 26 May 2024 16:27:14 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-114-introduce-xdp-dispatcher/</guid>
+      <description>自 5.6 kernel bpf dispatcher 被引入到 Linux 内核中。 bpf: Introduce BPF dispatcher 到目前 6.9 kernel，仍然只有 XDP 程序在使用 bpf dispatcher。 bpf dispatcher 的引入，是为了解决间接调用叠加 retpoline 带</description>
+    </item>
+    <item>
+      <title>eBPF Talk: xdpsnoop 一个 XDP 安装过程的跟踪工具</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-109-xdpsnoop/</link>
+      <pubDate>Sun, 26 May 2024 16:15:57 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-109-xdpsnoop/</guid>
+      <description>想起 eBPF Talk: 达成内核 bpf 子系统贡献者成就 给内核新增了一个 XDP 安装失败的 tracepoint；现在想来，这个 tracepoint 有点鸡肋，因为可以通过 kprobe 一些函数就能解决</description>
+    </item>
+    <item>
+      <title>eBPF Talk: XDP 支持 traceroute</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-101-xdp-supports-traceroute/</link>
+      <pubDate>Sun, 26 May 2024 15:37:31 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-101-xdp-supports-traceroute/</guid>
+      <description>不管 traceroute 具体的工作原理是什么，只需要抓住一点：如果当前的包 IP 头里的 TTL 是 1，那么就可以回一个 ICMP TtlExceeded 包，这样就可以支持 traceroute 和 mtr 了。 TL;DR XDP 程序里的处理逻辑</description>
+    </item>
     <item>
       <title>eBPF Talk: 手撕 XDP 程序</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-97-analyse-xdp/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-97-analyse-xdp/</link>
       <pubDate>Wed, 15 May 2024 23:37:46 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-97-analyse-xdp/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-97-analyse-xdp/</guid>
       <description>前段时间，老板让我 手撕 分析 一个陌生的 XDP 程序。 责任重过山头，莫敢推辞，只能硬着头皮上了。 陌生的 XDP 程序 没有源代码，且发现该 XDP 程序还没带上 debug 信息；</description>
     </item>
     <item>
       <title>eBPF Talk: 达成内核 bpf 子系统贡献者成就</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</link>
       <pubDate>Wed, 15 May 2024 23:20:40 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-89-kernel-bpf-contributor/</guid>
       <description>给 XDP 新增了一个 tracepoint；历时一个月，终不负所望。 bpf, xdp: Add tracepoint to xdp attaching failure 年份：2023 年。 需求来源 说来惭愧，需求不来自公司、也不来自我自</description>
     </item>
     <item>
       <title>eBPF Talk: XDP ACL 进阶之 TupleMerge</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</link>
       <pubDate>Wed, 03 Apr 2024 23:20:00 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</guid>
       <description>最近学习了网络包在线分类算法 TupleMerge，惊讶于其高效的查询和更新效率，比基于 bitmap 的算法更加节省内存、查询效率更高。本文将介绍 TupleMerge 算法的</description>
     </item>
     <item>
       <title>eBPF Talk: packet range check</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-69-packet-range-check/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-69-packet-range-check/</link>
       <pubDate>Wed, 03 Apr 2024 22:56:16 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-69-packet-range-check/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-69-packet-range-check/</guid>
       <description>在 XDP 或者 tc-bpf 中，经常要直接访问网络包内容；而在访问网络包内容之前，总是需要先检查访问的内容是否在 data_end 之内。 So，学习一下 packet range check 相关 commit 的历史；以史</description>
     </item>
     <item>
       <title>eBPF Talk: 踩坑 XDP on Mellanox</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-68-xdp-shit-on-mellanox/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-68-xdp-shit-on-mellanox/</link>
       <pubDate>Wed, 03 Apr 2024 22:54:12 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-68-xdp-shit-on-mellanox/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-68-xdp-shit-on-mellanox/</guid>
       <description>对 XDP 了解得越多，对 XDP 的信心越是膨胀。最近在 XDP on Mellanox 上踩了个坑，让我对 XDP 的认识又有了新的提升：就是需要保持对技术的敬畏之心，不要过于自信。 P.S. Mellanox 网</description>
     </item>
     <item>
       <title>eBPF Talk: 给 XDP 程序写 unittest</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-65-write-unittest-for-xdp/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-65-write-unittest-for-xdp/</link>
       <pubDate>Wed, 03 Apr 2024 22:46:00 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-65-write-unittest-for-xdp/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-65-write-unittest-for-xdp/</guid>
       <description>我们都知道写 unittest 是非常必要的，但是在 eBPF 程序里，该如何给 XDP 程序写 unittest 呢？ bpf: introduce BPF_PROG_TEST_RUN command since 4.12 kernel 在 4.12 内核中，引入了 BPF_PROG_TEST_RUN 命令，可以用来给 XDP 和 tc-bpf 等 eBPF 程序写 unit</description>
     </item>
     <item>
       <title>eBPF Talk: 使用 metadata 将信息从 XDP 传给 AF_XDP</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/</link>
       <pubDate>Wed, 03 Apr 2024 22:44:30 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/</guid>
       <description>学习了 XDP metadata 和 AF_XDP，是否可以使用 metadata 将信息从 XDP 传给 AF_XDP 呢？ eBPF Talk: XDP metadata 实战指南 eBPF Talk: 使用 AF_XDP 注入延时 TL;DR 答案是可以的，复制网络包内容时将 metadata 一起进行复</description>
     </item>
     <item>
       <title>eBPF Talk: 不吐不快之 XDP ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-58-complain-xdp-acl/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-58-complain-xdp-acl/</link>
       <pubDate>Mon, 01 Apr 2024 22:46:20 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-58-complain-xdp-acl/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-58-complain-xdp-acl/</guid>
       <description>之前，在学习高性能 XDP ACL 的时候，挺开心的，一下子就掌握了前沿技术。 eBPF Talk: 优化 xdp_acl eBPF Talk: 再论高性能 eBPF ACL demo for 「eBPF 技术实践：高性能 ACL」 不过在项目</description>
     </item>
     <item>
       <title>eBPF Talk: XDP on veth</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-55-xdp-on-veth/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-55-xdp-on-veth/</link>
       <pubDate>Sun, 31 Mar 2024 23:47:39 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-55-xdp-on-veth/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-55-xdp-on-veth/</guid>
       <description>veth 是一种虚拟网络设备，并支持在驱动里运行 XDP 程序。 eBPF Talk: XDP on Mellanox 与 Mellanox 物理网卡对比，veth 上运行 XDP 程序有和区别呢？ ndo_xdp on veth 这是将 XDP 程序下发到 veth 驱动里</description>
     </item>
     <item>
       <title>eBPF Talk: XDP on Mellanox</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-54-xdp-on-mellanox/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-54-xdp-on-mellanox/</link>
       <pubDate>Sun, 31 Mar 2024 21:22:06 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-54-xdp-on-mellanox/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-54-xdp-on-mellanox/</guid>
       <description>为了更高的性能，需要将 XDP 程序下沉到网卡驱动里去运行。 因为服务器使用的物理网卡是 Mellanox，所以就研究一下 Mellanox 驱动里是怎么运行 XDP 程序的。 XDP</description>
     </item>
     <item>
       <title>eBPF Talk: XDP redirect to AF_XDP</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</link>
       <pubDate>Tue, 23 May 2023 22:09:09 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-36-xdp-redirect-to-af_xdp/</guid>
       <description>通过学习 eBPF Talk: AF_XDP，我们掌握了 AF_XDP 的那些基础知识。 提问：对于如下高性能场景，在网卡收到网络包后，该网络包会被哪个 AF_XDP socket 处理呢？ 该网卡独占一</description>
     </item>
     <item>
       <title>eBPF Talk: veth, XDP, GRO ?</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-30-veth-xdp-gro/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-30-veth-xdp-gro/</link>
       <pubDate>Sun, 21 May 2023 23:33:35 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-30-veth-xdp-gro/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-30-veth-xdp-gro/</guid>
       <description>书接上回 eBPF Talk: XDP 转发失败了，今回讲解为什么从物理网卡的驱动模式 XDP 程序 xdp_redirect() 到 veth 设备时一定要开启对端设备的 GRO 功能？ 网络包 xdp_redirect() 转发到哪里去？ 简单而言，网</description>
     </item>
     <item>
       <title>eBPF Talk: XDP 转发失败了</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-29-failed-to-xdp-redirect/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-29-failed-to-xdp-redirect/</link>
       <pubDate>Sun, 21 May 2023 23:29:32 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-29-failed-to-xdp-redirect/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-29-failed-to-xdp-redirect/</guid>
       <description>奇葩场景遇到个奇葩问题。 为了更好的性能，就将 XDP 程序挂载到网卡驱动里。但有个业务需求，在 XDP 程序里将需要延迟的流量转发到 veth 设备。所以，就直接在 XDP</description>
     </item>
     <item>
       <title>eBPF Talk: 在 veth 上运行 XDP</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-28-xdp-on-veth/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-28-xdp-on-veth/</link>
       <pubDate>Sun, 21 May 2023 16:41:37 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-28-xdp-on-veth/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-28-xdp-on-veth/</guid>
       <description>veth 设备在 Linux 容器网络里被广泛使用，像其它网络设备一样都支持运行 XDP 程序。 与此同时，veth 设备还支持 driver 模式的 XDP 程序。 如果在往 veth 设备上挂载 XDP 程序时</description>
     </item>
     <item>
       <title>eBPF Talk: XDP metadata 实战指南</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-27-xdp-metadata-in-action/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-27-xdp-metadata-in-action/</link>
       <pubDate>Sun, 21 May 2023 16:34:35 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-27-xdp-metadata-in-action/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-27-xdp-metadata-in-action/</guid>
       <description>最近需要在两个 XDP 程序之间传递一个最简单的信息，原本想着使用使用一个 bpf map 来传递。经过同事提醒，有 XDP metadata 可以用来传递简单信息，我便解锁了 XDP metadata 技术。</description>
     </item>
     <item>
       <title>eBPF Talk: 揭秘 XDP 转发网络包【续】</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-25-xdp-redirect-packet/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-25-xdp-redirect-packet/</link>
       <pubDate>Sun, 21 May 2023 16:22:07 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-25-xdp-redirect-packet/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-25-xdp-redirect-packet/</guid>
       <description>书接 eBPF Talk: 揭秘 XDP 转发网络包 未竟的内容，看看最后 generic_xdp_tx() 函数中的发包详情。 1 2 3 4 5 6 // ${KERNEL}/net/core/dev.c generic_xdp_tx() |--&amp;gt;netdev_start_xmit() |--&amp;gt;__netdev_start_xmit() |--&amp;gt;ops-&amp;gt;ndo_start_xmit(skb, dev); 由以上函数调用栈可知，XDP_REDIRECT 和 XDP_TX</description>
     </item>
     <item>
       <title>eBPF Talk: 优化 XDP ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</link>
       <pubDate>Sun, 21 May 2023 16:08:36 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-21-xdp-acl-optimisation/</guid>
       <description>书接上回 ，本文讲解对高性能 XDP ACL 的开源项目 xdp_acl 的优化内容： 按需开启 eBPF 中的 debug 日志 动态调整 bitmap 大小 使用 PERCPU ARRAY 优化规则 bpf map 动态增删 ACL 规则的处理 以下代码片段</description>
     </item>
     <item>
       <title>eBPF Talk: 再论高性能 eBPF ACL</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-20-xdp-acl-again/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-20-xdp-acl-again/</link>
       <pubDate>Sun, 21 May 2023 16:03:32 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-20-xdp-acl-again/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-20-xdp-acl-again/</guid>
       <description>因为近期又得搞基于 eBPF 的 ACL，所以再次研究基于 eBPF 的 ACL 的几篇论文和一个开源项目。 以前，我研究过 「eBPF技术实践：高性能ACL」，并实现了一个</description>
     </item>
     <item>
       <title>eBPF Talk: 揭秘 XDP 转发网络包</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-17-xdp-redirect-packet/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-17-xdp-redirect-packet/</link>
       <pubDate>Sat, 20 May 2023 17:41:10 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-17-xdp-redirect-packet/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-17-xdp-redirect-packet/</guid>
       <description>书接上回 eBPF Talk: 解密 XDP generic 模式，本文从源代码层面剖析 XDP 转发网络包的实现。 demo 按需将网络包从另一张网卡转发走。 1 2 3 4 5 6 7 8 9 static volatile const u32 REDIRECT_IFINDEX = 0xFFFFFFFF; SEC(&amp;#34;xdp&amp;#34;) int xdp_redirect(struct xdp_md</description>
     </item>
     <item>
       <title>eBPF Talk: 解密 XDP generic 模式</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-16-xdp-generic-mode/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-16-xdp-generic-mode/</link>
       <pubDate>Sat, 20 May 2023 17:37:39 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-16-xdp-generic-mode/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-16-xdp-generic-mode/</guid>
       <description>近期又得搞 XDP 了，就顺手研究了下 XDP generic 模式的源代码。 XDP generic 模式的函数位置 已知，内核协议栈会对每个 skb 都执行一次 XDP generic 模式处理，当然是启用了 XDP generic 模式的情</description>
     </item>
     <item>
       <title>demo for 「eBPF 技术实践：高性能 ACL」</title>
-      <link>https://le0nhwan9.github.io/post/iptables-bpf-acl/</link>
+      <link>https://asphaltt.github.io/post/iptables-bpf-acl/</link>
       <pubDate>Fri, 01 Apr 2022 21:14:32 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/iptables-bpf-acl/</guid>
+      <guid>https://asphaltt.github.io/post/iptables-bpf-acl/</guid>
       <description>在阅读了字节跳动发出的公众号文章 eBPF 技术实践：高性能 ACL 后，对其中提出的 O(1) 匹配算法颇为佩服；但初始看了好几遍，都没看懂这个匹配算法。如今看懂后，</description>
     </item>
   </channel>

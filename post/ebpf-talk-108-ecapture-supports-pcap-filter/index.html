@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 给 eCapture 支持 pcap-filter 的艰辛历程 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="历经千辛万苦，给 eCapture 支持的 pcap-filter PR feat: Support pcap-filter expression for pcap mode 终于合并了：eCapture v0.7.4发布，支持Pcap Filter包过滤语法。感谢 @CFC4N 大佬的认可" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-108-ecapture-supports-pcap-filter/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 给 eCapture 支持 pcap-filter 的艰辛历程" />
+<meta property="og:description" content="历经千辛万苦，给 eCapture 支持的 pcap-filter PR feat: Support pcap-filter expression for pcap mode 终于合并了：eCapture v0.7.4发布，支持Pcap Filter包过滤语法。感谢 @CFC4N 大佬的认可" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-108-ecapture-supports-pcap-filter/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-05-26T16:14:02+08:00" />
+<meta property="article:modified_time" content="2024-05-26T16:14:02+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 给 eCapture 支持 pcap-filter 的艰辛历程">
+  <meta itemprop="description" content="历经千辛万苦，给 eCapture 支持的 pcap-filter PR feat: Support pcap-filter expression for pcap mode 终于合并了：eCapture v0.7.4发布，支持Pcap Filter包过滤语法。感谢 @CFC4N 大佬的认可">
+  <meta itemprop="datePublished" content="2024-05-26T16:14:02+08:00">
+  <meta itemprop="dateModified" content="2024-05-26T16:14:02+08:00">
+  <meta itemprop="wordCount" content="953">
+  <meta itemprop="keywords" content="EBPF,ECapture,Pcap-Filter"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 给 eCapture 支持 pcap-filter 的艰辛历程"/>
+<meta name="twitter:description" content="历经千辛万苦，给 eCapture 支持的 pcap-filter PR feat: Support pcap-filter expression for pcap mode 终于合并了：eCapture v0.7.4发布，支持Pcap Filter包过滤语法。感谢 @CFC4N 大佬的认可"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 给 eCapture 支持 pcap-filter 的艰辛历程</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 953 字 </span>
+      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#ecapture-的实现方式">eCapture 的实现方式</a></li>
+        <li><a href="#抓破头的-__noinline__-undefined-问题">抓破头的 <code>__noinline__</code> undefined 问题</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>历经千辛万苦，给 eCapture 支持的 pcap-filter PR <a href="https://github.com/gojue/ecapture/pull/478">feat: Support pcap-filter expression for pcap mode</a> 终于合并了：<a href="https://www.cnxct.com/ecapture-v0-7-4-pcap-filter/">eCapture v0.7.4发布，支持Pcap Filter包过滤语法</a>。感谢 <a href="https://github.com/cfc4n">@CFC4N</a> 大佬的认可。</p>
+<p>支持 pcap-filter 特性并不困难，参考 <a href="/post/ebpf-talk-99-tc-dump-supports-pcap-filter/">eBPF Talk: tc-dump 支持 pcap-filter</a>。但是，eCapture 需要支持 arm64 服务器和 Android；所以，支持 pcap-filter 特性的过程并不顺利。</p>
+<h2 id="ecapture-的实现方式">eCapture 的实现方式</h2>
+<p>迅速在 amd64 VM 上完成了 POC。</p>
+<p>参考 <code>tc-dump</code>，先在 bpf 代码里留个桩：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="c1">// ${ECAPTURE}/kern/tc.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// filter_pcap_ebpf_l2 is a stub to inject pcap-filter.
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">static</span> <span class="n">__noinline</span> <span class="kt">bool</span> <span class="nf">filter_pcap_ebpf_l2</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">_skb</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">__skb</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                           <span class="kt">void</span> <span class="o">*</span><span class="n">___skb</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                           <span class="kt">void</span><span class="o">*</span> <span class="n">data_end</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">data</span> <span class="o">!=</span> <span class="n">data_end</span> <span class="o">&amp;&amp;</span> <span class="n">_skb</span> <span class="o">==</span> <span class="n">__skb</span> <span class="o">&amp;&amp;</span> <span class="n">__skb</span> <span class="o">==</span> <span class="n">___skb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">bool</span> <span class="nf">filter_pcap_l2</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                           <span class="kt">void</span> <span class="o">*</span><span class="n">data_end</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">filter_pcap_ebpf_l2</span><span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">skb</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">skb</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">skb</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                               <span class="n">data_end</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>而后，在 Go 里使用 <a href="github.com/jschwinger233/elibpcap">elibpcap</a> 库将 pcap-filter 注入到 bpf 的桩上：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="c1">// ${ECAPTURE}/module/probe_pcap.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">injectPcapFilter</span><span class="p">(</span><span class="nx">progSpec</span> <span class="o">*</span><span class="nx">ebpf</span><span class="p">.</span><span class="nx">ProgramSpec</span><span class="p">,</span> <span class="nx">pcapFilter</span> <span class="kt">string</span><span class="p">)</span> <span class="p">(</span><span class="o">*</span><span class="nx">ebpf</span><span class="p">.</span><span class="nx">ProgramSpec</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">pcapFilter</span> <span class="o">==</span> <span class="s">&#34;&#34;</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">progSpec</span><span class="p">,</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kd">var</span> <span class="nx">err</span> <span class="kt">error</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">progSpec</span><span class="p">.</span><span class="nx">Instructions</span><span class="p">,</span> <span class="nx">err</span> <span class="p">=</span> <span class="nx">elibpcap</span><span class="p">.</span><span class="nf">Inject</span><span class="p">(</span><span class="nx">pcapFilter</span><span class="p">,</span> <span class="nx">progSpec</span><span class="p">.</span><span class="nx">Instructions</span><span class="p">,</span> <span class="nx">elibpcap</span><span class="p">.</span><span class="nx">Options</span><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">AtBpf2Bpf</span><span class="p">:</span>  <span class="s">&#34;filter_pcap_ebpf_l2&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">DirectRead</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">L2Skb</span><span class="p">:</span>      <span class="kc">true</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">})</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="kc">nil</span><span class="p">,</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;failed to inject pcap filter: %w&#34;</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">progSpec</span><span class="p">,</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">prepareInsnPatchers</span><span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">manager</span><span class="p">.</span><span class="nx">Manager</span><span class="p">,</span> <span class="nx">ebpfFuncs</span> <span class="p">[]</span><span class="kt">string</span><span class="p">,</span> <span class="nx">pcapFilter</span> <span class="kt">string</span><span class="p">)</span> <span class="p">[]</span><span class="nx">manager</span><span class="p">.</span><span class="nx">InstructionPatcherFunc</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">preparePatcher</span> <span class="o">:=</span> <span class="kd">func</span><span class="p">(</span><span class="nx">ebpfFunc</span> <span class="kt">string</span><span class="p">)</span> <span class="nx">manager</span><span class="p">.</span><span class="nx">InstructionPatcherFunc</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="kd">func</span><span class="p">(</span><span class="nx">m</span> <span class="o">*</span><span class="nx">manager</span><span class="p">.</span><span class="nx">Manager</span><span class="p">)</span> <span class="kt">error</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">progSpecs</span><span class="p">,</span> <span class="nx">ok</span><span class="p">,</span> <span class="nx">err</span> <span class="o">:=</span> <span class="nx">m</span><span class="p">.</span><span class="nf">GetProgramSpec</span><span class="p">(</span><span class="nx">manager</span><span class="p">.</span><span class="nx">ProbeIdentificationPair</span><span class="p">{</span><span class="nx">EbpfFuncName</span><span class="p">:</span> <span class="nx">ebpfFunc</span><span class="p">})</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="o">||</span> <span class="p">!</span><span class="nx">ok</span> <span class="o">||</span> <span class="nb">len</span><span class="p">(</span><span class="nx">progSpecs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;failed to get program spec for %s: %w&#34;</span><span class="p">,</span> <span class="nx">ebpfFunc</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">progSpec</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">progSpecs</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nx">progSpec</span><span class="p">,</span> <span class="nx">err</span> <span class="p">=</span> <span class="nf">injectPcapFilter</span><span class="p">(</span><span class="nx">progSpec</span><span class="p">,</span> <span class="nx">pcapFilter</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">if</span> <span class="nx">err</span> <span class="o">!=</span> <span class="kc">nil</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;failed to inject pcap filter for %s: %w&#34;</span><span class="p">,</span> <span class="nx">ebpfFunc</span><span class="p">,</span> <span class="nx">err</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">insnPatchers</span> <span class="o">:=</span> <span class="nb">make</span><span class="p">([]</span><span class="nx">manager</span><span class="p">.</span><span class="nx">InstructionPatcherFunc</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="nx">ebpfFuncs</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="nx">_</span><span class="p">,</span> <span class="nx">ebpfFunc</span> <span class="o">:=</span> <span class="k">range</span> <span class="nx">ebpfFuncs</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">fn</span> <span class="o">:=</span> <span class="nx">ebpfFunc</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">insnPatchers</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">insnPatchers</span><span class="p">,</span> <span class="nf">preparePatcher</span><span class="p">(</span><span class="nx">fn</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">insnPatchers</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>最后，将 <code>./ecapture tls -m pcap -i eth0 --pcapfile=ecapture.pcapng tcp port 443</code> pcap 模式的命令行的剩余参数当作 pcap-filter 表达式：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-go" data-lang="go"><span class="line"><span class="cl"><span class="c1">// ${ECAPTURE}/cli/cmd/gotls.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">goc</span><span class="p">.</span><span class="nx">PcapFilter</span> <span class="o">==</span> <span class="s">&#34;&#34;</span> <span class="o">&amp;&amp;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">args</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">goc</span><span class="p">.</span><span class="nx">PcapFilter</span> <span class="p">=</span> <span class="nx">strings</span><span class="p">.</span><span class="nf">Join</span><span class="p">(</span><span class="nx">args</span><span class="p">,</span> <span class="s">&#34; &#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>就这么简单，就像将大象装进冰箱一样。。。</p>
+<h2 id="抓破头的-__noinline__-undefined-问题">抓破头的 <code>__noinline__</code> undefined 问题</h2>
+<p>在提交 PR 之后，遇到了不少问题，其中最让人头疼的是 <code>__noinline__</code> undefined 问题。</p>
+<p>在 CI 里编译 bpf 代码时，遇到了如下错误：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-shell" data-lang="shell"><span class="line"><span class="cl">2024-02-03T08:04:11.0855280Z In file included from kern/boringssl_a_14_kern.c:72:
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0856614Z In file included from ./kern/openssl.h:16:
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0858122Z ./kern/tc.h:116:8: error: use of undeclared identifier <span class="s1">&#39;__noinline__&#39;</span>
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0859355Z static __noinline bool filter_pcap_ebpf_l2<span class="o">(</span>void *_skb, void *__skb,
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0860510Z        ^
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0862171Z ./kern/bpf/bpf_helpers.h:44:35: note: expanded from macro <span class="s1">&#39;__noinline&#39;</span>
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0863233Z <span class="c1">#define __noinline __attribute__((noinline))</span>
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0864452Z                                   ^
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0866148Z /lib/modules/6.2.0-1019-azure/build/include/linux/compiler_attributes.h:234:56: note: expanded from macro <span class="s1">&#39;noinline&#39;</span>
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0867810Z <span class="c1">#define   noinline                      __attribute__((__noinline__))</span>
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0869504Z                                                        ^
+</span></span><span class="line"><span class="cl">2024-02-03T08:04:11.0900704Z <span class="m">1</span> error generated.
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>直接搜索 <code>error: use of undeclared identifier '__noinline__'</code> 的话，大概率会搜索到如下资料：</p>
+<ul>
+<li><a href="https://github.com/NVIDIA/thrust/issues/1703"><strong>noinline</strong> Macro Definition causes clang++ Compile Error</a></li>
+<li><a href="https://github.com/llvm/llvm-project/issues/57544">With gcc-12&rsquo;s libstdc++, clang-15 rc2 still cannot compile CUDA/HIP code because of <strong>noinline</strong></a></li>
+</ul>
+<p>而查看 <code>compiler_attributes.h</code> 的话，会发现 <code>noinline</code> 的定义：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/include/linux/compiler_attributes.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * Note the missing underscores.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *   gcc: https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-noinline-function-attribute
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * clang: mentioned
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define   noinline                      __attribute__((__noinline__))
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>不过，不要被这些资料给蒙蔽了。</p>
+<p>随后，按照 CFC4N 大佬的提示，当我 <code>make nocore</code> 时，就复现了这个错误。</p>
+<p>而后，我就想到了一个大聪明的办法，将 <code>noinline</code> 给 undef 了：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// ${ECAPTURE}/kern/ecapture.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#if defined(noinline)
+</span></span></span><span class="line"><span class="cl"><span class="cp">#undef noinline
+</span></span></span><span class="line"><span class="cl"><span class="cp">#endif
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>undef 了之后，bpf 代码里使用的 <code>__noinline</code> 就会被展开成 <code>__attribute__((noinline))</code>，而不是 <code>__attribute__((__attribute__((noinline))))</code> 了。</p>
+<p>问题解决！！！</p>
+<h2 id="小结">小结</h2>
+<p>eCapture 支持 pcap-filter 特性的 PR 经历了不少波折，但是最终还是合并了。这也是 eCapture 项目的一个里程碑。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-05-26
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/ecapture/">eCapture</a>
+      <a href="/%20tags/pcap-filter/">pcap-filter</a>
+      </div>
+    <nav class="post-nav">
+      <a class="prev" href="/post/ebpf-talk-109-xdpsnoop/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: xdpsnoop 一个 XDP 安装过程的跟踪工具</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
+      <a class="next" href="/post/ebpf-talk-107-introduce-socketrace/">
+        <span class="next-text nav-default">eBPF Talk: 打造自己的 socket 跟踪工具 socketrace</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

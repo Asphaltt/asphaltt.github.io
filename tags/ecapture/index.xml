@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ECapture on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/ecapture/</link>
+    <description>Recent content in ECapture on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo 0.125.0-DEV</generator>
+    <language>zh</language>
+    <copyright>Leon Hwang</copyright>
+    <lastBuildDate>Sun, 26 May 2024 16:14:02 +0800</lastBuildDate>
+    <atom:link href="https://asphaltt.github.io/tags/ecapture/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 给 eCapture 支持 pcap-filter 的艰辛历程</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-108-ecapture-supports-pcap-filter/</link>
+      <pubDate>Sun, 26 May 2024 16:14:02 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-108-ecapture-supports-pcap-filter/</guid>
+      <description>历经千辛万苦，给 eCapture 支持的 pcap-filter PR feat: Support pcap-filter expression for pcap mode 终于合并了：eCapture v0.7.4发布，支持Pcap Filter包过滤语法。感谢 @CFC4N 大佬的认可</description>
+    </item>
+  </channel>
+</rss>

@@ -2,17 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>TupleMerge on LeonHwang&#39;s Blogs</title>
-    <link>https://le0nhwan9.github.io/tags/tuplemerge/</link>
+    <link>https://asphaltt.github.io/tags/tuplemerge/</link>
     <description>Recent content in TupleMerge on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
+    <copyright>Leon Hwang</copyright>
     <lastBuildDate>Wed, 03 Apr 2024 23:20:00 +0800</lastBuildDate>
-    <atom:link href="https://le0nhwan9.github.io/tags/tuplemerge/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://asphaltt.github.io/tags/tuplemerge/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: XDP ACL 进阶之 TupleMerge</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</link>
       <pubDate>Wed, 03 Apr 2024 23:20:00 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-78-xdp-acl-tuplemerge-algo/</guid>
       <description>最近学习了网络包在线分类算法 TupleMerge，惊讶于其高效的查询和更新效率，比基于 bitmap 的算法更加节省内存、查询效率更高。本文将介绍 TupleMerge 算法的</description>
     </item>
   </channel>

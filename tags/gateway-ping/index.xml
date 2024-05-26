@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Gateway Ping on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/gateway-ping/</link>
+    <description>Recent content in Gateway Ping on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo 0.125.0-DEV</generator>
+    <language>zh</language>
+    <copyright>Leon Hwang</copyright>
+    <lastBuildDate>Sun, 26 May 2024 16:20:37 +0800</lastBuildDate>
+    <atom:link href="https://asphaltt.github.io/tags/gateway-ping/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 善用 TCP option 来支持网关 ping</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-111-tcp-option-for-gateway-ping/</link>
+      <pubDate>Sun, 26 May 2024 16:20:37 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-111-tcp-option-for-gateway-ping/</guid>
+      <description>这里的网关 ping 指的是对虚拟网络网关发包，确认网关的数据面能够符合预期地转发网络包。 在部署、升级网关的时候，需要对网关进行 ping 测试，以确认网关的数</description>
+    </item>
+  </channel>
+</rss>

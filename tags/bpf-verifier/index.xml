@@ -2,45 +2,46 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Bpf Verifier on LeonHwang&#39;s Blogs</title>
-    <link>https://le0nhwan9.github.io/tags/bpf-verifier/</link>
+    <link>https://asphaltt.github.io/tags/bpf-verifier/</link>
     <description>Recent content in Bpf Verifier on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
+    <copyright>Leon Hwang</copyright>
     <lastBuildDate>Wed, 03 Apr 2024 23:06:44 +0800</lastBuildDate>
-    <atom:link href="https://le0nhwan9.github.io/tags/bpf-verifier/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://asphaltt.github.io/tags/bpf-verifier/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: verifier 支持有限循环</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-73-verifier-finite-loop/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-73-verifier-finite-loop/</link>
       <pubDate>Wed, 03 Apr 2024 23:06:44 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-73-verifier-finite-loop/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-73-verifier-finite-loop/</guid>
       <description>verifier 支持有限循环后，我们不再需要 #pragma unroll 将 for 循环展开了，留给 clang 编译器决定即可。 bpf: introduce bounded loops since 5.3 kernel. 也就是，eBPF Talk: binary search 里的 __should_delay_sip() 函数里不再需要 #pragma clang loop unroll(full) 了。</description>
     </item>
     <item>
       <title>eBPF Talk: challenge verifier</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-72-challenge-verifier/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-72-challenge-verifier/</link>
       <pubDate>Wed, 03 Apr 2024 23:04:08 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-72-challenge-verifier/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-72-challenge-verifier/</guid>
       <description>在 eBPF Talk: binary search 中，我们使用一个朴素的 for 循环实现了一个二分查找的 eBPF 程序，但是，这个程序通不过 verifier，报错 &amp;ldquo;R3 unbounded memory access, make sure to bounds check any such acces</description>
     </item>
     <item>
       <title>eBPF Talk: 3.18 kernel 里的 verifier 核心内容</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-62-verifier-core-in-3.18-kernel/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-62-verifier-core-in-3.18-kernel/</link>
       <pubDate>Mon, 01 Apr 2024 23:30:37 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-62-verifier-core-in-3.18-kernel/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-62-verifier-core-in-3.18-kernel/</guid>
       <description>在 eBPF Talk: 3.18 kernel 里的 CFG 检查 里，我们学习了如何检查 bpf prog 的控制流程图（CFG，Control Flow Graph）是不是一个有向无环图（DAG，Directe</description>
     </item>
     <item>
       <title>eBPF Talk: 3.18 kernel 里的 CFG 检查</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-61-cfg-check-in-3.18-kernel/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-61-cfg-check-in-3.18-kernel/</link>
       <pubDate>Mon, 01 Apr 2024 23:28:13 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-61-cfg-check-in-3.18-kernel/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-61-cfg-check-in-3.18-kernel/</guid>
       <description>为了克服对 bpf verifier 的恐惧，打算从 verifier.c 最初的 commit 开始学习 verifier；这是因为最初版本的 verifier 并不复杂。相对而言，理解起来会容易一些。 bpf: verifier (add branch/goto checks) 在该 commit</description>
     </item>
     <item>
       <title>eBPF Talk: bpf verifier 报告 ENOSPC</title>
-      <link>https://le0nhwan9.github.io/post/ebpf-talk-24-bpf-verifier-enospc/</link>
+      <link>https://asphaltt.github.io/post/ebpf-talk-24-bpf-verifier-enospc/</link>
       <pubDate>Sun, 21 May 2023 16:19:32 +0800</pubDate>
-      <guid>https://le0nhwan9.github.io/post/ebpf-talk-24-bpf-verifier-enospc/</guid>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-24-bpf-verifier-enospc/</guid>
       <description>今天遇到个不常见的问题：在往内核装载 bpf 程序时，bpf verifier 报告错误： 1 failed to load bpf with bitmap size 8: failed to load bpf obj and bpf maps: field Acl: program acl: load program: no space left on device: 578: R0=map_value(id=0,off=0,ks=8,vs=64,imm=0) R1_w=map_ptr(id=0,off=0,ks=4,vs=4,imm=0) R2_w=fp-4 R3_w=invP1 R4=invP(id=69 (3524 line(s) omitted) 觉</description>
     </item>
   </channel>
