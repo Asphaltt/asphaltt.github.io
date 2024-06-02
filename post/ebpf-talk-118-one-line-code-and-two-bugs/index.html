@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 一行代码两行泪 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="周一（5 月 27 日）上班在验证个功能的时候，发现功能异常了。 周一排查了一整天，心都要滴血了，都没能排查出功能异常的原因。 周二排查出原因了，是同事" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-118-one-line-code-and-two-bugs/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 一行代码两行泪" />
+<meta property="og:description" content="周一（5 月 27 日）上班在验证个功能的时候，发现功能异常了。 周一排查了一整天，心都要滴血了，都没能排查出功能异常的原因。 周二排查出原因了，是同事" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-118-one-line-code-and-two-bugs/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-06-02T21:42:03+08:00" />
+<meta property="article:modified_time" content="2024-06-02T21:42:03+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 一行代码两行泪">
+  <meta itemprop="description" content="周一（5 月 27 日）上班在验证个功能的时候，发现功能异常了。 周一排查了一整天，心都要滴血了，都没能排查出功能异常的原因。 周二排查出原因了，是同事">
+  <meta itemprop="datePublished" content="2024-06-02T21:42:03+08:00">
+  <meta itemprop="dateModified" content="2024-06-02T21:42:03+08:00">
+  <meta itemprop="wordCount" content="2130">
+  <meta itemprop="keywords" content="EBPF"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 一行代码两行泪"/>
+<meta name="twitter:description" content="周一（5 月 27 日）上班在验证个功能的时候，发现功能异常了。 周一排查了一整天，心都要滴血了，都没能排查出功能异常的原因。 周二排查出原因了，是同事"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 一行代码两行泪</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-06-02 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 2130 字 </span>
+      <span class="more-meta"> 预计阅读 5 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#背景">背景</a></li>
+        <li><a href="#排查过程">排查过程</a></li>
+        <li><a href="#kernel-bug-分析过程">kernel BUG 分析过程</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>周一（5 月 27 日）上班在验证个功能的时候，发现功能异常了。</p>
+<p>周一排查了一整天，心都要滴血了，都没能排查出功能异常的原因。</p>
+<p>周二排查出原因了，是同事修改了某个 bpf 函数的默认返回值。不过，在对 bpf 程序进行 trace 时，却没有拿到这个异常的返回值，这又排查了一整天。</p>
+<p>周三排查出原因了，这是个 bpf 子系统的 BUG；不过，在最新内核里，已经被修复了。</p>
+<h2 id="背景">背景</h2>
+<p>项目是一个超级复杂的 XDP 项目，采用了 <code>bpf2bpf</code> + <code>freplace</code> 混合 <code>bpf2bpf</code> + <code>tailcall</code> 的方式实现了模块化。参考 <a href="/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/">eBPF Talk: eBPF 程序模块化与单测构想</a>。</p>
+<p>其中，<code>bpf2bpf</code> 子程序用来当作 XDP 模块的桩；该桩要么被 <code>freplace</code> 替换成 XDP 模块，要么使用 <code>tailcall</code> 去调 XDP 模块。为什么不能统一成 <code>freplace</code> 呢？因为 <a href="/post/ebpf-talk-93-tailcall-in-freplace-bug/">eBPF Talk: tailcall in freplace 有 BUG</a>。</p>
+<p>发生异常的模块使用的桩是 <code>bpf2bpf</code> + <code>tailcall</code> 实现的。</p>
+<p>此时，对 <code>bpf2bpf</code> 子程序使用 <code>fentry</code> + <code>fexit</code> 进行 trace。<code>fentry/fexit</code> 的资料，请看 <a href="/post/ebpf-talk-42-trampoline-on-x86/">eBPF Talk: trampoline on x86</a>。</p>
+<p>对 <code>bpf2bpf</code> 子程序进行 trace，请看 <a href="/post/ebpf-talk-81-trace-bpf2bpf-program/">eBPF Talk: trace bpf2bpf 函数调用</a>。</p>
+<p>能否对 <code>freplace</code> 程序进行 trace？请看 <a href="/post/ebpf-talk-82-trace-freplace-program/">eBPF Talk: trace freplace 程序</a>。</p>
+<p>直接对 <code>tailcall</code> 进行 trace？</p>
+<ul>
+<li><a href="/post/ebpf-talk-83-trace-tailcall-program/">eBPF Talk: trace tailcall 程序？NO！</a></li>
+<li><a href="/post/ebpf-talk-92-try-trace-tailcall/">eBPF Talk: 尝试 trace tailcall 程序？！</a></li>
+</ul>
+<h2 id="排查过程">排查过程</h2>
+<p>改进了内部的 XDP trace 工具后，实现了对 <code>bpf2bpf</code> 和 <code>freplace</code> 的 trace 功能；如此，便能够对 XDP 模块进行精准 trace 了。</p>
+<p>对所有 XDP 模块同时使用 <code>fentry</code> + <code>fexit</code> 进行 trace，发现其中有个模块的返回值是 <strong>33</strong>（该值是 <code>bpf2bpf</code> 桩没有按预期运行的默认返回值）。</p>
+<p>如果桩程序按预期运行，预期应该拿到 <strong>255</strong> 这个返回值；噢，这个就是同事改错的地方。预期应该拿到 <code>XDP_PASS</code>/<code>XDP_TX</code>/<code>XDP_DROP</code>/<code>XDP_REDIRECT</code> 的。我是在 review 代码时，发现了这个错误的地方。</p>
+<p>不过，即使我修正了这里，使用 <code>fexit</code> 进行 trace 时，拿到的返回值还是 <strong>33</strong>。这是为什么呢？如果不使用 <code>fentry</code>/<code>fexit</code>，就没问题了。</p>
+<h2 id="kernel-bug-分析过程">kernel BUG 分析过程</h2>
+<p>先看看桩程序的源码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="n">__noinline</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">module3</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">volatile</span> <span class="kt">int</span> <span class="n">retval</span> <span class="o">=</span> <span class="mi">33</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_tail_call_static</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">prog_array</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol>
+<li><code>__noinline</code> 防止该函数被编译器内联优化掉了。</li>
+<li><code>volatile</code> 强行将变量 <code>retval</code> 写到栈上。</li>
+<li><code>bpf_tail_call_static()</code> 如果该函数没有被 <code>freplace</code> 替换掉，则进行 <code>tailcall</code>。</li>
+<li><code>return retval;</code> 从栈上读取 <code>retval</code>，然后返回给 caller；同时能阻止编译器对函数返回值的优化。</li>
+</ol>
+<p>一切尽在源代码中。在项目的源代码中？非也。在内核源代码中？是也不是。</p>
+<p>一切尽在机器码中。</p>
+<p>使用 <a href="https://github.com/Asphaltt/drgn-bpf">drgn-bpf</a> 找到那个桩程序和对应的 trampoline：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># drgn ./tools/bpf_inspect.py p</span>
+</span></span><span class="line"><span class="cl">    26: BPF_PROG_TYPE_XDP                xdp_xxx                   bpf_prog_8715bbbd4b4ee80f_xdp_dispatcher 0xffffffffc02e433c tail_call_reachable
+</span></span><span class="line"><span class="cl">      // ...
+</span></span><span class="line"><span class="cl">      4:      <span class="m">0</span> BPF_PROG_TYPE_XDP xdp_xxx   bpf_prog_e62ce70b7576e225_F 0xffffffffc1009620
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># drgn ./tools/bpf_inspect.py l</span>
+</span></span><span class="line"><span class="cl">    47: BPF_LINK_TYPE_TRACING
+</span></span><span class="line"><span class="cl">    linked prog:    <span class="m">106</span> BPF_PROG_TYPE_TRACING fexit_xdp        bpf_prog_fcc2f82f74950a24_fexit_xdp 0xffffffffc10aa71c
+</span></span><span class="line"><span class="cl">    target prog:     <span class="m">26</span> BPF_PROG_TYPE_XDP xdp_xxx   bpf_prog_8715bbbd4b4ee80f_xdp_xxx 0xffffffffc02e433c tail_call_reachable
+</span></span><span class="line"><span class="cl">    target func: module3
+</span></span><span class="line"><span class="cl">    current image: 0xffffffffc10b0000 bpf_trampoline_111669149702_1 0xffffffffc10b0000
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>直接看桩程序的反汇编吧。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm"><span class="line"><span class="cl"><span class="c1"># gdb -q -c /proc/kcore -ex &#39;disas/r 0xffffffffc100bb58,+1000&#39; -ex &#39;quit&#39;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="nf">Dump</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">code</span> <span class="no">from</span> <span class="mi">0xffffffffc100bb58</span> <span class="no">to</span> <span class="mi">0xffffffffc100bc0c</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// call trampoline of fentry/fexit
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb58:</span>  <span class="nf">e8</span> <span class="no">a3</span> <span class="mi">44</span> <span class="mi">0</span><span class="no">a</span> <span class="mi">00</span>  <span class="no">callq</span>  <span class="mi">0xffffffffc10b0000</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// nop2
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb5d:</span>  <span class="err">66</span> <span class="err">90</span>           <span class="nf">xchg</span>   <span class="nv">%ax</span><span class="p">,</span><span class="nv">%ax</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// prepare stack frame
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb5f:</span>  <span class="err">55</span>              <span class="nf">push</span>   <span class="nv">%rbp</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc100bb60:</span>  <span class="err">48</span> <span class="err">89</span> <span class="nf">e5</span>        <span class="no">mov</span>    <span class="nv">%rsp</span><span class="p">,</span><span class="nv">%rbp</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// reserve 8 bytes stack space
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb63:</span>  <span class="err">48</span> <span class="err">81</span> <span class="nf">ec</span> <span class="mi">08</span> <span class="mi">00</span> <span class="mi">00</span> <span class="mi">00</span>    <span class="no">sub</span>    <span class="no">$0x8</span><span class="p">,</span><span class="nv">%rsp</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// push tail_call_cnt to stack
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb6a:</span>  <span class="err">50</span>              <span class="nf">push</span>   <span class="nv">%rax</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// push callee saved regs
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb6b:</span>  <span class="err">53</span>              <span class="nf">push</span>   <span class="nv">%rbx</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc100bb6c:</span>  <span class="err">41</span> <span class="err">55</span>           <span class="nf">push</span>   <span class="nv">%r13</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// cache the first arg to rbx
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb6e:</span>  <span class="err">48</span> <span class="err">89</span> <span class="nf">fb</span>        <span class="no">mov</span>    <span class="nv">%rdi</span><span class="p">,</span><span class="nv">%rbx</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// save retval(0x1f, 33) to stack
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb71:</span>  <span class="nf">bf</span> <span class="mi">1</span><span class="no">f</span> <span class="mi">00</span> <span class="mi">00</span> <span class="mi">00</span>  <span class="no">mov</span>    <span class="no">$0x21</span><span class="p">,</span><span class="nv">%edi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc100bb76:</span>  <span class="err">89</span> <span class="err">7</span><span class="nf">d</span> <span class="no">fc</span>        <span class="no">mov</span>    <span class="nv">%edi</span><span class="p">,-</span><span class="mi">0x4</span><span class="p">(</span><span class="nv">%rbp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// &amp;prog_array
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb79:</span>  <span class="err">49</span> <span class="nf">bd</span> <span class="mi">00</span> <span class="mi">72</span> <span class="mi">9</span><span class="no">c</span> <span class="no">d4</span> <span class="mi">09</span> <span class="mi">8</span><span class="no">d</span> <span class="no">ff</span> <span class="no">ff</span>   <span class="no">movabs</span> <span class="no">$0xffff8d09d49c7200</span><span class="p">,</span><span class="nv">%r13</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// prepare args for bpf_tail_call()
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb83:</span>  <span class="err">48</span> <span class="err">89</span> <span class="nf">df</span>        <span class="no">mov</span>    <span class="nv">%rbx</span><span class="p">,</span><span class="nv">%rdi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc100bb86:</span>  <span class="err">4</span><span class="nf">c</span> <span class="mi">89</span> <span class="no">ee</span>        <span class="no">mov</span>    <span class="nv">%r13</span><span class="p">,</span><span class="nv">%rsi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc100bb89:</span>  <span class="nf">ba</span> <span class="mi">04</span> <span class="mi">00</span> <span class="mi">00</span> <span class="mi">00</span>  <span class="no">mov</span>    <span class="no">$0x3</span><span class="p">,</span><span class="nv">%edx</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// load tail_call_cnt from stack
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb8e:</span>  <span class="err">8</span><span class="nf">b</span> <span class="mi">85</span> <span class="no">f4</span> <span class="no">ff</span> <span class="no">ff</span> <span class="no">ff</span>   <span class="no">mov</span>    <span class="p">-</span><span class="mi">0xc</span><span class="p">(</span><span class="nv">%rbp</span><span class="p">),</span><span class="nv">%eax</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// jmp 0xffffffffc100bbb7 if tail_call_cnt &gt; 32
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb94:</span>  <span class="err">83</span> <span class="nf">f8</span> <span class="mi">20</span>        <span class="no">cmp</span>    <span class="no">$0x20</span><span class="p">,</span><span class="nv">%eax</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc100bb97:</span>  <span class="err">77</span> <span class="err">1</span><span class="nf">e</span>           <span class="no">ja</span>     <span class="mi">0xffffffffc100bbb7</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// inc tail_call_cnt
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb99:</span>  <span class="err">83</span> <span class="nf">c0</span> <span class="mi">01</span>        <span class="no">add</span>    <span class="no">$0x1</span><span class="p">,</span><span class="nv">%eax</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// store tail_call_cnt to stack
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bb9c:</span>  <span class="err">89</span> <span class="err">85</span> <span class="nf">f4</span> <span class="no">ff</span> <span class="no">ff</span> <span class="no">ff</span>   <span class="no">mov</span>    <span class="nv">%eax</span><span class="p">,-</span><span class="mi">0xc</span><span class="p">(</span><span class="nv">%rbp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// nops5
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bba2:</span>  <span class="err">0</span><span class="nf">f</span> <span class="mi">1</span><span class="no">f</span> <span class="mi">44</span> <span class="mi">00</span> <span class="mi">00</span>  <span class="no">nopl</span>   <span class="mi">0x0</span><span class="p">(</span><span class="nv">%rax</span><span class="p">,</span><span class="nv">%rax</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// pop callee saved regs
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bba7:</span>  <span class="err">41</span> <span class="err">5</span><span class="nf">d</span>           <span class="no">pop</span>    <span class="nv">%r13</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc100bba9:</span>  <span class="err">5</span><span class="nf">b</span>              <span class="no">pop</span>    <span class="nv">%rbx</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// pop tail_call_cnt
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bbaa:</span>  <span class="err">58</span>              <span class="nf">pop</span>    <span class="nv">%rax</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// restore stack frame
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bbab:</span>  <span class="err">48</span> <span class="err">81</span> <span class="nf">c4</span> <span class="mi">08</span> <span class="mi">00</span> <span class="mi">00</span> <span class="mi">00</span>    <span class="no">add</span>    <span class="no">$0x8</span><span class="p">,</span><span class="nv">%rsp</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// jmp tailcall tgt bpf prog
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bbb2:</span>  <span class="nf">e9</span> <span class="mi">98</span> <span class="no">f7</span> <span class="mi">02</span> <span class="mi">00</span>  <span class="no">jmpq</span>   <span class="mi">0xffffffffc103b34f</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// load retval from stack
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bbb7:</span>  <span class="err">8</span><span class="nf">b</span> <span class="mi">45</span> <span class="no">fc</span>        <span class="no">mov</span>    <span class="p">-</span><span class="mi">0x4</span><span class="p">(</span><span class="nv">%rbp</span><span class="p">),</span><span class="nv">%eax</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// pop callee saved regs
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bbba:</span>  <span class="err">41</span> <span class="err">5</span><span class="nf">d</span>           <span class="no">pop</span>    <span class="nv">%r13</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc100bbbc:</span>  <span class="err">5</span><span class="nf">b</span>              <span class="no">pop</span>    <span class="nv">%rbx</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// leave
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bbbd:</span>  <span class="nf">c9</span>              <span class="no">leaveq</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// ret
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc100bbbe:</span>  <span class="nf">c3</span>              <span class="no">retq</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc100bbbf:</span>  <span class="nf">cc</span>              <span class="no">int3</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>留意其中的 <code>rax</code>，即 <code>tail_call_cnt</code>。</p>
+<p>再来看 <code>fentry</code>/<code>fexit</code> 的 trampoline 的反汇编。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-asm" data-lang="asm"><span class="line"><span class="cl"><span class="c1"># gdb -q -c /proc/kcore -ex &#39;disas/r 0xffffffffc10b0000,+1000&#39; -ex &#39;quit&#39;
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="nf">Dump</span> <span class="no">of</span> <span class="no">assembler</span> <span class="no">code</span> <span class="no">from</span> <span class="mi">0xffffffffc10b0000</span> <span class="no">to</span> <span class="mi">0xffffffffc10b0258</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// prepare stack frame
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc10b0000:</span>  <span class="err">55</span>              <span class="nf">push</span>   <span class="nv">%rbp</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0001:</span>  <span class="err">48</span> <span class="err">89</span> <span class="nf">e5</span>        <span class="no">mov</span>    <span class="nv">%rsp</span><span class="p">,</span><span class="nv">%rbp</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// reserve stack space
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc10b0004:</span>  <span class="err">48</span> <span class="err">83</span> <span class="nf">ec</span> <span class="mi">10</span>     <span class="no">sub</span>    <span class="no">$0x10</span><span class="p">,</span><span class="nv">%rsp</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// push callee saved regs
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc10b0008:</span>  <span class="err">53</span>              <span class="nf">push</span>   <span class="nv">%rbx</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// save the first arg to stack
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc10b0009:</span>  <span class="err">48</span> <span class="err">89</span> <span class="err">7</span><span class="nf">d</span> <span class="no">f0</span>     <span class="no">mov</span>    <span class="nv">%rdi</span><span class="p">,-</span><span class="mi">0x10</span><span class="p">(</span><span class="nv">%rbp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b000d:</span>  <span class="err">48</span> <span class="nf">bf</span> <span class="mi">00</span> <span class="no">a8</span> <span class="no">b3</span> <span class="mi">73</span> <span class="mi">19</span> <span class="mi">8</span><span class="no">d</span> <span class="no">ff</span> <span class="no">ff</span>   <span class="no">movabs</span> <span class="no">$0xffff8d1973b3a800</span><span class="p">,</span><span class="nv">%rdi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0017:</span>  <span class="nf">e8</span> <span class="mi">04</span> <span class="mi">65</span> <span class="mi">9</span><span class="no">a</span> <span class="no">c0</span>  <span class="no">callq</span>  <span class="mi">0xffffffff81a56520</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b001c:</span>  <span class="err">48</span> <span class="nf">bf</span> <span class="mi">00</span> <span class="mi">50</span> <span class="mi">24</span> <span class="mi">47</span> <span class="no">e3</span> <span class="no">b9</span> <span class="no">ff</span> <span class="no">ff</span>   <span class="no">movabs</span> <span class="no">$0xffffb9e347245000</span><span class="p">,</span><span class="nv">%rdi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0026:</span>  <span class="nf">e8</span> <span class="no">c5</span> <span class="mi">63</span> <span class="mi">9</span><span class="no">a</span> <span class="no">c0</span>  <span class="no">callq</span>  <span class="mi">0xffffffff81a563f0</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b002b:</span>  <span class="err">48</span> <span class="err">89</span> <span class="nf">c3</span>        <span class="no">mov</span>    <span class="nv">%rax</span><span class="p">,</span><span class="nv">%rbx</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b002e:</span>  <span class="err">48</span> <span class="err">85</span> <span class="nf">c0</span>        <span class="no">test</span>   <span class="nv">%rax</span><span class="p">,</span><span class="nv">%rax</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0031:</span>  <span class="err">74</span> <span class="err">09</span>           <span class="nf">je</span>     <span class="mi">0xffffffffc10b003c</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0033:</span>  <span class="err">48</span> <span class="err">8</span><span class="nf">d</span> <span class="mi">7</span><span class="no">d</span> <span class="no">f0</span>     <span class="no">lea</span>    <span class="p">-</span><span class="mi">0x10</span><span class="p">(</span><span class="nv">%rbp</span><span class="p">),</span><span class="nv">%rdi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0037:</span>  <span class="nf">e8</span> <span class="mi">0</span><span class="no">c</span> <span class="no">aa</span> <span class="no">fc</span>     <span class="no">ff</span>  <span class="no">callq</span>  <span class="mi">0xffffffffc107aa48</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b003c:</span>  <span class="err">48</span> <span class="nf">bf</span> <span class="mi">00</span> <span class="mi">50</span> <span class="mi">24</span> <span class="mi">47</span> <span class="no">e3</span> <span class="no">b9</span> <span class="no">ff</span> <span class="no">ff</span>   <span class="no">movabs</span> <span class="no">$0xffffb9e347245000</span><span class="p">,</span><span class="nv">%rdi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0046:</span>  <span class="err">48</span> <span class="err">89</span> <span class="nf">de</span>        <span class="no">mov</span>    <span class="nv">%rbx</span><span class="p">,</span><span class="nv">%rsi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0049:</span>  <span class="nf">e8</span> <span class="no">e2</span> <span class="mi">63</span> <span class="mi">9</span><span class="no">a</span> <span class="no">c0</span>  <span class="no">callq</span>  <span class="mi">0xffffffff81a56430</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// restore the first arg
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc10b004e:</span>  <span class="err">48</span> <span class="err">8</span><span class="nf">b</span> <span class="mi">7</span><span class="no">d</span> <span class="no">f0</span>     <span class="no">mov</span>    <span class="p">-</span><span class="mi">0x10</span><span class="p">(</span><span class="nv">%rbp</span><span class="p">),</span><span class="nv">%rdi</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// call the tgt bpf prog
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc10b0052:</span>  <span class="nf">e8</span> <span class="mi">06</span> <span class="no">bb</span> <span class="no">f5</span> <span class="no">ff</span>  <span class="no">callq</span>  <span class="mi">0xffffffffc100bb5d</span>
+</span></span><span class="line"><span class="cl">                                        <span class="c1">// save retval of bpf prog to stack
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>   <span class="err">0</span><span class="nl">xffffffffc10b0057:</span>  <span class="err">48</span> <span class="err">89</span> <span class="err">45</span> <span class="nf">f8</span>     <span class="no">mov</span>    <span class="nv">%rax</span><span class="p">,-</span><span class="mi">0x8</span><span class="p">(</span><span class="nv">%rbp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b005b:</span>  <span class="err">0</span><span class="nf">f</span> <span class="mi">1</span><span class="no">f</span> <span class="mi">44</span> <span class="mi">00</span> <span class="mi">00</span>  <span class="no">nopl</span>   <span class="mi">0x0</span><span class="p">(</span><span class="nv">%rax</span><span class="p">,</span><span class="nv">%rax</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0060:</span>  <span class="err">48</span> <span class="nf">bf</span> <span class="mi">00</span> <span class="mi">90</span> <span class="mi">41</span> <span class="mi">47</span> <span class="no">e3</span> <span class="no">b9</span> <span class="no">ff</span> <span class="no">ff</span>   <span class="no">movabs</span> <span class="no">$0xffffb9e347419000</span><span class="p">,</span><span class="nv">%rdi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b006a:</span>  <span class="nf">e8</span> <span class="mi">81</span> <span class="mi">63</span> <span class="mi">9</span><span class="no">a</span> <span class="no">c0</span>  <span class="no">callq</span>  <span class="mi">0xffffffff81a563f0</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b006f:</span>  <span class="err">48</span> <span class="err">89</span> <span class="nf">c3</span>        <span class="no">mov</span>    <span class="nv">%rax</span><span class="p">,</span><span class="nv">%rbx</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0072:</span>  <span class="err">48</span> <span class="err">85</span> <span class="nf">c0</span>        <span class="no">test</span>   <span class="nv">%rax</span><span class="p">,</span><span class="nv">%rax</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0075:</span>  <span class="err">74</span> <span class="err">09</span>           <span class="nf">je</span>     <span class="mi">0xffffffffc10b0080</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0077:</span>  <span class="err">48</span> <span class="err">8</span><span class="nf">d</span> <span class="mi">7</span><span class="no">d</span> <span class="no">f0</span>     <span class="no">lea</span>    <span class="p">-</span><span class="mi">0x10</span><span class="p">(</span><span class="nv">%rbp</span><span class="p">),</span><span class="nv">%rdi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b007b:</span>  <span class="nf">e8</span> <span class="mi">9</span><span class="no">c</span> <span class="no">a6</span> <span class="no">ff</span> <span class="no">ff</span>  <span class="no">callq</span>  <span class="mi">0xffffffffc10aa71c</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0080:</span>  <span class="err">48</span> <span class="nf">bf</span> <span class="mi">00</span> <span class="mi">90</span> <span class="mi">41</span> <span class="mi">47</span> <span class="no">e3</span> <span class="no">b9</span> <span class="no">ff</span> <span class="no">ff</span>   <span class="no">movabs</span> <span class="no">$0xffffb9e347419000</span><span class="p">,</span><span class="nv">%rdi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b008a:</span>  <span class="err">48</span> <span class="err">89</span> <span class="nf">de</span>        <span class="no">mov</span>    <span class="nv">%rbx</span><span class="p">,</span><span class="nv">%rsi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b008d:</span>  <span class="nf">e8</span> <span class="mi">9</span><span class="no">e</span> <span class="mi">63</span> <span class="mi">9</span><span class="no">a</span> <span class="no">c0</span>  <span class="no">callq</span>  <span class="mi">0xffffffff81a56430</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b0092:</span>  <span class="err">48</span> <span class="nf">bf</span> <span class="mi">00</span> <span class="no">a8</span> <span class="no">b3</span> <span class="mi">73</span> <span class="mi">19</span> <span class="mi">8</span><span class="no">d</span> <span class="no">ff</span> <span class="no">ff</span>   <span class="no">movabs</span> <span class="no">$0xffff8d1973b3a800</span><span class="p">,</span><span class="nv">%rdi</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b009c:</span>  <span class="nf">e8</span> <span class="no">af</span> <span class="mi">64</span> <span class="mi">9</span><span class="no">a</span> <span class="no">c0</span>  <span class="no">callq</span>  <span class="mi">0xffffffff81a56550</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b00a1:</span>  <span class="err">48</span> <span class="err">8</span><span class="nf">b</span> <span class="mi">45</span> <span class="no">f8</span>     <span class="no">mov</span>    <span class="p">-</span><span class="mi">0x8</span><span class="p">(</span><span class="nv">%rbp</span><span class="p">),</span><span class="nv">%rax</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b00a5:</span>  <span class="err">5</span><span class="nf">b</span>              <span class="no">pop</span>    <span class="nv">%rbx</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b00a6:</span>  <span class="nf">c9</span>              <span class="no">leaveq</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b00a7:</span>  <span class="err">48</span> <span class="err">83</span> <span class="nf">c4</span> <span class="mi">08</span>     <span class="no">add</span>    <span class="no">$0x8</span><span class="p">,</span><span class="nv">%rsp</span>
+</span></span><span class="line"><span class="cl">   <span class="err">0</span><span class="nl">xffffffffc10b00ab:</span>  <span class="nf">c3</span>              <span class="no">retq</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>留意其中调用原 bpf prog 的地方。</p>
+<p><img src="/talk-118-fexit-on-bpf2bpf.png" alt="fexit on bpf2bpf"></p>
+<p>Kernel BUG 发生过程：</p>
+<ol>
+<li>trampoline 里没有使用 <code>push rax</code> 去缓存 <code>tail_call_cnt</code>。</li>
+<li>trampoline 里 <code>call</code> 原 bpf prog 前，没有恢复 <code>tail_call_cnt</code>。</li>
+<li>trampoline 里 <code>call</code> 原 bpf prog 前，<code>rax</code> 的值是不确定的。</li>
+<li>桩程序里把 <code>rax</code> 当作 <code>tail_call_cnt</code>。</li>
+<li>桩程序里使用 <code>tail_call_cnt</code> 跟 <code>MAX_TAIL_CALL_CNT</code> 对比时，<code>tail_call_cnt</code> 超出了限制。</li>
+<li>桩程序里使用栈上保存的 <code>retval</code> 当作返回值返回了。</li>
+</ol>
+<p>咦，这个 BUG 发生过程有点似曾相识：<a href="/post/ebpf-talk-95-kernel-bpf-contribution/">eBPF Talk: 内核 bpf 子系统贡献之修复 tailcall 无限循环</a>。如果桩程序里的 <code>tail_call_cnt</code> 一直没超出 <code>MAX_TAIL_CALL_CNT</code> 的限制，就可以利用这个 BUG 构造一个无限循环。</p>
+<ul>
+<li><a href="https://github.com/torvalds/linux/commit/2b5dcb31a19a2e0acd869b12c9db9b2d696ef544">bpf, x64: Fix tailcall infinite loop</a> since 6.7 kernel</li>
+</ul>
+<p>好吧，这个 patch 其实也修复了这个 BUG，让 <code>tail_call_cnt</code> 正确地经过 trampoline 传递给桩程序。</p>
+<p><del>白白错失又一个内核贡献的机会。</del></p>
+<h2 id="总结">总结</h2>
+<p>由一行代码引发的一个 BUG，排查 BUG 的过程中触发了一个 kernel BUG，导致未能顺利地解决代码 BUG。</p>
+<p>排查 BUG 搞得身心疲惫，<em>一行代码两行泪</em>。</p>
+<hr>
+<p>更多 XDP 资料，请加入「eBPF Talk」知识星球来学习《XDP 进阶手册》吧。</p>
+<p><img src="/zhishixingqiu.png" alt="eBPF Talk 知识星球"></p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-06-02
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-117-pcap-in-vista/">
+        <span class="next-text nav-default">eBPF Talk: vista 支持对 XDP/tc-bpf 进行抓包</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

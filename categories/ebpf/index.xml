@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 26 May 2024 16:30:37 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 02 Jun 2024 21:42:03 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 一行代码两行泪</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-118-one-line-code-and-two-bugs/</link>
+      <pubDate>Sun, 02 Jun 2024 21:42:03 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-118-one-line-code-and-two-bugs/</guid>
+      <description>周一（5 月 27 日）上班在验证个功能的时候，发现功能异常了。 周一排查了一整天，心都要滴血了，都没能排查出功能异常的原因。 周二排查出原因了，是同事</description>
+    </item>
     <item>
       <title>eBPF Talk: vista 支持对 XDP/tc-bpf 进行抓包</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-117-pcap-in-vista/</link>

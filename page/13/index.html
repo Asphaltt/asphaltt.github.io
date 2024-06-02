@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="" /><meta name="description" content="Run eBPF with Go, run eBPF in kernel space" /><meta name="keywords"
+  content="" /><meta name="description" content="Overcome Challenges, Master the Details. -- Leon Hwang" /><meta name="keywords"
   content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -44,14 +44,14 @@
 
 
 <meta property="og:title" content="LeonHwang&#39;s Blogs" />
-<meta property="og:description" content="Run eBPF with Go, run eBPF in kernel space" />
+<meta property="og:description" content="Overcome Challenges, Master the Details. -- Leon Hwang" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://asphaltt.github.io/" />
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
-  <meta itemprop="description" content="Run eBPF with Go, run eBPF in kernel space">
-  <meta itemprop="dateModified" content="2024-05-26T16:30:37+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
-<meta name="twitter:description" content="Run eBPF with Go, run eBPF in kernel space"/>
+  <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
+  <meta itemprop="dateModified" content="2024-06-02T21:42:03+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+<meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
 <!--[if lte IE 9]>
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-two-macros/">eBPF Talk: 宏的两种写法</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2022-10-30 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 564 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      宏是 C 语言中最强大的语言特性，能够用来简化 eBPF 的 C 代码；毕竟 eBPF 的 C 代码是一种语法、语义都受限的 C 代码，不能像普通 C 代码那样“肆意妄为”。 写法一
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-two-macros/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-variables-declaration-location/">eBPF Talk: 变量声明的位置</a></h1>
@@ -351,29 +375,6 @@
     </div>
     <div class="read-more">
       <a href="/post/iptables-bpf/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/go-functrace/">使用 functrace 排查 Go 函数卡顿问题</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2021-12-15 </span>
-      <div class="post-category">
-          <a href="/categories/go/"> Go </a>
-          </div>
-        <span class="more-meta"> 约 1068 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在验证 使用 Go 对接 iptables NFQUEUE 的例子 所使用的 go-nfqueue 第三方库 go-nfnetlink 的性能的时候，发现每秒只能处理 4 个网络包，遂使用 functrace 排查了起来。以下记录了排查过程。 排查过程 根据
-    </div>
-    <div class="read-more">
-      <a href="/post/go-functrace/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
