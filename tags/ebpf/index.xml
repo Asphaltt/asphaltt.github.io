@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Mon, 17 Jun 2024 00:23:36 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 23 Jun 2024 22:21:31 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 跟踪 RPS/XPS 配置变更</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-120-trace-rpsxps/</link>
+      <pubDate>Sun, 23 Jun 2024 22:21:31 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-120-trace-rpsxps/</guid>
+      <description>既然实现了 eBPF Talk: 跟踪 IRQ 绑核，那么也实现一下跟踪 RPS/XPS 配置变更吧。 RPS/XPS 是什么？RPS 是 Receive Packet Steering，XPS 是 Transmit Packet Steering。它们是 Linux 内核</description>
+    </item>
     <item>
       <title>eBPF Talk: 跟踪 IRQ 绑核</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-119-trace-irq-binding/</link>
