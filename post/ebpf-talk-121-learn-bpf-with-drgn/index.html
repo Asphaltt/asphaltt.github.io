@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 使用 drgn 学习 bpf - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="drgn 是 Linux 系统可编程的调试器，基于 Python 脚本简单、便利地读取内核数据结构和变量。 理所当然地，drgn 可以用来学习 bpf，用来 inspect bpf map、bpf pro" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-121-learn-bpf-with-drgn/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 使用 drgn 学习 bpf" />
+<meta property="og:description" content="drgn 是 Linux 系统可编程的调试器，基于 Python 脚本简单、便利地读取内核数据结构和变量。 理所当然地，drgn 可以用来学习 bpf，用来 inspect bpf map、bpf pro" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-121-learn-bpf-with-drgn/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-06-30T23:38:07+08:00" />
+<meta property="article:modified_time" content="2024-06-30T23:38:07+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 使用 drgn 学习 bpf">
+  <meta itemprop="description" content="drgn 是 Linux 系统可编程的调试器，基于 Python 脚本简单、便利地读取内核数据结构和变量。 理所当然地，drgn 可以用来学习 bpf，用来 inspect bpf map、bpf pro">
+  <meta itemprop="datePublished" content="2024-06-30T23:38:07+08:00">
+  <meta itemprop="dateModified" content="2024-06-30T23:38:07+08:00">
+  <meta itemprop="wordCount" content="1250">
+  <meta itemprop="keywords" content="EBPF,Drgn"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 使用 drgn 学习 bpf"/>
+<meta name="twitter:description" content="drgn 是 Linux 系统可编程的调试器，基于 Python 脚本简单、便利地读取内核数据结构和变量。 理所当然地，drgn 可以用来学习 bpf，用来 inspect bpf map、bpf pro"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 使用 drgn 学习 bpf</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-06-30 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1250 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#inspect-bpf-map">inspect bpf map</a></li>
+        <li><a href="#inspect-bpf-program">inspect bpf program</a></li>
+        <li><a href="#inspect-bpf-link">inspect bpf link</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p><a href="https://github.com/osandov/drgn">drgn</a> 是 Linux 系统可编程的调试器，基于 Python 脚本简单、便利地读取内核数据结构和变量。</p>
+<p>理所当然地，<code>drgn</code> 可以用来学习 bpf，用来 inspect bpf map、bpf program、bpf link 等对象。</p>
+<p>P.S. 以下内容基于 <a href="https://github.com/osandov/drgn/pull/409">drgn PR</a> 提供的功能。</p>
+<h2 id="inspect-bpf-map">inspect bpf map</h2>
+<p>类似 <code>bpftool map list</code>，可以使用 <code>drgn</code> 来查看 bpf map 的信息。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># drgn ./contrib/bpf_inspect.py m</span>
+</span></span><span class="line"><span class="cl">     2: BPF_MAP_TYPE_PROG_ARRAY          hid_jmp_table
+</span></span><span class="line"><span class="cl">  4207: BPF_MAP_TYPE_PROG_ARRAY          jmp_table
+</span></span><span class="line"><span class="cl">  4208: BPF_MAP_TYPE_ARRAY               tailcall.bss
+</span></span><span class="line"><span class="cl">  4247: BPF_MAP_TYPE_PROG_ARRAY          jmp_table
+</span></span><span class="line"><span class="cl">  4248: BPF_MAP_TYPE_ARRAY               tailcall.bss
+</span></span><span class="line"><span class="cl">  5092: BPF_MAP_TYPE_ARRAY               .rodata
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># drgn ./contrib/bpf_inspect.py m --show-details</span>
+</span></span><span class="line"><span class="cl">     2: BPF_MAP_TYPE_PROG_ARRAY          hid_jmp_table
+</span></span><span class="line"><span class="cl">    owner:    BPF_PROG_TYPE_TRACING            JITed
+</span></span><span class="line"><span class="cl">  4207: BPF_MAP_TYPE_PROG_ARRAY          jmp_table
+</span></span><span class="line"><span class="cl">    owner:    BPF_PROG_TYPE_SCHED_CLS          JITed
+</span></span><span class="line"><span class="cl">    poke:       2295: BPF_PROG_TYPE_EXT                entry                            tail_call_reachable
+</span></span><span class="line"><span class="cl">  4208: BPF_MAP_TYPE_ARRAY               tailcall.bss
+</span></span><span class="line"><span class="cl">  4247: BPF_MAP_TYPE_PROG_ARRAY          jmp_table
+</span></span><span class="line"><span class="cl">    owner:    BPF_PROG_TYPE_SCHED_CLS          JITed
+</span></span><span class="line"><span class="cl">    poke:       2400: BPF_PROG_TYPE_EXT                entry                            tail_call_reachable
+</span></span><span class="line"><span class="cl">  4248: BPF_MAP_TYPE_ARRAY               tailcall.bss
+</span></span><span class="line"><span class="cl">  5092: BPF_MAP_TYPE_ARRAY               .rodata
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如果想要 inspect 具体的 bpf map 呢？</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># drgn ./contrib/bpf_inspect.py i</span>
+</span></span><span class="line"><span class="cl"><span class="n">For</span> <span class="n">help</span><span class="p">,</span> <span class="nb">type</span> <span class="n">help</span><span class="p">(</span><span class="n">drgn</span><span class="p">)</span><span class="o">.</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">drgn</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn</span> <span class="kn">import</span> <span class="n">NULL</span><span class="p">,</span> <span class="n">Object</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">container_of</span><span class="p">,</span> <span class="n">execscript</span><span class="p">,</span> <span class="n">offsetof</span><span class="p">,</span> <span class="n">reinterpret</span><span class="p">,</span> <span class="n">sizeof</span><span class="p">,</span> <span class="n">stack_trace</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn.helpers.common</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn.helpers.linux</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="n">list_bpf_maps</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">     <span class="mi">2</span><span class="p">:</span> <span class="n">BPF_MAP_TYPE_PROG_ARRAY</span>          <span class="n">hid_jmp_table</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">4207</span><span class="p">:</span> <span class="n">BPF_MAP_TYPE_PROG_ARRAY</span>          <span class="n">jmp_table</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">4208</span><span class="p">:</span> <span class="n">BPF_MAP_TYPE_ARRAY</span>               <span class="n">tailcall</span><span class="o">.</span><span class="n">bss</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">4247</span><span class="p">:</span> <span class="n">BPF_MAP_TYPE_PROG_ARRAY</span>          <span class="n">jmp_table</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">4248</span><span class="p">:</span> <span class="n">BPF_MAP_TYPE_ARRAY</span>               <span class="n">tailcall</span><span class="o">.</span><span class="n">bss</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">5092</span><span class="p">:</span> <span class="n">BPF_MAP_TYPE_ARRAY</span>               <span class="o">.</span><span class="n">rodata</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="n">m</span> <span class="o">=</span> <span class="n">get_bpf_map_by_id</span><span class="p">(</span><span class="mi">4247</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">map</span><span class="o">.</span><span class="n">format_</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl"><span class="o">*</span><span class="p">(</span><span class="n">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff990290259400</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span> <span class="n">struct</span> <span class="n">bpf_map_ops</span> <span class="o">*</span><span class="p">)</span><span class="n">prog_array_map_ops</span><span class="o">+</span><span class="mh">0x0</span> <span class="o">=</span> <span class="mh">0xffffffff8583cc20</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">inner_map_meta</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">security</span> <span class="o">=</span> <span class="p">(</span><span class="n">void</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">map_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">enum</span> <span class="n">bpf_map_type</span><span class="p">)</span><span class="n">BPF_MAP_TYPE_PROG_ARRAY</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">key_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">4</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">value_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">4</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">max_entries</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">map_extra</span> <span class="o">=</span> <span class="p">(</span><span class="n">u64</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">map_flags</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">4247</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">record</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">btf_record</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">numa_node</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">btf_key_type_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">btf_value_type_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">btf_vmlinux_value_type_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">btf</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">btf</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">objcg</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">obj_cgroup</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff990290f48540</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="p">(</span><span class="n">char</span> <span class="p">[</span><span class="mi">16</span><span class="p">])</span><span class="s2">&#34;jmp_table&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">//</span> <span class="o">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="n">arr</span> <span class="o">=</span> <span class="n">BpfProgArrayMap</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">map</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">arr</span><span class="o">.</span><span class="n">prog_array</span><span class="o">.</span><span class="n">format_</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl"><span class="o">*</span><span class="p">(</span><span class="n">struct</span> <span class="n">bpf_array</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff990290259400</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">map</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_map</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">        <span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span> <span class="n">struct</span> <span class="n">bpf_map_ops</span> <span class="o">*</span><span class="p">)</span><span class="n">prog_array_map_ops</span><span class="o">+</span><span class="mh">0x0</span> <span class="o">=</span> <span class="mh">0xffffffff8583cc20</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="o">//</span> <span class="o">...</span>
+</span></span><span class="line"><span class="cl">    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">elem_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">8</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">index_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">aux</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_array_aux</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff9902885134e0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">__empty_value</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="o">&lt;</span><span class="n">anonymous</span><span class="o">&gt;</span><span class="p">){},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">(</span><span class="n">char</span> <span class="p">[]){},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">__empty_ptrs</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="o">&lt;</span><span class="n">anonymous</span><span class="o">&gt;</span><span class="p">){},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">ptrs</span> <span class="o">=</span> <span class="p">(</span><span class="n">void</span> <span class="o">*</span><span class="p">[]){},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">__empty_pptrs</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="o">&lt;</span><span class="n">anonymous</span><span class="o">&gt;</span><span class="p">){},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">pptrs</span> <span class="o">=</span> <span class="p">(</span><span class="n">void</span> <span class="o">*</span><span class="p">[]){},</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="inspect-bpf-program">inspect bpf program</h2>
+<p>类似 <code>bpftool prog list</code>，可以使用 <code>drgn</code> 来查看 bpf program 的信息。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># drgn ./contrib/bpf_inspect.py p</span>
+</span></span><span class="line"><span class="cl">     2: BPF_PROG_TYPE_TRACING            hid_tail_call
+</span></span><span class="line"><span class="cl">  2295: BPF_PROG_TYPE_EXT                entry                            tail_call_reachable
+</span></span><span class="line"><span class="cl">  2400: BPF_PROG_TYPE_EXT                entry                            tail_call_reachable
+</span></span><span class="line"><span class="cl">  4235: BPF_PROG_TYPE_SCHED_CLS          entry1
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">#  drgn ./contrib/bpf_inspect.py p --show-details</span>
+</span></span><span class="line"><span class="cl">     2: BPF_PROG_TYPE_TRACING            hid_tail_call
+</span></span><span class="line"><span class="cl">    used map:      2: BPF_MAP_TYPE_PROG_ARRAY          hid_jmp_table
+</span></span><span class="line"><span class="cl">    ksym:     bpf_prog_7cc47bbf07148bfe_hid_tail_call  0x00ffffffffc009e948 <span class="m">105</span> bytes
+</span></span><span class="line"><span class="cl">  2295: BPF_PROG_TYPE_EXT                entry                            tail_call_reachable
+</span></span><span class="line"><span class="cl">    used map:   4208: BPF_MAP_TYPE_ARRAY               tailcall.bss
+</span></span><span class="line"><span class="cl">    used map:   4207: BPF_MAP_TYPE_PROG_ARRAY          jmp_table
+</span></span><span class="line"><span class="cl">    ksym:     bpf_prog_0c0f4c2413ef19b1_entry          0x00ffffffffc00b4720 <span class="m">74</span> bytes
+</span></span><span class="line"><span class="cl">    func<span class="o">[</span> 1<span class="o">]</span>:      0: BPF_PROG_TYPE_EXT                subprog_tail
+</span></span><span class="line"><span class="cl">    funcksym: bpf_prog_3a140cef239a4b4f_subprog_tail   0x00ffffffffc00b4788 <span class="m">76</span> bytes
+</span></span><span class="line"><span class="cl">  2400: BPF_PROG_TYPE_EXT                entry                            tail_call_reachable
+</span></span><span class="line"><span class="cl">    used map:   4248: BPF_MAP_TYPE_ARRAY               tailcall.bss
+</span></span><span class="line"><span class="cl">    used map:   4247: BPF_MAP_TYPE_PROG_ARRAY          jmp_table
+</span></span><span class="line"><span class="cl">    ksym:     bpf_prog_0c0f4c2413ef19b1_entry          0x00ffffffffc00af864 <span class="m">74</span> bytes
+</span></span><span class="line"><span class="cl">    func<span class="o">[</span> 1<span class="o">]</span>:      0: BPF_PROG_TYPE_EXT                subprog_tail
+</span></span><span class="line"><span class="cl">    funcksym: bpf_prog_3a140cef239a4b4f_subprog_tail   0x00ffffffffc00b3fdc <span class="m">76</span> bytes
+</span></span><span class="line"><span class="cl">  4235: BPF_PROG_TYPE_SCHED_CLS          entry1
+</span></span><span class="line"><span class="cl">    used map:   5092: BPF_MAP_TYPE_ARRAY               .rodata
+</span></span><span class="line"><span class="cl">    ksym:     bpf_prog_e20a685998fd41c8_entry1         0x00ffffffffc009ece0 <span class="m">26</span> bytes
+</span></span><span class="line"><span class="cl">    func<span class="o">[</span> 1<span class="o">]</span>:      0: BPF_PROG_TYPE_SCHED_CLS          subprog1
+</span></span><span class="line"><span class="cl">    funcksym: bpf_prog_9e6e84b2270d0b1f_subprog1       0x00ffffffffc009ed0c <span class="m">36</span> bytes
+</span></span><span class="line"><span class="cl">    func<span class="o">[</span> 2<span class="o">]</span>:      0: BPF_PROG_TYPE_SCHED_CLS          subprog2
+</span></span><span class="line"><span class="cl">    funcksym: bpf_prog_9e6e84b2270d0b1f_subprog2       0x00ffffffffc009ed48 <span class="m">36</span> bytes
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如果想要 inspect 具体的 bpf program 呢？</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">drgn</span> <span class="o">./</span><span class="n">contrib</span><span class="o">/</span><span class="n">bpf_inspect</span><span class="o">.</span><span class="n">py</span> <span class="n">i</span>
+</span></span><span class="line"><span class="cl"><span class="n">For</span> <span class="n">help</span><span class="p">,</span> <span class="nb">type</span> <span class="n">help</span><span class="p">(</span><span class="n">drgn</span><span class="p">)</span><span class="o">.</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">drgn</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn</span> <span class="kn">import</span> <span class="n">NULL</span><span class="p">,</span> <span class="n">Object</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">container_of</span><span class="p">,</span> <span class="n">execscript</span><span class="p">,</span> <span class="n">offsetof</span><span class="p">,</span> <span class="n">reinterpret</span><span class="p">,</span> <span class="n">sizeof</span><span class="p">,</span> <span class="n">stack_trace</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn.helpers.common</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn.helpers.linux</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="n">list_bpf_progs</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">     <span class="mi">2</span><span class="p">:</span> <span class="n">BPF_PROG_TYPE_TRACING</span>            <span class="n">hid_tail_call</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">2295</span><span class="p">:</span> <span class="n">BPF_PROG_TYPE_EXT</span>                <span class="n">entry</span>                            <span class="n">tail_call_reachable</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">2400</span><span class="p">:</span> <span class="n">BPF_PROG_TYPE_EXT</span>                <span class="n">entry</span>                            <span class="n">tail_call_reachable</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">4235</span><span class="p">:</span> <span class="n">BPF_PROG_TYPE_SCHED_CLS</span>          <span class="n">entry1</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">get_bpf_prog_by_id</span><span class="p">(</span><span class="mi">2400</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">prog</span><span class="o">.</span><span class="n">format_</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl"><span class="o">*</span><span class="p">(</span><span class="n">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffffb2e08075a000</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">pages</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">jited</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">jit_requested</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">gpl_compatible</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">cb_access</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">dst_needed</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">blinding_requested</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">blinded</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">is_func</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">kprobe_override</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">has_callchain_buf</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">enforce_expected_attach_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">call_get_stack</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">call_get_func_ip</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">tstamp_type_access</span> <span class="o">=</span> <span class="p">(</span><span class="n">u16</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="p">(</span><span class="n">enum</span> <span class="n">bpf_prog_type</span><span class="p">)</span><span class="n">BPF_PROG_TYPE_EXT</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">expected_attach_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">enum</span> <span class="n">bpf_attach_type</span><span class="p">)</span><span class="n">BPF_CGROUP_INET_INGRESS</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">len</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">20</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">jited_len</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">74</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">tag</span> <span class="o">=</span> <span class="p">(</span><span class="n">u8</span> <span class="p">[</span><span class="mi">8</span><span class="p">]){</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">76</span><span class="p">,</span> <span class="mi">36</span><span class="p">,</span> <span class="mi">19</span><span class="p">,</span> <span class="mi">239</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">177</span> <span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">stats</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_prog_stats</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x4a590</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">active</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x4a24c</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">bpf_func</span> <span class="o">=</span> <span class="p">(</span><span class="n">unsigned</span> <span class="nb">int</span> <span class="p">(</span><span class="o">*</span><span class="p">)(</span><span class="n">const</span> <span class="n">void</span> <span class="o">*</span><span class="p">,</span> <span class="n">const</span> <span class="n">struct</span> <span class="n">bpf_insn</span> <span class="o">*</span><span class="p">))</span><span class="mh">0xffffffffc00af864</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">aux</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_prog_aux</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff9902bbdbb800</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">orig_prog</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">sock_fprog_kern</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">__empty_insns</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="o">&lt;</span><span class="n">anonymous</span><span class="o">&gt;</span><span class="p">){},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">insns</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">sock_filter</span> <span class="p">[]){},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">__empty_insnsi</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="o">&lt;</span><span class="n">anonymous</span><span class="o">&gt;</span><span class="p">){},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">insnsi</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_insn</span> <span class="p">[]){},</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">prog</span><span class="o">.</span><span class="n">aux</span><span class="o">.</span><span class="n">format_</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl"><span class="o">*</span><span class="p">(</span><span class="n">struct</span> <span class="n">bpf_prog_aux</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff9902bbdbb800</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">refcnt</span> <span class="o">=</span> <span class="p">(</span><span class="n">atomic64_t</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">        <span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="p">(</span><span class="n">s64</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">used_map_cnt</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">2</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">//</span> <span class="o">...</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">stack_depth</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">2400</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">//</span> <span class="o">...</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="p">(</span><span class="n">char</span> <span class="p">[</span><span class="mi">16</span><span class="p">])</span><span class="s2">&#34;entry&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">//</span> <span class="o">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="inspect-bpf-link">inspect bpf link</h2>
+<p>类似 <code>bpftool link list</code>，可以使用 <code>drgn</code> 来查看 bpf link 的信息。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># drgn ./contrib/bpf_inspect.py l --show-details</span>
+</span></span><span class="line"><span class="cl">     1: BPF_LINK_TYPE_TRACING
+</span></span><span class="line"><span class="cl">    prog:        2: BPF_PROG_TYPE_TRACING            hid_tail_call
+</span></span><span class="line"><span class="cl">    attach:   __hid_bpf_tail_call
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如果想要 inspect 具体的 bpf link 呢？</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">drgn</span> <span class="o">./</span><span class="n">contrib</span><span class="o">/</span><span class="n">bpf_inspect</span><span class="o">.</span><span class="n">py</span> <span class="n">i</span>
+</span></span><span class="line"><span class="cl"><span class="n">For</span> <span class="n">help</span><span class="p">,</span> <span class="nb">type</span> <span class="n">help</span><span class="p">(</span><span class="n">drgn</span><span class="p">)</span><span class="o">.</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">drgn</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn</span> <span class="kn">import</span> <span class="n">NULL</span><span class="p">,</span> <span class="n">Object</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">container_of</span><span class="p">,</span> <span class="n">execscript</span><span class="p">,</span> <span class="n">offsetof</span><span class="p">,</span> <span class="n">reinterpret</span><span class="p">,</span> <span class="n">sizeof</span><span class="p">,</span> <span class="n">stack_trace</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn.helpers.common</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn.helpers.linux</span> <span class="kn">import</span> <span class="o">*</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="n">list_bpf_links</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">     <span class="mi">1</span><span class="p">:</span> <span class="n">BPF_LINK_TYPE_TRACING</span>
+</span></span><span class="line"><span class="cl">    <span class="n">prog</span><span class="p">:</span>        <span class="mi">2</span><span class="p">:</span> <span class="n">BPF_PROG_TYPE_TRACING</span>            <span class="n">hid_tail_call</span>
+</span></span><span class="line"><span class="cl">    <span class="n">attach</span><span class="p">:</span>   <span class="n">__hid_bpf_tail_call</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="n">l</span> <span class="o">=</span> <span class="n">get_bpf_link_by_id</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">format_</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl"><span class="o">*</span><span class="p">(</span><span class="n">struct</span> <span class="n">bpf_link</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff990282c31200</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">refcnt</span> <span class="o">=</span> <span class="p">(</span><span class="n">atomic64_t</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">        <span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="p">(</span><span class="n">s64</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="p">(</span><span class="n">enum</span> <span class="n">bpf_link_type</span><span class="p">)</span><span class="n">BPF_LINK_TYPE_TRACING</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span> <span class="n">struct</span> <span class="n">bpf_link_ops</span> <span class="o">*</span><span class="p">)</span><span class="n">bpf_tracing_link_lops</span><span class="o">+</span><span class="mh">0x0</span> <span class="o">=</span> <span class="mh">0xffffffff85839000</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">prog</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffffb2e080075000</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">//</span> <span class="o">...</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">BpfTracingLink</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">link</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">tracing</span><span class="o">.</span><span class="n">format_</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl"><span class="o">*</span><span class="p">(</span><span class="n">struct</span> <span class="n">bpf_tracing_link</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff990282c31200</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_tramp_link</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">        <span class="o">.</span><span class="n">link</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_link</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">            <span class="o">.</span><span class="n">refcnt</span> <span class="o">=</span> <span class="p">(</span><span class="n">atomic64_t</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">                <span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="p">(</span><span class="n">s64</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="p">},</span>
+</span></span><span class="line"><span class="cl">            <span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="p">(</span><span class="n">u32</span><span class="p">)</span><span class="mi">1</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="p">(</span><span class="n">enum</span> <span class="n">bpf_link_type</span><span class="p">)</span><span class="n">BPF_LINK_TYPE_TRACING</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="o">.</span><span class="n">ops</span> <span class="o">=</span> <span class="p">(</span><span class="n">const</span> <span class="n">struct</span> <span class="n">bpf_link_ops</span> <span class="o">*</span><span class="p">)</span><span class="n">bpf_tracing_link_lops</span><span class="o">+</span><span class="mh">0x0</span> <span class="o">=</span> <span class="mh">0xffffffff85839000</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="o">.</span><span class="n">prog</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffffb2e080075000</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="o">//</span> <span class="o">...</span>
+</span></span><span class="line"><span class="cl">        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">        <span class="o">.</span><span class="n">tramp_hlist</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">hlist_node</span><span class="p">){</span>
+</span></span><span class="line"><span class="cl">            <span class="o">.</span><span class="n">next</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">hlist_node</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="o">.</span><span class="n">pprev</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">hlist_node</span> <span class="o">**</span><span class="p">)</span><span class="mh">0xffff990282c30ed0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="p">},</span>
+</span></span><span class="line"><span class="cl">        <span class="o">.</span><span class="n">cookie</span> <span class="o">=</span> <span class="p">(</span><span class="n">u64</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">attach_type</span> <span class="o">=</span> <span class="p">(</span><span class="n">enum</span> <span class="n">bpf_attach_type</span><span class="p">)</span><span class="n">BPF_MODIFY_RETURN</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">trampoline</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_trampoline</span> <span class="o">*</span><span class="p">)</span><span class="mh">0xffff990282c30e40</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="o">.</span><span class="n">tgt_prog</span> <span class="o">=</span> <span class="p">(</span><span class="n">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="p">)</span><span class="mh">0x0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="总结">总结</h2>
+<p><code>drgn</code> 是一个强大的调试工具，可以用来 inspect bpf map、bpf program、bpf link 等对象。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-06-30
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/drgn/">drgn</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-120-trace-rpsxps/">
+        <span class="next-text nav-default">eBPF Talk: 跟踪 RPS/XPS 配置变更</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
