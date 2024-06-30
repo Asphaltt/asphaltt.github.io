@@ -45,14 +45,14 @@
 <meta property="og:description" content="drgn 是 Linux 系统可编程的调试器，基于 Python 脚本简单、便利地读取内核数据结构和变量。 理所当然地，drgn 可以用来学习 bpf，用来 inspect bpf map、bpf pro" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-121-learn-bpf-with-drgn/" /><meta property="article:section" content="post" />
-<meta property="article:published_time" content="2024-06-30T23:38:07+08:00" />
-<meta property="article:modified_time" content="2024-06-30T23:38:07+08:00" />
+<meta property="article:published_time" content="2024-06-30T23:44:55+08:00" />
+<meta property="article:modified_time" content="2024-06-30T23:44:55+08:00" />
 
   <meta itemprop="name" content="eBPF Talk: 使用 drgn 学习 bpf">
   <meta itemprop="description" content="drgn 是 Linux 系统可编程的调试器，基于 Python 脚本简单、便利地读取内核数据结构和变量。 理所当然地，drgn 可以用来学习 bpf，用来 inspect bpf map、bpf pro">
-  <meta itemprop="datePublished" content="2024-06-30T23:38:07+08:00">
-  <meta itemprop="dateModified" content="2024-06-30T23:38:07+08:00">
-  <meta itemprop="wordCount" content="1250">
+  <meta itemprop="datePublished" content="2024-06-30T23:44:55+08:00">
+  <meta itemprop="dateModified" content="2024-06-30T23:44:55+08:00">
+  <meta itemprop="wordCount" content="1252">
   <meta itemprop="keywords" content="EBPF,Drgn"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 使用 drgn 学习 bpf"/>
 <meta name="twitter:description" content="drgn 是 Linux 系统可编程的调试器，基于 Python 脚本简单、便利地读取内核数据结构和变量。 理所当然地，drgn 可以用来学习 bpf，用来 inspect bpf map、bpf pro"/>
 
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 1250 字 </span>
+      <span class="more-meta"> 约 1252 字 </span>
       <span class="more-meta"> 预计阅读 3 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -383,7 +383,7 @@
 </span></span><span class="line"><span class="cl">  2400: BPF_PROG_TYPE_EXT                entry                            tail_call_reachable
 </span></span><span class="line"><span class="cl">  4235: BPF_PROG_TYPE_SCHED_CLS          entry1
 </span></span><span class="line"><span class="cl">
-</span></span><span class="line"><span class="cl"><span class="c1">#  drgn ./contrib/bpf_inspect.py p --show-details</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># drgn ./contrib/bpf_inspect.py p --show-details</span>
 </span></span><span class="line"><span class="cl">     2: BPF_PROG_TYPE_TRACING            hid_tail_call
 </span></span><span class="line"><span class="cl">    used map:      2: BPF_MAP_TYPE_PROG_ARRAY          hid_jmp_table
 </span></span><span class="line"><span class="cl">    ksym:     bpf_prog_7cc47bbf07148bfe_hid_tail_call  0x00ffffffffc009e948 <span class="m">105</span> bytes
@@ -470,7 +470,7 @@
 </span><span class="lnt">57
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">drgn</span> <span class="o">./</span><span class="n">contrib</span><span class="o">/</span><span class="n">bpf_inspect</span><span class="o">.</span><span class="n">py</span> <span class="n">i</span>
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># drgn ./contrib/bpf_inspect.py i</span>
 </span></span><span class="line"><span class="cl"><span class="n">For</span> <span class="n">help</span><span class="p">,</span> <span class="nb">type</span> <span class="n">help</span><span class="p">(</span><span class="n">drgn</span><span class="p">)</span><span class="o">.</span>
 </span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">drgn</span>
 </span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn</span> <span class="kn">import</span> <span class="n">NULL</span><span class="p">,</span> <span class="n">Object</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">container_of</span><span class="p">,</span> <span class="n">execscript</span><span class="p">,</span> <span class="n">offsetof</span><span class="p">,</span> <span class="n">reinterpret</span><span class="p">,</span> <span class="n">sizeof</span><span class="p">,</span> <span class="n">stack_trace</span>
@@ -596,7 +596,7 @@
 </span><span class="lnt">46
 </span></code></pre></td>
 <td class="lntd">
-<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="n">drgn</span> <span class="o">./</span><span class="n">contrib</span><span class="o">/</span><span class="n">bpf_inspect</span><span class="o">.</span><span class="n">py</span> <span class="n">i</span>
+<pre tabindex="0" class="chroma"><code class="language-python" data-lang="python"><span class="line"><span class="cl"><span class="c1"># drgn ./contrib/bpf_inspect.py i</span>
 </span></span><span class="line"><span class="cl"><span class="n">For</span> <span class="n">help</span><span class="p">,</span> <span class="nb">type</span> <span class="n">help</span><span class="p">(</span><span class="n">drgn</span><span class="p">)</span><span class="o">.</span>
 </span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">drgn</span>
 </span></span><span class="line"><span class="cl"><span class="o">&gt;&gt;&gt;</span> <span class="kn">from</span> <span class="nn">drgn</span> <span class="kn">import</span> <span class="n">NULL</span><span class="p">,</span> <span class="n">Object</span><span class="p">,</span> <span class="n">cast</span><span class="p">,</span> <span class="n">container_of</span><span class="p">,</span> <span class="n">execscript</span><span class="p">,</span> <span class="n">offsetof</span><span class="p">,</span> <span class="n">reinterpret</span><span class="p">,</span> <span class="n">sizeof</span><span class="p">,</span> <span class="n">stack_trace</span>

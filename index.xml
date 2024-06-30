@@ -7,12 +7,12 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 30 Jun 2024 23:38:07 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 30 Jun 2024 23:44:55 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: 使用 drgn 学习 bpf</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-121-learn-bpf-with-drgn/</link>
-      <pubDate>Sun, 30 Jun 2024 23:38:07 +0800</pubDate>
+      <pubDate>Sun, 30 Jun 2024 23:44:55 +0800</pubDate>
       <guid>https://asphaltt.github.io/post/ebpf-talk-121-learn-bpf-with-drgn/</guid>
       <description>drgn 是 Linux 系统可编程的调试器，基于 Python 脚本简单、便利地读取内核数据结构和变量。 理所当然地，drgn 可以用来学习 bpf，用来 inspect bpf map、bpf pro</description>
     </item>
