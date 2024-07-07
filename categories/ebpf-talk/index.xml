@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 30 Jun 2024 23:44:55 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 07 Jul 2024 22:09:29 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/categories/ebpf-talk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 跟踪 ipv4 sysctl 配置变更</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-122-trace-ipv4-sysctl/</link>
+      <pubDate>Sun, 07 Jul 2024 22:09:29 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-122-trace-ipv4-sysctl/</guid>
+      <description>eBPF Talk: 跟踪 IRQ 绑核 eBPF Talk: 跟踪 RPS/XPS 配置变更 eBPF Talk: 跟踪 ipv4 sysctl 配置变更 实现了对 IRQ 绑核、RPS/XPS 配置变更后，接着是跟踪网卡的 net.ipv4.conf.*.* sysctl 的配置变更。 ipv4 sysctl 配置变更的</description>
+    </item>
     <item>
       <title>eBPF Talk: 使用 drgn 学习 bpf</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-121-learn-bpf-with-drgn/</link>
@@ -21,14 +28,14 @@
       <link>https://asphaltt.github.io/post/ebpf-talk-120-trace-rpsxps/</link>
       <pubDate>Sun, 23 Jun 2024 22:21:31 +0800</pubDate>
       <guid>https://asphaltt.github.io/post/ebpf-talk-120-trace-rpsxps/</guid>
-      <description>既然实现了 eBPF Talk: 跟踪 IRQ 绑核，那么也实现一下跟踪 RPS/XPS 配置变更吧。 RPS/XPS 是什么？RPS 是 Receive Packet Steering，XPS 是 Transmit Packet Steering。它们是 Linux 内核</description>
+      <description>eBPF Talk: 跟踪 IRQ 绑核 eBPF Talk: 跟踪 RPS/XPS 配置变更 eBPF Talk: 跟踪 ipv4 sysctl 配置变更 既然实现了 eBPF Talk: 跟踪 IRQ 绑核，那么也实现一下跟踪 RPS/XPS 配置变更吧。 RPS/XPS 是什么？RPS 是 Receive Packet Stee</description>
     </item>
     <item>
       <title>eBPF Talk: 跟踪 IRQ 绑核</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-119-trace-irq-binding/</link>
       <pubDate>Mon, 17 Jun 2024 00:23:36 +0800</pubDate>
       <guid>https://asphaltt.github.io/post/ebpf-talk-119-trace-irq-binding/</guid>
-      <description>在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue 对应的 IRQ 绑定到指定的 CPU 核上。 因此，在绑核之后，需要对</description>
+      <description>eBPF Talk: 跟踪 IRQ 绑核 eBPF Talk: 跟踪 RPS/XPS 配置变更 eBPF Talk: 跟踪 ipv4 sysctl 配置变更 在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue</description>
     </item>
     <item>
       <title>eBPF Talk: 一行代码两行泪</title>

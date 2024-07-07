@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-06-30T23:44:55+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-07-07T22:09:29+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-112-use-netns-to-keep-away-from-iptables/">eBPF Talk: 使用隔离的 netns 避免 iptables 规则干扰收发 ping 包</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 683 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      为了降本增效，网关部署到了业务的节点上，参考 eBPF Talk: 善用 TCP option 来支持网关 ping。然而，业务节点上可能会配置不少 iptables 规则，从该节点 ping 另一台网关的时候
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-112-use-netns-to-keep-away-from-iptables/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-111-tcp-option-for-gateway-ping/">eBPF Talk: 善用 TCP option 来支持网关 ping</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-103-ebpf-vm-on-ebpf/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-102-introduce-sockdump/">eBPF Talk: Unix Socket 抓包工具 sockdump</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-05-26 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1598 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      犹如 2 年前抄狄老师的 skbtracer 一样，当看到 sockdump 时，又抄了一回作业。原 sockdump 也是基于 bcc 的项目，我把它改造成了基于 Go+eBPF CO-RE 的项目，下载二进制文件即可立马用起来。 skbtracer
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-102-introduce-sockdump/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

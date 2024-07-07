@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-06-30T23:44:55+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-07-07T22:09:29+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-102-introduce-sockdump/">eBPF Talk: Unix Socket 抓包工具 sockdump</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1598 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      犹如 2 年前抄狄老师的 skbtracer 一样，当看到 sockdump 时，又抄了一回作业。原 sockdump 也是基于 bcc 的项目，我把它改造成了基于 Go+eBPF CO-RE 的项目，下载二进制文件即可立马用起来。 skbtracer
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-102-introduce-sockdump/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-101-xdp-supports-traceroute/">eBPF Talk: XDP 支持 traceroute</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-93-tailcall-in-freplace-bug/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-92-try-trace-tailcall/">eBPF Talk: 尝试 trace tailcall 程序？！</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-05-15 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1825 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在 eBPF Talk: trace tailcall 程序？NO！ 里，我们知道 tailcall 程序是不能直接使用 fentry/fexit 进行 trace 的。 如果通过内核模块，使用比较 hack 的方式，能否 trace tailcall 程序呢？ TL;DR 能对静态 tailcall 进行 tra
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-92-try-trace-tailcall/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

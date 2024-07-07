@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="" /><meta name="description" content="在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue 对应的 IRQ 绑定到指定的 CPU 核上。 因此，在绑核之后，需要对" /><meta name="keywords"
+  content="" /><meta name="description" content="eBPF Talk: 跟踪 IRQ 绑核 eBPF Talk: 跟踪 RPS/XPS 配置变更 eBPF Talk: 跟踪 ipv4 sysctl 配置变更 在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue" /><meta name="keywords"
   content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -42,19 +42,19 @@
 
 
 <meta property="og:title" content="eBPF Talk: 跟踪 IRQ 绑核" />
-<meta property="og:description" content="在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue 对应的 IRQ 绑定到指定的 CPU 核上。 因此，在绑核之后，需要对" />
+<meta property="og:description" content="eBPF Talk: 跟踪 IRQ 绑核 eBPF Talk: 跟踪 RPS/XPS 配置变更 eBPF Talk: 跟踪 ipv4 sysctl 配置变更 在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-119-trace-irq-binding/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2024-06-17T00:23:36+08:00" />
 <meta property="article:modified_time" content="2024-06-17T00:23:36+08:00" />
 
   <meta itemprop="name" content="eBPF Talk: 跟踪 IRQ 绑核">
-  <meta itemprop="description" content="在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue 对应的 IRQ 绑定到指定的 CPU 核上。 因此，在绑核之后，需要对">
+  <meta itemprop="description" content="eBPF Talk: 跟踪 IRQ 绑核 eBPF Talk: 跟踪 RPS/XPS 配置变更 eBPF Talk: 跟踪 ipv4 sysctl 配置变更 在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue">
   <meta itemprop="datePublished" content="2024-06-17T00:23:36+08:00">
   <meta itemprop="dateModified" content="2024-06-17T00:23:36+08:00">
-  <meta itemprop="wordCount" content="536">
+  <meta itemprop="wordCount" content="562">
   <meta itemprop="keywords" content="EBPF,IRQ"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 跟踪 IRQ 绑核"/>
-<meta name="twitter:description" content="在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue 对应的 IRQ 绑定到指定的 CPU 核上。 因此，在绑核之后，需要对"/>
+<meta name="twitter:description" content="eBPF Talk: 跟踪 IRQ 绑核 eBPF Talk: 跟踪 RPS/XPS 配置变更 eBPF Talk: 跟踪 ipv4 sysctl 配置变更 在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue"/>
 
 
 <!--[if lte IE 9]>
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 536 字 </span>
+      <span class="more-meta"> 约 562 字 </span>
       <span class="more-meta"> 预计阅读 2 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -177,7 +177,13 @@
   </div>
 </div>
   <div class="post-content">
-    <p>在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue 对应的 IRQ 绑定到指定的 CPU 核上。</p>
+    <ul>
+<li><a href="/post/ebpf-talk-119-trace-irq-binding/">eBPF Talk: 跟踪 IRQ 绑核</a></li>
+<li><a href="/post/ebpf-talk-120-trace-rpsxps/">eBPF Talk: 跟踪 RPS/XPS 配置变更</a></li>
+<li><a href="/post/ebpf-talk-122-trace-ipv4-sysctl/">eBPF Talk: 跟踪 ipv4 sysctl 配置变更</a></li>
+</ul>
+<hr>
+<p>在 XDP 网关项目中，为了提高网络包吞吐性能，需要充分利用 CPU 核；这就需要调整网卡 queue 数量，并将 queue 对应的 IRQ 绑定到指定的 CPU 核上。</p>
 <p>因此，在绑核之后，需要对 IRQ 绑核进行跟踪，以便观测绑核是否被更改了。</p>
 <h2 id="irq-绑核的内核函数">IRQ 绑核的内核函数</h2>
 <p>IRQ 绑核的方式如下：</p>
