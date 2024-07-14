@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 07 Jul 2024 22:09:29 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 14 Jul 2024 21:51:35 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 在设备层统计网络包延迟</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-123-skbdist/</link>
+      <pubDate>Sun, 14 Jul 2024 21:51:35 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-123-skbdist/</guid>
+      <description>在 Linux 内核协议栈设备层，有 2 个 tracepoint 可以用来统计网络包的延迟： net:net_dev_xmit：设备层发送 skb 的 tracepoint。 net:net</description>
+    </item>
     <item>
       <title>eBPF Talk: 跟踪 ipv4 sysctl 配置变更</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-122-trace-ipv4-sysctl/</link>
