@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 14 Jul 2024 21:51:35 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 21 Jul 2024 22:14:11 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-124-tailcall-hierarchy/</link>
+      <pubDate>Sun, 21 Jul 2024 22:14:11 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-124-tailcall-hierarchy/</guid>
+      <description>在 7 月 20 日早上醒来的时候，发现个好消息：修复 tailcall hierarchy 问题的 PATCH 被合并啦。 并得到 BPF 社区大佬 Alexei 的肯定： Thank you for sticking to it. Applied to bpf-next. It took almost a year, but the final fix is imo much better than all</description>
+    </item>
     <item>
       <title>eBPF Talk: 在设备层统计网络包延迟</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-123-skbdist/</link>

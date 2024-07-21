@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-07-14T21:51:35+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-07-21T22:14:11+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-104-tailcall-in-bpf2bpf/">eBPF Talk: `tailcall` in `bpf2bpf` 踩坑一则</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 2339 字 </span>
+        <span class="more-meta"> 预计阅读 5 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在 bpf2bpf 里使用 tailcall 时，可以达到意想不到的效果： tailcall 目标 bpf prog 复用当前 subprog 的栈空间，而不是 subprog caller 的栈空间。 subprog caller 能获取到 tailcall 目标 bpf prog 的返回值。 tailcall in bpf2bpf 支持情况 从 5.10
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-104-tailcall-in-bpf2bpf/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-103-ebpf-vm-on-ebpf/">eBPF Talk: 巨献 eBPF vm on eBPF</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-95-kernel-bpf-contribution/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-94-introduce-kfuncs/">eBPF Talk: introduce kfuncs</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-05-15 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1594 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      通过 bpf: Support bpf program calling kernel function 学习 kfuncs 的实现。 不过，此 kfuncs 不是 bpftrace kfunc/kretfunc: Kernel Functions Tracing。bpftrace 的 kfunc 是的底层是 fentry/fexit。 BPF Kernel Functions (kfuncs) 该内核
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-94-introduce-kfuncs/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

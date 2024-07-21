@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="在 7 月 20 日早上醒来的时候，发现个好消息：修复 tailcall hierarchy 问题的 PATCH 被合并啦。 并得到 BPF 社区大佬 Alexei 的肯定： Thank you for sticking to it. Applied to bpf-next. It took almost a year, but the final fix is imo much better than all" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-124-tailcall-hierarchy/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug" />
+<meta property="og:description" content="在 7 月 20 日早上醒来的时候，发现个好消息：修复 tailcall hierarchy 问题的 PATCH 被合并啦。 并得到 BPF 社区大佬 Alexei 的肯定： Thank you for sticking to it. Applied to bpf-next. It took almost a year, but the final fix is imo much better than all" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-124-tailcall-hierarchy/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-07-21T22:14:11+08:00" />
+<meta property="article:modified_time" content="2024-07-21T22:14:11+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug">
+  <meta itemprop="description" content="在 7 月 20 日早上醒来的时候，发现个好消息：修复 tailcall hierarchy 问题的 PATCH 被合并啦。 并得到 BPF 社区大佬 Alexei 的肯定： Thank you for sticking to it. Applied to bpf-next. It took almost a year, but the final fix is imo much better than all">
+  <meta itemprop="datePublished" content="2024-07-21T22:14:11+08:00">
+  <meta itemprop="dateModified" content="2024-07-21T22:14:11+08:00">
+  <meta itemprop="wordCount" content="3745">
+  <meta itemprop="keywords" content="EBPF,Kernel-Patch,Tailcall"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug"/>
+<meta name="twitter:description" content="在 7 月 20 日早上醒来的时候，发现个好消息：修复 tailcall hierarchy 问题的 PATCH 被合并啦。 并得到 BPF 社区大佬 Alexei 的肯定： Thank you for sticking to it. Applied to bpf-next. It took almost a year, but the final fix is imo much better than all"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-07-21 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 3745 字 </span>
+      <span class="more-meta"> 预计阅读 8 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#第一回合确认问题--2023-年-9-月-4-日">第一回合：确认问题 / 2023 年 9 月 4 日</a></li>
+        <li><a href="#第二回合rfc-patch-v1--2023-年-10-月-5-日">第二回合：RFC PATCH v1 / 2023 年 10 月 5 日</a></li>
+        <li><a href="#第三回合rfc-patch-v2--2023-年-10-月-11-日">第三回合：RFC PATCH v2 / 2023 年 10 月 11 日</a></li>
+        <li><a href="#第四回合patch-v1--2024-年-1-月-4-日">第四回合：PATCH v1 / 2024 年 1 月 4 日</a></li>
+        <li><a href="#第五回合patch-v2--2024-年-2-月-22-日">第五回合：PATCH v2 / 2024 年 2 月 22 日</a></li>
+        <li><a href="#第六回合patch-v3--2024-年-4-月-2-日">第六回合：PATCH v3 / 2024 年 4 月 2 日</a></li>
+        <li><a href="#第七回合patch-v4--2024-年-5-月-9-日">第七回合：PATCH v4 / 2024 年 5 月 9 日</a></li>
+        <li><a href="#第八回合patch-v5--2024-年-7-月-24-日">第八回合：PATCH v5 / 2024 年 7 月 24 日</a>
+          <ul>
+            <li><a href="#失败的尝试push-tail_call_cnt-and-propagate-its-pointer">失败的尝试：&ldquo;push tail_call_cnt and propagate its pointer&rdquo;</a></li>
+            <li><a href="#成功的尝试use-rax-to-propagate-tail-call-count-or-its-pointer">成功的尝试：&ldquo;use rax to propagate tail call count or its pointer&rdquo;</a></li>
+          </ul>
+        </li>
+        <li><a href="#第九回合patch-v6--2024-年-7-月-14-日">第九回合：PATCH v6 / 2024 年 7 月 14 日</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>在 7 月 20 日早上醒来的时候，发现个好消息：修复 tailcall hierarchy 问题的 PATCH 被合并啦。</p>
+<p>并得到 BPF 社区大佬 Alexei 的肯定：</p>
+<blockquote>
+<p>Thank you for sticking to it. Applied to bpf-next.</p>
+<p>It took almost a year, but the final fix is imo much better
+than all the previous attempts.
+I suspect some tail_call users may see a small performance
+degradation, but it&rsquo;s a trade off we had to make.
+The evolution of the fix made the perf hit as small as possible.</p>
+</blockquote>
+<p>哪里来的 <em>又一个</em> bug？之前，在 2023 年 9 月 12 日，修复 tailcall 无限循环问题的 PATCH 被合并：</p>
+<ul>
+<li><a href="/post/ebpf-talk-95-kernel-bpf-contribution/">eBPF Talk: 内核 bpf 子系统贡献之修复 tailcall 无限循环</a></li>
+</ul>
+<p>太长不读：以下记录一下修 tailcall hierarchy 问题的升仙历程，中途几度想要放弃。</p>
+<h2 id="第一回合确认问题--2023-年-9-月-4-日">第一回合：确认问题 / 2023 年 9 月 4 日</h2>
+<p>在跟 s390x BPF JIT maintainer Ilya Leoshkevich 讨论修复 tailcall 无限循环问题时，我写了个 demo 确认了 tailcall hierarchy 问题。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PROG_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">4</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">key_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">value_size</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">__u32</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">jmp_table</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">subprog_tail_01</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">load_byte</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_tail_call_static</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">jmp_table</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">else</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_tail_call_static</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">jmp_table</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">subprog_tail_23</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">load_byte</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_tail_call_static</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">jmp_table</span><span class="p">,</span> <span class="mi">3</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">else</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_tail_call_static</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">jmp_table</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">count0</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tc&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">classifier_01</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">count0</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">subprog_tail_01</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="n">count1</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tc&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">classifier_23</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">count1</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">subprog_tail_23</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">subprog_tailcall</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="kt">int</span> <span class="n">index</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">volatile</span> <span class="kt">int</span> <span class="n">retval</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_tail_call</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">jmp_table</span><span class="p">,</span> <span class="n">index</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tc&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">entry</span><span class="p">(</span><span class="k">struct</span> <span class="n">__sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">subprog_tailcall</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">subprog_tailcall</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">Finally, count0 is 33. And count1 is 33, too. It breaks the
+</span></span><span class="line"><span class="cl">MAX_TAIL_CALL_CNT limit by the way tailcall in subprog.
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>详情：<a href="https://lore.kernel.org/bpf/6203dd01-789d-f02c-5293-def4c1b18aef@gmail.com/">Re: [RFC PATCH bpf-next v4 0/4] bpf, x64: Fix tailcall infinite loop</a>。</p>
+<h2 id="第二回合rfc-patch-v1--2023-年-10-月-5-日">第二回合：RFC PATCH v1 / 2023 年 10 月 5 日</h2>
+<p>在 2023 年 9 月 12 日修复 tailcall 无限循环问题的 PATCH 被合并了之后，便投入到修复 tailcall hierarchy 问题中。</p>
+<p>不过不过，该怎么修复呢？</p>
+<p>想法是，在栈上保存 tail call count pointer 和 tail call count，然后在传递时就只传 tail call count pointer。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl"> |  STACK  |
+</span></span><span class="line"><span class="cl"> +---------+ RBP
+</span></span><span class="line"><span class="cl"> |         |
+</span></span><span class="line"><span class="cl"> |         |
+</span></span><span class="line"><span class="cl"> |         |
+</span></span><span class="line"><span class="cl"> | tcc_ptr |
+</span></span><span class="line"><span class="cl"> |   tcc   |
+</span></span><span class="line"><span class="cl"> |   rbx   |
+</span></span><span class="line"><span class="cl"> +---------+ RSP
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>不过，看着那 diff，就觉得复杂，肯定会出问题；所以，后面就没继续这个方向了。</p>
+<p>详情：<a href="https://lore.kernel.org/bpf/20231005145814.83122-1-hffilwlqm@gmail.com/">[RFC PATCH bpf-next 0/3] bpf, x64: Fix tailcall hierarchy</a>。</p>
+<p>P.S. 最终被合并的 PATCH 的思路来源于这个想法；兜兜转转的，绕了不少弯路。</p>
+<h2 id="第三回合rfc-patch-v2--2023-年-10-月-11-日">第三回合：RFC PATCH v2 / 2023 年 10 月 11 日</h2>
+<p>不满意前一个思路，又想了个新的思路：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">    |  STACK  |
+</span></span><span class="line"><span class="cl">    |         |
+</span></span><span class="line"><span class="cl">    |   rip   |
+</span></span><span class="line"><span class="cl"> +-&gt;|   tcc   |
+</span></span><span class="line"><span class="cl"> |  |   rip   |
+</span></span><span class="line"><span class="cl"> |  |   rbp   |
+</span></span><span class="line"><span class="cl"> |  +---------+ RBP
+</span></span><span class="line"><span class="cl"> |  |         |
+</span></span><span class="line"><span class="cl"> |  |         |
+</span></span><span class="line"><span class="cl"> |  |         |
+</span></span><span class="line"><span class="cl"> +--| tcc_ptr |
+</span></span><span class="line"><span class="cl">    |   rbx   |
+</span></span><span class="line"><span class="cl">    +---------+ RSP
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>使用一个伪栈帧来保存 tail call count，然后传递的还是 tail call count pointer。</p>
+<p>相比于前一个思路，这个思路更简单；但觉得 BPF 社区不会接受这样的思路，因为伪栈帧可能会破坏 unwind。</p>
+<p>但，问题比较艰深、复杂，在跟 reviewer Maciej Fijalkowski 讨论的过程中，做了更加详细的解释，譬如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">    |  STACK  | STACK of entry()&#39;s caller
+</span></span><span class="line"><span class="cl">    |         |
+</span></span><span class="line"><span class="cl">    |   rip   |
+</span></span><span class="line"><span class="cl"> +-&gt;|   tcc   | its value is 33
+</span></span><span class="line"><span class="cl"> |  |   rip   |
+</span></span><span class="line"><span class="cl"> |  |   rbp   |
+</span></span><span class="line"><span class="cl"> |  +---------+ rbp
+</span></span><span class="line"><span class="cl"> |  |   ret   | STACK of entry()
+</span></span><span class="line"><span class="cl"> +--| tcc_ptr |
+</span></span><span class="line"><span class="cl"> |  |   rbx   | saved regs
+</span></span><span class="line"><span class="cl"> |  |   rip   |
+</span></span><span class="line"><span class="cl"> |  |   rbp   |
+</span></span><span class="line"><span class="cl"> |  +---------+ rbp
+</span></span><span class="line"><span class="cl"> |  |   ret   | STACK of entry(), reuse STACK of subprog_tail()
+</span></span><span class="line"><span class="cl"> +--| tcc_ptr |
+</span></span><span class="line"><span class="cl"> |  |   rip   |
+</span></span><span class="line"><span class="cl"> |  |   rbp   |
+</span></span><span class="line"><span class="cl"> |  +---------+ rbp
+</span></span><span class="line"><span class="cl"> |  |   ret   | STACK of entry(), reuse STACK of subprog_tail()
+</span></span><span class="line"><span class="cl"> +--| tcc_ptr |
+</span></span><span class="line"><span class="cl"> |  |   rip   |
+</span></span><span class="line"><span class="cl"> |  |   rbp   |
+</span></span><span class="line"><span class="cl"> |  +---------+ rbp
+</span></span><span class="line"><span class="cl"> |  |    *    |
+</span></span><span class="line"><span class="cl"> |  |    *    |
+</span></span><span class="line"><span class="cl"> |  |    *    |
+</span></span><span class="line"><span class="cl"> |  +---------+ RBP
+</span></span><span class="line"><span class="cl"> +--| tcc_ptr | STACK of subprog_tail()
+</span></span><span class="line"><span class="cl">    +---------+ RSP
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>详情：<a href="https://lore.kernel.org/bpf/20231011152725.95895-1-hffilwlqm@gmail.com/">[RFC PATCH bpf-next v2 0/4] bpf, x64: Fix tailcall hierarchy</a>。</p>
+<h2 id="第四回合patch-v1--2024-年-1-月-4-日">第四回合：PATCH v1 / 2024 年 1 月 4 日</h2>
+<p>RFC PATCH v2 在讨论了许久后，Maciej Fijalkowski 终于肯定了这个思路。于是，在写了更好的 commit message 之后，便投递了 PATCH v1。</p>
+<p>修复问题的核心之处：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-diff" data-lang="diff"><span class="line"><span class="cl"><span class="gh">diff --git a/arch/x86/net/bpf_jit_comp.c b/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="gh">index fe30b9ebb8de4..67fa337fc2e0c 100644
+</span></span></span><span class="line"><span class="cl"><span class="gh"></span><span class="gd">--- a/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+++ b/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span><span class="gu">@@ -406,14 +406,21 @@ static void emit_prologue(u8 **pprog, u32 stack_depth, bool ebpf_from_cbpf,
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>      */
+</span></span><span class="line"><span class="cl">     emit_nops(&amp;prog, X86_PATCH_SIZE);
+</span></span><span class="line"><span class="cl">     if (!ebpf_from_cbpf) {
+</span></span><span class="line"><span class="cl"><span class="gd">-       if (tail_call_reachable &amp;&amp; !is_subprog)
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+       if (tail_call_reachable &amp;&amp; !is_subprog) {
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>             /* When it&#39;s the entry of the whole tailcall context,
+</span></span><span class="line"><span class="cl">              * zeroing rax means initialising tail_call_cnt.
+</span></span><span class="line"><span class="cl">              */
+</span></span><span class="line"><span class="cl"><span class="gd">-           EMIT2(0x31, 0xC0); /* xor eax, eax */
+</span></span></span><span class="line"><span class="cl"><span class="gd">-       else
+</span></span></span><span class="line"><span class="cl"><span class="gd">-           /* Keep the same instruction layout. */
+</span></span></span><span class="line"><span class="cl"><span class="gd">-           EMIT2(0x66, 0x90); /* nop2 */
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+           EMIT2(0x31, 0xC0);       /* xor eax, eax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+           EMIT1(0x50);             /* push rax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+           /* Make rax as ptr that points to tail_call_cnt. */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+           EMIT3(0x48, 0x89, 0xE0); /* mov rax, rsp */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+           EMIT1_off32(0xE8, 2);    /* call main prog */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+           EMIT1(0x59);             /* pop rcx, get rid of tail_call_cnt */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+           EMIT1(0xC3);             /* ret */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       } else {
+</span></span></span><span class="line"><span class="cl"><span class="gi">+           /* Keep the same instruction size. */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+           emit_nops(&amp;prog, 13);
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       }
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>     }
+</span></span><span class="line"><span class="cl">     /* Exception callback receives FP as third parameter */
+</span></span><span class="line"><span class="cl">     if (is_exception_cb) {
+</span></span><span class="line"><span class="cl"><span class="gu">@@ -439,6 +446,7 @@ static void emit_prologue(u8 **pprog, u32 stack_depth, bool ebpf_from_cbpf,
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>     if (stack_depth)
+</span></span><span class="line"><span class="cl">         EMIT3_off32(0x48, 0x81, 0xEC, round_up(stack_depth, 8));
+</span></span><span class="line"><span class="cl">     if (tail_call_reachable)
+</span></span><span class="line"><span class="cl"><span class="gi">+       /* Here, rax is tail_call_cnt_ptr. */
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>         EMIT1(0x50);         /* push rax */
+</span></span><span class="line"><span class="cl">     *pprog = prog;
+</span></span><span class="line"><span class="cl"> }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>果真如我担心的那样，Alexei 担心这里的 <code>call</code> 指令可能会破坏 unwind 以及其它许多东西，并提出：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-diff" data-lang="diff"><span class="line"><span class="cl"><span class="gh">diff --git a/kernel/bpf/arraymap.c b/kernel/bpf/arraymap.c
+</span></span></span><span class="line"><span class="cl"><span class="gh">index 0bdbbbeab155..0b45571559be 100644
+</span></span></span><span class="line"><span class="cl"><span class="gh"></span><span class="gd">--- a/kernel/bpf/arraymap.c
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+++ b/kernel/bpf/arraymap.c
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span><span class="gu">@@ -910,7 +910,7 @@ static void *prog_fd_array_get_ptr(struct bpf_map *map,
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>        if (IS_ERR(prog))
+</span></span><span class="line"><span class="cl">                return prog;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="gd">-       if (!bpf_prog_map_compatible(map, prog)) {
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+       if (!bpf_prog_map_compatible(map, prog) || prog-&gt;aux-&gt;func_cnt) {
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>                bpf_prog_put(prog);
+</span></span><span class="line"><span class="cl">                return ERR_PTR(-EINVAL);
+</span></span><span class="line"><span class="cl">        }
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>我：提起 RFC PATCH v1 的思路。
+Alexei: prologue 里使用 15 字节的 nop 的做法太重了，想一想适合所有 BPF JIT 的更简单的办法吧。</p>
+<p>我：提出了在 <code>__bpf_prog_run_dfunc()</code> 里使用 <code>bpf_prog_run_ctx</code> 的思路。
+Alexei: 在 <code>__bpf_prog_run_dfunc()</code> 里不能使用额外的 <code>if</code> 条件判断；要不试试 PERCPU tail call count 的思路？</p>
+<p>详情：<a href="https://lore.kernel.org/bpf/20240104142226.87869-1-hffilwlqm@gmail.com/">[PATCH bpf-next 0/4] bpf, x64: Fix tailcall hierarchy</a>。</p>
+<p>在尝试了 PERCPU tail call count 的思路后，便递交了 PATCH v2。</p>
+<h2 id="第五回合patch-v2--2024-年-2-月-22-日">第五回合：PATCH v2 / 2024 年 2 月 22 日</h2>
+<p>在深入思考 PATCH v2 的更多 case 后，发现该思路存在缺陷：不同 bpf prog 运行在同一 CPU 上，会共享同一个 tail call count。</p>
+<p>详情：<a href="https://lore.kernel.org/bpf/20240222085232.62483-1-hffilwlqm@gmail.com/">[PATCH bpf-next v2 0/2] bpf, x64: Fix tailcall hierarchy</a>。</p>
+<h2 id="第六回合patch-v3--2024-年-4-月-2-日">第六回合：PATCH v3 / 2024 年 4 月 2 日</h2>
+<p>继续在 PERCPU tail call count 的思路上前进，比如将 tail call count 挪到 <code>task_struct</code> 里。</p>
+<p>继续跟 Alexei 讨论，他发现其中的缺陷：当一个带有 tail call 的 bpf prog 的 subprog 被 fentry、且 fentry 里也有 tail call 时，会共享同一个 tail call count。</p>
+<p>详情：<a href="https://lore.kernel.org/bpf/20240402152638.31377-1-hffilwlqm@gmail.com/">[PATCH bpf-next v3 0/3] bpf, x64: Fix tailcall hierarchy</a>。</p>
+<h2 id="第七回合patch-v4--2024-年-5-月-9-日">第七回合：PATCH v4 / 2024 年 5 月 9 日</h2>
+<p>在 PATCH v4 里，将 arm64 BPF JIT 也一并修复了吧，就不需要等待 arm64 BPF JIT maintainer 的加入了。</p>
+<p>将思路摇摆回 <code>bpf_prog_run_ctx</code> 的方向上，<strong>但</strong> 发现该思路存在缺陷：如果 freplace bpf prog 里使用了 tail call 呢？</p>
+<p>再度陷入困境 。。。</p>
+<p>详情：<a href="https://lore.kernel.org/bpf/20240509150541.81799-1-hffilwlqm@gmail.com/">[PATCH bpf-next v4 0/5] bpf: Fix tailcall hierarchy</a>。</p>
+<h2 id="第八回合patch-v5--2024-年-7-月-24-日">第八回合：PATCH v5 / 2024 年 7 月 24 日</h2>
+<p>既然 PERCPU tail call count 和 <code>bpf_prog_run_ctx</code> 的思路都存在缺陷，那么，就剩下 RFC PATCH v1 的思路了；解决 RFC PATCH v1 的缺陷，大概就可以了吧。</p>
+<h3 id="失败的尝试push-tail_call_cnt-and-propagate-its-pointer">失败的尝试：&ldquo;push tail_call_cnt and propagate its pointer&rdquo;</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-diff" data-lang="diff"><span class="line"><span class="cl"><span class="gh">diff --git a/arch/x86/net/bpf_jit_comp.c b/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="gh">index 5159c7a229229..f9f3aea5d9d2a 100644
+</span></span></span><span class="line"><span class="cl"><span class="gh"></span><span class="gd">--- a/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+++ b/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span><span class="gu">@@ -420,14 +420,18 @@ static void emit_prologue(u8 **pprog, u32 stack_depth, bool ebpf_from_cbpf,
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>         */
+</span></span><span class="line"><span class="cl">        emit_nops(&amp;prog, X86_PATCH_SIZE);
+</span></span><span class="line"><span class="cl">        if (!ebpf_from_cbpf) {
+</span></span><span class="line"><span class="cl"><span class="gd">-               if (tail_call_reachable &amp;&amp; !is_subprog)
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+               if (tail_call_reachable &amp;&amp; !is_subprog) {
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>                        /* When it&#39;s the entry of the whole tailcall context,
+</span></span><span class="line"><span class="cl">                         * zeroing rax means initialising tail_call_cnt.
+</span></span><span class="line"><span class="cl">                         */
+</span></span><span class="line"><span class="cl"><span class="gd">-                       EMIT2(0x31, 0xC0); /* xor eax, eax */
+</span></span></span><span class="line"><span class="cl"><span class="gd">-               else
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+                       EMIT2(0x31, 0xC0);       /* xor eax, eax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+                       EMIT1(0x50);             /* push rax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+                       EMIT3(0x48, 0x89, 0xE0); /* mov rax, rsp */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+               } else {
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>                        /* Keep the same instruction layout. */
+</span></span><span class="line"><span class="cl"><span class="gd">-                       EMIT2(0x66, 0x90); /* nop2 */
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+                       emit_nops(&amp;prog, 5);     /* nop5 */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+                       EMIT1(0x50);             /* push rax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+               }
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>        }
+</span></span><span class="line"><span class="cl">        /* Exception callback receives FP as third parameter */
+</span></span><span class="line"><span class="cl">        if (is_exception_cb) {
+</span></span><span class="line"><span class="cl"><span class="gu">@@ -439,6 +443,11 @@ static void emit_prologue(u8 **pprog, u32 stack_depth, bool ebpf_from_cbpf,
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>                 */
+</span></span><span class="line"><span class="cl">                pop_callee_regs(&amp;prog, all_callee_regs_used);
+</span></span><span class="line"><span class="cl">                pop_r12(&amp;prog);
+</span></span><span class="line"><span class="cl"><span class="gi">+               if (tail_call_reachable) {
+</span></span></span><span class="line"><span class="cl"><span class="gi">+                       /* rax is tail_call_cnt_ptr */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+                       EMIT1(0x58);     /* pop rax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+                       EMIT2_off32(0xC7, 0x00, 0); /* mov dword ptr [rax], 0 */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+               }
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>                /* Reset the stack frame. */
+</span></span><span class="line"><span class="cl">                EMIT3(0x48, 0x89, 0xEC); /* mov rsp, rbp */
+</span></span><span class="line"><span class="cl">        } else {
+</span></span><span class="line"><span class="cl"><span class="gu">@@ -453,6 +462,7 @@ static void emit_prologue(u8 **pprog, u32 stack_depth, bool ebpf_from_cbpf,
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>        if (stack_depth)
+</span></span><span class="line"><span class="cl">                EMIT3_off32(0x48, 0x81, 0xEC, round_up(stack_depth, 8));
+</span></span><span class="line"><span class="cl">        if (tail_call_reachable)
+</span></span><span class="line"><span class="cl"><span class="gi">+               /* rax is tail_call_cnt_ptr */
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>                EMIT1(0x50);         /* push rax */
+</span></span><span class="line"><span class="cl">        *pprog = prog;
+</span></span><span class="line"><span class="cl"> }
+</span></span><span class="line"><span class="cl"><span class="gu">@@ -2321,6 +2333,7 @@ st:                    if (is_imm8(insn-&gt;off))
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>                                        pop_r12(&amp;prog);
+</span></span><span class="line"><span class="cl">                        }
+</span></span><span class="line"><span class="cl">                        EMIT1(0xC9);         /* leave */
+</span></span><span class="line"><span class="cl"><span class="gi">+                       EMIT1(0x59);         /* pop rcx, get rid of tail_call_cnt */
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>                        emit_return(&amp;prog, image + addrs[i - 1] + (prog - temp));
+</span></span><span class="line"><span class="cl">                        break;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如上代码片段，在 prologue 里，初始化 <code>rax</code> 寄存器并 push 到栈上、并将 <code>rax</code> 寄存器当作指向栈帧的指针；在 epilogue 里，在 <code>ret</code> 之前，需要 pop 一下。</p>
+<p>但，这个思路真的破坏了 unwind 机制 。。。</p>
+<p>BPF exceptions 特性依赖 unwind 机制，我便联系 BPF exceptions 的作者 Kumar Kartikeya Dwivedi，想要讨论如何解决这个问题。</p>
+<h3 id="成功的尝试use-rax-to-propagate-tail-call-count-or-its-pointer">成功的尝试：&ldquo;use rax to propagate tail call count or its pointer&rdquo;</h3>
+<p>不过，在联系他的时候，我想到了一个更好的思路：只使用 <code>rax</code> 寄存器传递 tail call count 信息。</p>
+<p>在 x86_64 BPF JIT 里，保留使用 <code>rax</code> 寄存器来传递 tail call count 信息，而不是只传递 tail call count pointer；那么，该如何区分 <code>rax</code> 寄存器里的值是 tail call count 还是 tail call count pointer 呢？</p>
+<p>因为 <code>tail_call_cnt</code> 的最大值是 <strong>MAX_TAIL_CALL_CNT</strong>，所以，只要 <code>rax</code> 寄存器里的值小于等于 <strong>MAX_TAIL_CALL_CNT</strong>，就说明是 tail call count；否则，就说明是 tail call count pointer。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-diff" data-lang="diff"><span class="line"><span class="cl"><span class="gh">diff --git a/arch/x86/net/bpf_jit_comp.c b/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="gh">index d25d81c8ecc00..074b41fafbe3f 100644
+</span></span></span><span class="line"><span class="cl"><span class="gh"></span><span class="gd">--- a/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+++ b/arch/x86/net/bpf_jit_comp.c
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span><span class="gu">@@ -403,6 +403,37 @@ static void emit_cfi(u8 **pprog, u32 hash)
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>    *pprog = prog;
+</span></span><span class="line"><span class="cl"> }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="gi">+static void emit_prologue_tail_call(u8 **pprog, bool is_subprog)
+</span></span></span><span class="line"><span class="cl"><span class="gi">+{
+</span></span></span><span class="line"><span class="cl"><span class="gi">+   u8 *prog = *pprog;
+</span></span></span><span class="line"><span class="cl"><span class="gi">+
+</span></span></span><span class="line"><span class="cl"><span class="gi">+   if (!is_subprog) {
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       /* cmp rax, MAX_TAIL_CALL_CNT */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       EMIT4(0x48, 0x83, 0xF8, MAX_TAIL_CALL_CNT);
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       EMIT2(X86_JA, 6);        /* ja 6 */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       /* rax is tail_call_cnt if &lt;= MAX_TAIL_CALL_CNT.
+</span></span></span><span class="line"><span class="cl"><span class="gi">+        * case1: entry of main prog.
+</span></span></span><span class="line"><span class="cl"><span class="gi">+        * case2: tail callee of main prog.
+</span></span></span><span class="line"><span class="cl"><span class="gi">+        */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       EMIT1(0x50);             /* push rax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       /* Make rax as tail_call_cnt_ptr. */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       EMIT3(0x48, 0x89, 0xE0); /* mov rax, rsp */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       EMIT2(0xEB, 1);          /* jmp 1 */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       /* rax is tail_call_cnt_ptr if &gt; MAX_TAIL_CALL_CNT.
+</span></span></span><span class="line"><span class="cl"><span class="gi">+        * case: tail callee of subprog.
+</span></span></span><span class="line"><span class="cl"><span class="gi">+        */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       EMIT1(0x50);             /* push rax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       /* push tail_call_cnt_ptr */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       EMIT1(0x50);             /* push rax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+   } else { /* is_subprog */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       /* rax is tail_call_cnt_ptr. */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       EMIT1(0x50);             /* push rax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       EMIT1(0x50);             /* push rax */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+   }
+</span></span></span><span class="line"><span class="cl"><span class="gi">+
+</span></span></span><span class="line"><span class="cl"><span class="gi">+   *pprog = prog;
+</span></span></span><span class="line"><span class="cl"><span class="gi">+}
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>如上代码片段，对于主 prog 的 prologue，需要判断 <code>rax</code> 寄存器是 tail call count 还是 tail call count pointer；对于 subprog 的 prologue，只需要将 <code>rax</code> 寄存器当作 tail call count pointer 即可。</p>
+<p>x86_64 BPF JIT 的修改得到社区大佬 Eduard Zingerman 的肯定；就是要补充一下 JITed prog 的反汇编讲解：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-txt" data-lang="txt"><span class="line"><span class="cl">When bpftool p d j id 42:
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">int entry(struct __sk_buff * skb):
+</span></span><span class="line"><span class="cl">bpf_prog_0c0f4c2413ef19b1_entry:
+</span></span><span class="line"><span class="cl">; int entry(struct __sk_buff *skb)
+</span></span><span class="line"><span class="cl">   0:   endbr64
+</span></span><span class="line"><span class="cl">   4:   nopl    (%rax,%rax)
+</span></span><span class="line"><span class="cl">   9:   xorq    %rax, %rax      ;; rax = 0 (tail_call_cnt)
+</span></span><span class="line"><span class="cl">   c:   pushq   %rbp
+</span></span><span class="line"><span class="cl">   d:   movq    %rsp, %rbp
+</span></span><span class="line"><span class="cl">  10:   endbr64
+</span></span><span class="line"><span class="cl">  14:   cmpq    $33, %rax       ;; if rax &gt; 33, rax = tcc_ptr
+</span></span><span class="line"><span class="cl">  18:   ja      0x20            ;; if rax &gt; 33 goto 0x20 ---+
+</span></span><span class="line"><span class="cl">  1a:   pushq   %rax            ;; [rbp - 8] = rax = 0      |
+</span></span><span class="line"><span class="cl">  1b:   movq    %rsp, %rax      ;; rax = rbp - 8            |
+</span></span><span class="line"><span class="cl">  1e:   jmp     0x21            ;; ---------+               |
+</span></span><span class="line"><span class="cl">  20:   pushq   %rax            ;; &lt;--------|---------------+
+</span></span><span class="line"><span class="cl">  21:   pushq   %rax            ;; &lt;--------+ [rbp - 16] = rax
+</span></span><span class="line"><span class="cl">  22:   pushq   %rbx            ;; callee saved
+</span></span><span class="line"><span class="cl">  23:   movq    %rdi, %rbx      ;; rbx = skb (callee saved)
+</span></span><span class="line"><span class="cl">; count++;
+</span></span><span class="line"><span class="cl">  26:   movabsq $-82417199407104, %rdi
+</span></span><span class="line"><span class="cl">  30:   movl    (%rdi), %esi
+</span></span><span class="line"><span class="cl">  33:   addl    $1, %esi
+</span></span><span class="line"><span class="cl">  36:   movl    %esi, (%rdi)
+</span></span><span class="line"><span class="cl">; subprog_tail(skb);
+</span></span><span class="line"><span class="cl">  39:   movq    %rbx, %rdi      ;; rdi = skb
+</span></span><span class="line"><span class="cl">  3c:   movq    -16(%rbp), %rax     ;; rax = tcc_ptr
+</span></span><span class="line"><span class="cl">  43:   callq   0x80            ;; call subprog_tail()
+</span></span><span class="line"><span class="cl">; subprog_tail(skb);
+</span></span><span class="line"><span class="cl">  48:   movq    %rbx, %rdi      ;; rdi = skb
+</span></span><span class="line"><span class="cl">  4b:   movq    -16(%rbp), %rax     ;; rax = tcc_ptr
+</span></span><span class="line"><span class="cl">  52:   callq   0x80            ;; call subprog_tail()
+</span></span><span class="line"><span class="cl">; return ret;
+</span></span><span class="line"><span class="cl">  57:   movl    $1, %eax
+</span></span><span class="line"><span class="cl">  5c:   popq    %rbx
+</span></span><span class="line"><span class="cl">  5d:   leave
+</span></span><span class="line"><span class="cl">  5e:   retq
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">int subprog_tail(struct __sk_buff * skb):
+</span></span><span class="line"><span class="cl">bpf_prog_3a140cef239a4b4f_subprog_tail:
+</span></span><span class="line"><span class="cl">; int subprog_tail(struct __sk_buff *skb)
+</span></span><span class="line"><span class="cl">   0:   endbr64
+</span></span><span class="line"><span class="cl">   4:   nopl    (%rax,%rax)
+</span></span><span class="line"><span class="cl">   9:   nopl    (%rax)          ;; do not touch tail_call_cnt
+</span></span><span class="line"><span class="cl">   c:   pushq   %rbp
+</span></span><span class="line"><span class="cl">   d:   movq    %rsp, %rbp
+</span></span><span class="line"><span class="cl">  10:   endbr64
+</span></span><span class="line"><span class="cl">  14:   pushq   %rax            ;; [rbp - 8]  = rax (tcc_ptr)
+</span></span><span class="line"><span class="cl">  15:   pushq   %rax            ;; [rbp - 16] = rax (tcc_ptr)
+</span></span><span class="line"><span class="cl">  16:   pushq   %rbx            ;; callee saved
+</span></span><span class="line"><span class="cl">  17:   pushq   %r13            ;; callee saved
+</span></span><span class="line"><span class="cl">  19:   movq    %rdi, %rbx      ;; rbx = skb
+</span></span><span class="line"><span class="cl">; asm volatile(&#34;r1 = %[ctx]\n\t&#34;
+</span></span><span class="line"><span class="cl">  1c:   movabsq $-105487587488768, %r13 ;; r13 = jmp_table
+</span></span><span class="line"><span class="cl">  26:   movq    %rbx, %rdi      ;; 1st arg, skb
+</span></span><span class="line"><span class="cl">  29:   movq    %r13, %rsi      ;; 2nd arg, jmp_table
+</span></span><span class="line"><span class="cl">  2c:   xorl    %edx, %edx      ;; 3rd arg, index = 0
+</span></span><span class="line"><span class="cl">  2e:   movq    -16(%rbp), %rax     ;; rax = [rbp - 16] (tcc_ptr)
+</span></span><span class="line"><span class="cl">  35:   cmpq    $33, (%rax)
+</span></span><span class="line"><span class="cl">  39:   jae     0x4e            ;; if *tcc_ptr &gt;= 33 goto 0x4e --------+
+</span></span><span class="line"><span class="cl">  3b:   jmp     0x4e            ;; jmp bypass, toggled by poking       |
+</span></span><span class="line"><span class="cl">  40:   addq    $1, (%rax)      ;; (*tcc_ptr)++                        |
+</span></span><span class="line"><span class="cl">  44:   popq    %r13            ;; callee saved                        |
+</span></span><span class="line"><span class="cl">  46:   popq    %rbx            ;; callee saved                        |
+</span></span><span class="line"><span class="cl">  47:   popq    %rax            ;; undo rbp-16 push                    |
+</span></span><span class="line"><span class="cl">  48:   popq    %rax            ;; undo rbp-8  push                    |
+</span></span><span class="line"><span class="cl">  49:   nopl    (%rax,%rax)     ;; tail call target, toggled by poking |
+</span></span><span class="line"><span class="cl">; return 0;                     ;;                                     |
+</span></span><span class="line"><span class="cl">  4e:   popq    %r13            ;; restore callee saved &lt;--------------+
+</span></span><span class="line"><span class="cl">  50:   popq    %rbx            ;; restore callee saved
+</span></span><span class="line"><span class="cl">  51:   leave
+</span></span><span class="line"><span class="cl">  52:   retq
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>而 arm64 BPF JIT 的修改，则得到 arm64 BPF JIT maintainer Puranjay Mohan 的 ack。</p>
+<p>详情：<a href="https://lore.kernel.org/bpf/20240623161528.68946-1-hffilwlqm@gmail.com/">[PATCH v5 bpf-next 0/3] bpf: Fix tailcall hierarchy</a>。</p>
+<h2 id="第九回合patch-v6--2024-年-7-月-14-日">第九回合：PATCH v6 / 2024 年 7 月 14 日</h2>
+<p>补充了 JITed prog 的反汇编讲解之后，便递交了 PATCH v6。</p>
+<p>在 7 月 20 日上午，PATCH v6 被合并啦。</p>
+<p>详情：<a href="https://lore.kernel.org/bpf/20240714123902.32305-1-hffilwlqm@gmail.com/">[PATCH v6 bpf-next 0/3] bpf: Fix tailcall hierarchy</a>。</p>
+<h2 id="总结">总结</h2>
+<p>这次修复 tailcall hierarchy 问题，耗时 10 个月，中途几度想要放弃，但最终还是坚持了下来，坚持将这个问题给修复了。</p>
+<p>接下来，还会继续修 tailcall 的问题！</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-07-21
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/kernel-patch/">kernel-patch</a>
+      <a href="/%20tags/tailcall/">tailcall</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-123-skbdist/">
+        <span class="next-text nav-default">eBPF Talk: 在设备层统计网络包延迟</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
