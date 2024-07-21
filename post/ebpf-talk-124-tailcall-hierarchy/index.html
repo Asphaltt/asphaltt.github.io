@@ -598,10 +598,10 @@ The evolution of the fix made the perf hit as small as possible.</p>
 </span></span><span class="line"><span class="cl">        }
 </span></span></code></pre></td></tr></table>
 </div>
-</div><p>我：提起 RFC PATCH v1 的思路。
-Alexei: prologue 里使用 15 字节的 nop 的做法太重了，想一想适合所有 BPF JIT 的更简单的办法吧。</p>
-<p>我：提出了在 <code>__bpf_prog_run_dfunc()</code> 里使用 <code>bpf_prog_run_ctx</code> 的思路。
-Alexei: 在 <code>__bpf_prog_run_dfunc()</code> 里不能使用额外的 <code>if</code> 条件判断；要不试试 PERCPU tail call count 的思路？</p>
+</div><p>我：提起 RFC PATCH v1 的思路。</p>
+<p>Alexei: prologue 里使用 15 字节的 nop 的做法太重了，想一想适合所有 BPF JIT 的更简单的办法吧。</p>
+<p>我：提出了在 <code>__bpf_prog_run_dfunc()</code> 里使用 <code>bpf_prog_run_ctx</code> 的思路。</p>
+<p>Alexei: 在 <code>__bpf_prog_run_dfunc()</code> 里不能使用额外的 <code>if</code> 条件判断；要不试试 PERCPU tail call count 的思路？</p>
 <p>详情：<a href="https://lore.kernel.org/bpf/20240104142226.87869-1-hffilwlqm@gmail.com/">[PATCH bpf-next 0/4] bpf, x64: Fix tailcall hierarchy</a>。</p>
 <p>在尝试了 PERCPU tail call count 的思路后，便递交了 PATCH v2。</p>
 <h2 id="第五回合patch-v2--2024-年-2-月-22-日">第五回合：PATCH v2 / 2024 年 2 月 22 日</h2>
