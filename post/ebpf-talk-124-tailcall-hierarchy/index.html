@@ -928,11 +928,11 @@ The evolution of the fix made the perf hit as small as possible.</p>
 </span></span><span class="line"><span class="cl">  36:   movl    %esi, (%rdi)
 </span></span><span class="line"><span class="cl">; subprog_tail(skb);
 </span></span><span class="line"><span class="cl">  39:   movq    %rbx, %rdi      ;; rdi = skb
-</span></span><span class="line"><span class="cl">  3c:   movq    -16(%rbp), %rax     ;; rax = tcc_ptr
+</span></span><span class="line"><span class="cl">  3c:   movq    -16(%rbp), %rax ;; rax = tcc_ptr
 </span></span><span class="line"><span class="cl">  43:   callq   0x80            ;; call subprog_tail()
 </span></span><span class="line"><span class="cl">; subprog_tail(skb);
 </span></span><span class="line"><span class="cl">  48:   movq    %rbx, %rdi      ;; rdi = skb
-</span></span><span class="line"><span class="cl">  4b:   movq    -16(%rbp), %rax     ;; rax = tcc_ptr
+</span></span><span class="line"><span class="cl">  4b:   movq    -16(%rbp), %rax ;; rax = tcc_ptr
 </span></span><span class="line"><span class="cl">  52:   callq   0x80            ;; call subprog_tail()
 </span></span><span class="line"><span class="cl">; return ret;
 </span></span><span class="line"><span class="cl">  57:   movl    $1, %eax
@@ -959,7 +959,7 @@ The evolution of the fix made the perf hit as small as possible.</p>
 </span></span><span class="line"><span class="cl">  26:   movq    %rbx, %rdi      ;; 1st arg, skb
 </span></span><span class="line"><span class="cl">  29:   movq    %r13, %rsi      ;; 2nd arg, jmp_table
 </span></span><span class="line"><span class="cl">  2c:   xorl    %edx, %edx      ;; 3rd arg, index = 0
-</span></span><span class="line"><span class="cl">  2e:   movq    -16(%rbp), %rax     ;; rax = [rbp - 16] (tcc_ptr)
+</span></span><span class="line"><span class="cl">  2e:   movq    -16(%rbp), %rax ;; rax = [rbp - 16] (tcc_ptr)
 </span></span><span class="line"><span class="cl">  35:   cmpq    $33, (%rax)
 </span></span><span class="line"><span class="cl">  39:   jae     0x4e            ;; if *tcc_ptr &gt;= 33 goto 0x4e --------+
 </span></span><span class="line"><span class="cl">  3b:   jmp     0x4e            ;; jmp bypass, toggled by poking       |
@@ -1029,7 +1029,11 @@ The evolution of the fix made the perf hit as small as possible.</p>
       <a href="/%20tags/tailcall/">tailcall</a>
       </div>
     <nav class="post-nav">
-      
+      <a class="prev" href="/post/ebpf-talk-125-xdp-crc/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 手撕 verifier log 一例</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
       <a class="next" href="/post/ebpf-talk-123-skbdist/">
         <span class="next-text nav-default">eBPF Talk: 在设备层统计网络包延迟</span>
         <span class="next-text nav-mobile">下一篇</span>

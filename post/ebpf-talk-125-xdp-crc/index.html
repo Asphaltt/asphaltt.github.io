@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 手撕 verifier log 一例 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="Ziv Chow 在微信群里问了个 verifier 的问题，一眼看上去肯定是 bpf 代码写得有问题，但是问题具体在哪里呢？ 数组访问 如上图，crc16tab[key] 访问 crc16tab 数组时" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-125-xdp-crc/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 手撕 verifier log 一例" />
+<meta property="og:description" content="Ziv Chow 在微信群里问了个 verifier 的问题，一眼看上去肯定是 bpf 代码写得有问题，但是问题具体在哪里呢？ 数组访问 如上图，crc16tab[key] 访问 crc16tab 数组时" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-125-xdp-crc/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-07-28T22:54:41+08:00" />
+<meta property="article:modified_time" content="2024-07-28T22:54:41+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 手撕 verifier log 一例">
+  <meta itemprop="description" content="Ziv Chow 在微信群里问了个 verifier 的问题，一眼看上去肯定是 bpf 代码写得有问题，但是问题具体在哪里呢？ 数组访问 如上图，crc16tab[key] 访问 crc16tab 数组时">
+  <meta itemprop="datePublished" content="2024-07-28T22:54:41+08:00">
+  <meta itemprop="dateModified" content="2024-07-28T22:54:41+08:00">
+  <meta itemprop="wordCount" content="1635">
+  <meta itemprop="keywords" content="EBPF,Bpf Verifier"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 手撕 verifier log 一例"/>
+<meta name="twitter:description" content="Ziv Chow 在微信群里问了个 verifier 的问题，一眼看上去肯定是 bpf 代码写得有问题，但是问题具体在哪里呢？ 数组访问 如上图，crc16tab[key] 访问 crc16tab 数组时"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 手撕 verifier log 一例</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-07-28 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1635 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#数组访问">数组访问</a></li>
+        <li><a href="#快速验证-crc16tab-数组访问是没问题的">快速验证 <code>crc16tab</code> 数组访问是没问题的</a></li>
+        <li><a href="#问题出错-for-循环">问题出错 <code>for</code> 循环</a></li>
+        <li><a href="#解法1-禁止-for-循环复用寄存器">解法1: 禁止 <code>for</code> 循环复用寄存器</a></li>
+        <li><a href="#解法2-强行阻止编译器复用寄存器">解法2: 强行阻止编译器复用寄存器</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>Ziv Chow 在微信群里问了个 verifier 的问题，一眼看上去肯定是 bpf 代码写得有问题，但是问题具体在哪里呢？</p>
+<p><img src="/talk125-ZivChow.png" alt=""></p>
+<h2 id="数组访问">数组访问</h2>
+<p>如上图，<code>crc16tab[key]</code> 访问 <code>crc16tab</code> 数组时，在 bpf 里会转换成 bpf map 访问；因为 <code>crc16tab</code> 是一个长度为 256 的 <code>u16</code> 数组，需要消耗 512 字节的内存，因而无法保存在栈上。</p>
+<p>所以，如果 verifier 判断寄存器的值没有有限最小值时，就会报上图中的错误。</p>
+<p>可，明明已经 <code>key &amp; 0xFF</code> 和 <code>if (key &gt; 255 || key &lt; 0)</code> 了，为什么还会报错呢？</p>
+<h2 id="快速验证-crc16tab-数组访问是没问题的">快速验证 <code>crc16tab</code> 数组访问是没问题的</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span>
+</span></span><span class="line"><span class="cl"><span class="n">__u16</span> <span class="nf">crc16</span><span class="p">(</span><span class="n">__u16</span> <span class="n">port</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">port</span> <span class="o">=</span> <span class="p">(</span><span class="n">port</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="n">crc16tab</span><span class="p">[(</span><span class="n">port</span> <span class="o">&gt;&gt;</span> <span class="mi">10</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">port</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;xdp&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">crc</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">ethhdr</span> <span class="o">*</span><span class="n">eth</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">eth</span><span class="p">))</span> <span class="nf">ctx_ptr</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">iphdr</span> <span class="o">*</span><span class="n">iph</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">iph</span><span class="p">))</span> <span class="p">(</span><span class="n">eth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">tcphdr</span> <span class="o">*</span><span class="n">tcph</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">tcph</span><span class="p">))</span> <span class="p">(</span><span class="n">iph</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">tcph</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nf">ctx_ptr</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">data_end</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">protocol</span> <span class="o">!=</span> <span class="n">IPPROTO_TCP</span> <span class="o">||</span> <span class="n">tcph</span><span class="o">-&gt;</span><span class="n">dest</span> <span class="o">!=</span> <span class="nf">bpf_htons</span><span class="p">(</span><span class="mi">8080</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_printk</span><span class="p">(</span><span class="s">&#34;crc16 of sport %d is %d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="nf">bpf_ntohs</span><span class="p">(</span><span class="n">tcph</span><span class="o">-&gt;</span><span class="n">source</span><span class="p">),</span> <span class="nf">crc16</span><span class="p">(</span><span class="n">tcph</span><span class="o">-&gt;</span><span class="n">source</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>跑起来后，可以看到输出：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-sh" data-lang="sh"><span class="line"><span class="cl">$ sudo cat /sys/kernel/debug/tracing/trace_pipe
+</span></span><span class="line"><span class="cl">          &lt;idle&gt;-0       <span class="o">[</span>006<span class="o">]</span> .Ns21 380503.312159: bpf_trace_printk: crc16 of sport <span class="m">64654</span> is <span class="m">61704</span>
+</span></span><span class="line"><span class="cl">          &lt;idle&gt;-0       <span class="o">[</span>006<span class="o">]</span> ..s21 380504.676875: bpf_trace_printk: crc16 of sport <span class="m">64659</span> is <span class="m">40765</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>那么，到底哪里出错了呢？</p>
+<h2 id="问题出错-for-循环">问题出错 <code>for</code> 循环</h2>
+<p>找 Ziv Chow 要了一下完整的计算 CRC16 的代码，大概如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span>
+</span></span><span class="line"><span class="cl"><span class="n">__u16</span> <span class="nf">crc_16</span><span class="p">(</span><span class="n">__u64</span> <span class="n">port</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u16</span> <span class="n">crc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">key</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span> <span class="p">((</span><span class="n">crc</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">port</span> <span class="o">&gt;&gt;</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mh">0x00FF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">key</span> <span class="o">&gt;</span> <span class="mi">255</span> <span class="o">||</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">key</span> <span class="o">=</span> <span class="n">crc16tab</span><span class="p">[</span><span class="n">key</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="n">crc</span> <span class="o">=</span> <span class="p">(</span><span class="n">crc</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="n">key</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">crc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span>
+</span></span><span class="line"><span class="cl"><span class="n">__u16</span> <span class="nf">connection_crc_hash</span><span class="p">(</span><span class="n">__u32</span> <span class="n">src</span><span class="p">,</span> <span class="n">__u16</span> <span class="n">src_port</span><span class="p">,</span> <span class="n">__u32</span> <span class="n">dest</span><span class="p">,</span> <span class="n">__u16</span> <span class="n">dest_port</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u64</span> <span class="n">merge</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u16</span> <span class="n">crc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">merge</span> <span class="o">=</span> <span class="p">((</span><span class="n">__u64</span><span class="p">)</span> <span class="n">src</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="n">dest</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">crc</span> <span class="o">=</span> <span class="nf">crc_16</span><span class="p">(</span><span class="n">merge</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">merge</span> <span class="o">=</span> <span class="p">(</span><span class="n">__u64</span><span class="p">)</span> <span class="p">(</span><span class="n">src_port</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">48</span><span class="o">|</span><span class="p">((</span><span class="n">__u64</span><span class="p">)</span> <span class="n">crc</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span><span class="p">)</span> <span class="o">|</span> <span class="p">((</span><span class="n">__u64</span><span class="p">)</span> <span class="p">(</span><span class="n">dest_port</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">)</span> <span class="o">|</span> <span class="p">((</span><span class="n">__u64</span><span class="p">)</span> <span class="p">(</span><span class="n">src_port</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">crc_16</span><span class="p">(</span><span class="n">merge</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;xdp&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">crc</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">ethhdr</span> <span class="o">*</span><span class="n">eth</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">eth</span><span class="p">))</span> <span class="nf">ctx_ptr</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">iphdr</span> <span class="o">*</span><span class="n">iph</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">iph</span><span class="p">))</span> <span class="p">(</span><span class="n">eth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">tcphdr</span> <span class="o">*</span><span class="n">tcph</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">tcph</span><span class="p">))</span> <span class="p">(</span><span class="n">iph</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">((</span><span class="kt">void</span> <span class="o">*</span><span class="p">)(</span><span class="n">tcph</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nf">ctx_ptr</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">data_end</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">protocol</span> <span class="o">!=</span> <span class="n">IPPROTO_TCP</span> <span class="o">||</span> <span class="n">tcph</span><span class="o">-&gt;</span><span class="n">dest</span> <span class="o">!=</span> <span class="nf">bpf_htons</span><span class="p">(</span><span class="mi">8080</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_printk</span><span class="p">(</span><span class="s">&#34;crc16: %d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="nf">connection_crc_hash</span><span class="p">(</span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">saddr</span><span class="p">,</span> <span class="n">tcph</span><span class="o">-&gt;</span><span class="n">source</span><span class="p">,</span> <span class="n">iph</span><span class="o">-&gt;</span><span class="n">daddr</span><span class="p">,</span> <span class="n">tcph</span><span class="o">-&gt;</span><span class="n">dest</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>就是其中 <code>key = crc16tab[key];</code> 这一行，导致 verifier 报错:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-gdscript3" data-lang="gdscript3"><span class="line"><span class="cl">    <span class="o">...</span>
+</span></span><span class="line"><span class="cl">    <span class="p">;</span> <span class="n">crc</span> <span class="o">=</span> <span class="n">crc_16</span><span class="p">(</span><span class="n">merge</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">31</span><span class="p">:</span> <span class="p">(</span><span class="mi">85</span><span class="p">)</span> <span class="n">call</span> <span class="n">pc</span><span class="o">+</span><span class="mi">11</span>
+</span></span><span class="line"><span class="cl">    <span class="n">caller</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">     <span class="n">frame1</span><span class="p">:</span> <span class="n">R6</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffff</span><span class="p">))</span> <span class="n">R7</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffff</span><span class="p">))</span> <span class="n">R10</span><span class="o">=</span><span class="n">fp0</span>
+</span></span><span class="line"><span class="cl">    <span class="n">callee</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">     <span class="n">frame2</span><span class="p">:</span> <span class="n">R1</span><span class="o">=</span><span class="n">scalar</span><span class="p">()</span> <span class="n">R2</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffff</span><span class="p">))</span> <span class="n">R3</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="mh">0xffffffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffffffff</span><span class="p">))</span> <span class="n">R4</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffff</span><span class="p">))</span> <span class="n">R10</span><span class="o">=</span><span class="n">fp0</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">43</span><span class="p">:</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R1</span><span class="o">=</span><span class="n">scalar</span><span class="p">()</span> <span class="n">R2</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffff</span><span class="p">))</span> <span class="n">R3</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="mh">0xffffffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffffffff</span><span class="p">))</span> <span class="n">R4</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffff</span><span class="p">))</span> <span class="n">R10</span><span class="o">=</span><span class="n">fp0</span>
+</span></span><span class="line"><span class="cl">    <span class="p">;</span> <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="ne">int</span><span class="p">)</span> <span class="p">((</span><span class="n">crc</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">port</span> <span class="o">&gt;&gt;</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mh">0x00FF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">43</span><span class="p">:</span> <span class="p">(</span><span class="n">bf</span><span class="p">)</span> <span class="n">r3</span> <span class="o">=</span> <span class="n">r1</span>                      <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R1</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="n">R3_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">44</span><span class="p">:</span> <span class="p">(</span><span class="mi">57</span><span class="p">)</span> <span class="n">r3</span> <span class="o">&amp;=</span> <span class="mi">255</span>                    <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R3_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xff</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">;</span> <span class="n">key</span> <span class="o">=</span> <span class="n">crc16tab</span><span class="p">[</span><span class="n">key</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">45</span><span class="p">:</span> <span class="p">(</span><span class="mi">67</span><span class="p">)</span> <span class="n">r3</span> <span class="o">&lt;&lt;=</span> <span class="mi">1</span>                     <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R3_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mi">510</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0x1fe</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">46</span><span class="p">:</span> <span class="p">(</span><span class="mi">18</span><span class="p">)</span> <span class="n">r2</span> <span class="o">=</span> <span class="mh">0xffff8f8b9a03051c</span>      <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R2_w</span><span class="o">=</span><span class="n">map_value</span><span class="p">(</span><span class="n">map</span><span class="o">=.</span><span class="n">rodata</span><span class="p">,</span><span class="n">ks</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">vs</span><span class="o">=</span><span class="mi">524</span><span class="p">,</span><span class="n">off</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">48</span><span class="p">:</span> <span class="p">(</span><span class="mi">18</span><span class="p">)</span> <span class="n">r4</span> <span class="o">=</span> <span class="mh">0xffff8f8b9a03051c</span>      <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R4_w</span><span class="o">=</span><span class="n">map_value</span><span class="p">(</span><span class="n">map</span><span class="o">=.</span><span class="n">rodata</span><span class="p">,</span><span class="n">ks</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">vs</span><span class="o">=</span><span class="mi">524</span><span class="p">,</span><span class="n">off</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">50</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="n">f</span><span class="p">)</span> <span class="n">r4</span> <span class="o">+=</span> <span class="n">r3</span>                     <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R3_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mi">510</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0x1fe</span><span class="p">))</span> <span class="n">R4_w</span><span class="o">=</span><span class="n">map_value</span><span class="p">(</span><span class="n">map</span><span class="o">=.</span><span class="n">rodata</span><span class="p">,</span><span class="n">ks</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">vs</span><span class="o">=</span><span class="mi">524</span><span class="p">,</span><span class="n">off</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mi">510</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0x1fe</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">51</span><span class="p">:</span> <span class="p">(</span><span class="mi">69</span><span class="p">)</span> <span class="n">r3</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">u16</span> <span class="o">*</span><span class="p">)(</span><span class="n">r4</span> <span class="o">+</span><span class="mi">0</span><span class="p">)</span>         <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R3_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffff</span><span class="p">))</span> <span class="n">R4_w</span><span class="o">=</span><span class="n">map_value</span><span class="p">(</span><span class="n">map</span><span class="o">=.</span><span class="n">rodata</span><span class="p">,</span><span class="n">ks</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">vs</span><span class="o">=</span><span class="mi">524</span><span class="p">,</span><span class="n">off</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mi">510</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0x1fe</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">;</span> <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="ne">int</span><span class="p">)</span> <span class="p">((</span><span class="n">crc</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">port</span> <span class="o">&gt;&gt;</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mh">0x00FF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">52</span><span class="p">:</span> <span class="p">(</span><span class="n">bf</span><span class="p">)</span> <span class="n">r4</span> <span class="o">=</span> <span class="n">r1</span>                      <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R1</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span> <span class="n">R4_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">53</span><span class="p">:</span> <span class="p">(</span><span class="mi">77</span><span class="p">)</span> <span class="n">r4</span> <span class="o">&gt;&gt;=</span> <span class="mi">8</span>                     <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R4_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="mh">0xffffffffffffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffffffffffffff</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">;</span> <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="ne">int</span><span class="p">)</span> <span class="p">((</span><span class="n">crc</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">port</span> <span class="o">&gt;&gt;</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mh">0x00FF</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">54</span><span class="p">:</span> <span class="p">(</span><span class="mi">57</span><span class="p">)</span> <span class="n">r4</span> <span class="o">&amp;=</span> <span class="mi">255</span>                    <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R4_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xff</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">55</span><span class="p">:</span> <span class="p">(</span><span class="n">bf</span><span class="p">)</span> <span class="n">r5</span> <span class="o">=</span> <span class="n">r3</span>                      <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R3_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffff</span><span class="p">))</span> <span class="n">R5_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">id</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xffff</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffff</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">56</span><span class="p">:</span> <span class="p">(</span><span class="mi">77</span><span class="p">)</span> <span class="n">r5</span> <span class="o">&gt;&gt;=</span> <span class="mi">8</span>                     <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R5_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xff</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">57</span><span class="p">:</span> <span class="p">(</span><span class="n">af</span><span class="p">)</span> <span class="n">r4</span> <span class="o">^=</span> <span class="n">r5</span>                     <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R4_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">()</span> <span class="n">R5_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mi">255</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xff</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">;</span> <span class="n">crc</span> <span class="o">=</span> <span class="p">(</span><span class="n">crc</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="n">key</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">58</span><span class="p">:</span> <span class="p">(</span><span class="mi">67</span><span class="p">)</span> <span class="n">r3</span> <span class="o">&lt;&lt;=</span> <span class="mi">8</span>                     <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R3_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smin</span><span class="o">=</span><span class="n">smin32</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">smax</span><span class="o">=</span><span class="n">umax</span><span class="o">=</span><span class="n">smax32</span><span class="o">=</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xffff00</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xffff00</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="p">;</span> <span class="n">key</span> <span class="o">=</span> <span class="n">crc16tab</span><span class="p">[</span><span class="n">key</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">59</span><span class="p">:</span> <span class="p">(</span><span class="mi">67</span><span class="p">)</span> <span class="n">r4</span> <span class="o">&lt;&lt;=</span> <span class="mi">1</span>                     <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R4_w</span><span class="o">=</span><span class="n">scalar</span><span class="p">(</span><span class="n">smax</span><span class="o">=</span><span class="mh">0x7ffffffffffffffe</span><span class="p">,</span><span class="n">umax</span><span class="o">=</span><span class="mh">0xfffffffffffffffe</span><span class="p">,</span><span class="n">smax32</span><span class="o">=</span><span class="mh">0x7ffffffe</span><span class="p">,</span><span class="n">umax32</span><span class="o">=</span><span class="mh">0xfffffffe</span><span class="p">,</span><span class="n">var_off</span><span class="o">=</span><span class="p">(</span><span class="mh">0x0</span><span class="p">;</span> <span class="mh">0xfffffffffffffffe</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">60</span><span class="p">:</span> <span class="p">(</span><span class="mi">18</span><span class="p">)</span> <span class="n">r5</span> <span class="o">=</span> <span class="mh">0xffff8f8b9a03051c</span>      <span class="p">;</span> <span class="n">frame2</span><span class="p">:</span> <span class="n">R5_w</span><span class="o">=</span><span class="n">map_value</span><span class="p">(</span><span class="n">map</span><span class="o">=.</span><span class="n">rodata</span><span class="p">,</span><span class="n">ks</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span><span class="n">vs</span><span class="o">=</span><span class="mi">524</span><span class="p">,</span><span class="n">off</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="mi">62</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="n">f</span><span class="p">)</span> <span class="n">r5</span> <span class="o">+=</span> <span class="n">r4</span>
+</span></span><span class="line"><span class="cl">    <span class="n">math</span> <span class="n">between</span> <span class="n">map_value</span> <span class="n">pointer</span> <span class="ow">and</span> <span class="n">register</span> <span class="n">with</span> <span class="n">unbounded</span> <span class="nb">min</span> <span class="n">value</span> <span class="n">is</span> <span class="ow">not</span> <span class="n">allowed</span>
+</span></span><span class="line"><span class="cl">    <span class="n">processed</span> <span class="mi">41</span> <span class="n">insns</span> <span class="p">(</span><span class="n">limit</span> <span class="mi">1000000</span><span class="p">)</span> <span class="n">max_states_per_insn</span> <span class="mi">0</span> <span class="n">total_states</span> <span class="mi">2</span> <span class="n">peak_states</span> <span class="mi">2</span> <span class="n">mark_read</span> <span class="mi">1</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>从下往上看，<code>r4 ^= r5</code> 破坏了 <code>r4</code> 的范围值，前面明明 <code>r4 &amp;= 255</code> 做了范围检查。</p>
+<p>再仔细分析，<code>r5 += r4</code> 是第二次循环中的 <code>crc16tab</code> 访问。而在第一次访问 <code>crc16tab</code> 前，<code>r3 &lt;&lt; 1</code> 和 <code>r3 &amp;= 255</code> 之间却没有类似 <code>r3 ^= r5</code> 的操作。</p>
+<p>这又是为什么呢？</p>
+<p>将 <code>crc_16()</code> 的 verifier log 精简一下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">    r3 = r1                 ;; r3 = port
+</span></span><span class="line"><span class="cl">    r3 &amp;= 255               ;; r3 = port &amp; 0xff, 因为 crc = 0 且 counter = 0，所有优化掉了不少地方
+</span></span><span class="line"><span class="cl">    r3 &lt;&lt;= 1                ;; ???
+</span></span><span class="line"><span class="cl">    r2 = 0xffff8f8b9a03051c ;; r2 = &amp;crc16tab
+</span></span><span class="line"><span class="cl">    r4 = 0xffff8f8b9a03051c ;; r4 = &amp;crc16tab
+</span></span><span class="line"><span class="cl">    r4 += r3                ;; r4 = &amp;crc16tab + (port &amp; 0xff) * 2
+</span></span><span class="line"><span class="cl">    r3 = *(u16 *)(r4 +0)    ;; r3 = crc16tab[r4]
+</span></span><span class="line"><span class="cl">    r4 = r1                 ;; r4 = port
+</span></span><span class="line"><span class="cl">    r4 &gt;&gt;= 8                ;; r4 = port &gt;&gt; 8
+</span></span><span class="line"><span class="cl">    r4 &amp;= 255               ;; r4 = (port &gt;&gt; 8) &amp; 0xff
+</span></span><span class="line"><span class="cl">    r5 = r3                 ;; r5 = r3, crc16tab 取出的值
+</span></span><span class="line"><span class="cl">    r5 &gt;&gt;= 8                ;; r5 = r3 &gt;&gt; 8, 对应 crc &gt;&gt; 8
+</span></span><span class="line"><span class="cl">    r4 ^= r5                ;; r4 = r4 ^ r5, 对应 (crc &gt;&gt; 8) ^ ((port &gt;&gt; 8) &amp; 0xff)
+</span></span><span class="line"><span class="cl">    r3 &lt;&lt;= 8                ;; r3 = r3 &lt;&lt; 8, 对应 crc &lt;&lt; 8
+</span></span><span class="line"><span class="cl">    r4 &lt;&lt;= 1                ;; ???
+</span></span><span class="line"><span class="cl">    r5 = 0xffff8f8b9a03051c ;; r5 = &amp;crc16tab
+</span></span><span class="line"><span class="cl">    r5 += r4                ;; r5 = &amp;crc16tab + (r4 &lt;&lt; 1)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>噢噢，原来第一次的 <code>r3 ^= r5</code> 的操作被优化掉了。</p>
+<p>所以，要解决这问题，只需要确保 <code>&amp;= 255</code> 在 <code>^= r5</code> 之后便可。</p>
+<h2 id="解法1-禁止-for-循环复用寄存器">解法1: 禁止 <code>for</code> 循环复用寄存器</h2>
+<p>意即，每次循环都进行一次函数调用：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span>
+</span></span><span class="line"><span class="cl"><span class="n">__u32</span> <span class="nf">__crc</span><span class="p">(</span><span class="n">__u32</span> <span class="n">crc</span><span class="p">,</span> <span class="n">__u64</span> <span class="n">port</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">(</span><span class="n">crc</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="n">crc16tab</span><span class="p">[((</span><span class="n">crc</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">port</span> <span class="o">&gt;&gt;</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">8</span><span class="p">))</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span>
+</span></span><span class="line"><span class="cl"><span class="n">__u16</span> <span class="nf">crc16</span><span class="p">(</span><span class="n">__u64</span> <span class="n">port</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">crc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">crc</span> <span class="o">=</span> <span class="nf">__crc</span><span class="p">(</span><span class="n">crc</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">crc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="解法2-强行阻止编译器复用寄存器">解法2: 强行阻止编译器复用寄存器</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cm">/* make it look to compiler like value is read and written */</span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define __sink(expr) asm volatile(&#34;&#34; : &#34;+g&#34;(expr))
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span>
+</span></span><span class="line"><span class="cl"><span class="n">__u32</span> <span class="nf">__crc</span><span class="p">(</span><span class="n">__u32</span> <span class="n">crc</span><span class="p">,</span> <span class="n">__u64</span> <span class="n">port</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u64</span> <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">crc</span> <span class="o">&gt;&gt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">port</span> <span class="o">&gt;&gt;</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">8</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__sink</span><span class="p">(</span><span class="n">key</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">(</span><span class="n">crc</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span><span class="p">)</span> <span class="o">^</span> <span class="n">crc16tab</span><span class="p">[</span><span class="n">key</span> <span class="o">&amp;</span> <span class="mh">0xff</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span>
+</span></span><span class="line"><span class="cl"><span class="n">__u16</span> <span class="nf">crc16</span><span class="p">(</span><span class="n">__u64</span> <span class="n">port</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u32</span> <span class="n">crc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">crc</span> <span class="o">=</span> <span class="nf">__crc</span><span class="p">(</span><span class="n">crc</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">crc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如此一来，便可省掉 6 次函数调用。</p>
+<h2 id="总结">总结</h2>
+<p>过不了 verifier 的问题总是那么恼人，而且需要耗费大量时间去分析 verifier log，才能找到问题所在。</p>
+<p>而想要解决这个问题，还需要对编译器有一定的理解，才能找到解决方案。</p>
+<p>完整代码：<a href="https://github.com/Asphaltt/learn-by-example/tree/main/ebpf/xdp-crc">learn-by-example xdp-crc</a>。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-07-28
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/bpf-verifier/">bpf verifier</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-124-tailcall-hierarchy/">
+        <span class="next-text nav-default">eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

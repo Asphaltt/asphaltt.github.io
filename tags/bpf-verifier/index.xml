@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Wed, 03 Apr 2024 23:06:44 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 28 Jul 2024 22:54:41 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/tags/bpf-verifier/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 手撕 verifier log 一例</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-125-xdp-crc/</link>
+      <pubDate>Sun, 28 Jul 2024 22:54:41 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-125-xdp-crc/</guid>
+      <description>Ziv Chow 在微信群里问了个 verifier 的问题，一眼看上去肯定是 bpf 代码写得有问题，但是问题具体在哪里呢？ 数组访问 如上图，crc16tab[key] 访问 crc16tab 数组时</description>
+    </item>
     <item>
       <title>eBPF Talk: verifier 支持有限循环</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-73-verifier-finite-loop/</link>
