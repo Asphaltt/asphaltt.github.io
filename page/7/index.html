@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-07-28T22:54:41+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-08-11T21:35:08+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-65-write-unittest-for-xdp/">eBPF Talk: 给 XDP 程序写 unittest</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 932 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      我们都知道写 unittest 是非常必要的，但是在 eBPF 程序里，该如何给 XDP 程序写 unittest 呢？ bpf: introduce BPF_PROG_TEST_RUN command since 4.12 kernel 在 4.12 内核中，引入了 BPF_PROG_TEST_RUN 命令，可以用来给 XDP 和 tc-bpf 等 eBPF 程序写 unit
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-65-write-unittest-for-xdp/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/">eBPF Talk: 使用 metadata 将信息从 XDP 传给 AF_XDP</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-56-latency-injection-with-af_xdp/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-55-xdp-on-veth/">eBPF Talk: XDP on veth</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-03-31 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1614 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      veth 是一种虚拟网络设备，并支持在驱动里运行 XDP 程序。 eBPF Talk: XDP on Mellanox 与 Mellanox 物理网卡对比，veth 上运行 XDP 程序有和区别呢？ ndo_xdp on veth 这是将 XDP 程序下发到 veth 驱动里
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-55-xdp-on-veth/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

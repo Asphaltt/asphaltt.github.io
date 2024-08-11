@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 28 Jul 2024 22:54:41 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 11 Aug 2024 21:35:08 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: BPF 读取 TOA 的 4 种方式</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-126-toa/</link>
+      <pubDate>Sun, 11 Aug 2024 21:35:08 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-126-toa/</guid>
+      <description>在 4 层 tcp 代理的场景下，一般使用 TOA option 将真实的客户端地址和端口信息传递给后端服务。 在后端服务里，如果不使用内核模块读取 TOA，而是使用 eBPF 来读取 T</description>
+    </item>
     <item>
       <title>eBPF Talk: 手撕 verifier log 一例</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-125-xdp-crc/</link>

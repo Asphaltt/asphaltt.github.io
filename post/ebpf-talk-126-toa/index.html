@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: BPF 读取 TOA 的 4 种方式 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="在 4 层 tcp 代理的场景下，一般使用 TOA option 将真实的客户端地址和端口信息传递给后端服务。 在后端服务里，如果不使用内核模块读取 TOA，而是使用 eBPF 来读取 T" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-126-toa/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: BPF 读取 TOA 的 4 种方式" />
+<meta property="og:description" content="在 4 层 tcp 代理的场景下，一般使用 TOA option 将真实的客户端地址和端口信息传递给后端服务。 在后端服务里，如果不使用内核模块读取 TOA，而是使用 eBPF 来读取 T" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-126-toa/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-08-11T21:35:08+08:00" />
+<meta property="article:modified_time" content="2024-08-11T21:35:08+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: BPF 读取 TOA 的 4 种方式">
+  <meta itemprop="description" content="在 4 层 tcp 代理的场景下，一般使用 TOA option 将真实的客户端地址和端口信息传递给后端服务。 在后端服务里，如果不使用内核模块读取 TOA，而是使用 eBPF 来读取 T">
+  <meta itemprop="datePublished" content="2024-08-11T21:35:08+08:00">
+  <meta itemprop="dateModified" content="2024-08-11T21:35:08+08:00">
+  <meta itemprop="wordCount" content="2124">
+  <meta itemprop="keywords" content="EBPF,Toa"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: BPF 读取 TOA 的 4 种方式"/>
+<meta name="twitter:description" content="在 4 层 tcp 代理的场景下，一般使用 TOA option 将真实的客户端地址和端口信息传递给后端服务。 在后端服务里，如果不使用内核模块读取 TOA，而是使用 eBPF 来读取 T"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: BPF 读取 TOA 的 4 种方式</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-08-11 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 2124 字 </span>
+      <span class="more-meta"> 预计阅读 5 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#内核模块读取-toa">内核模块读取 TOA</a></li>
+        <li><a href="#ebpf-读取-toa">eBPF 读取 TOA</a></li>
+        <li><a href="#ebpf-读取-toa-优化">eBPF 读取 TOA 优化</a></li>
+        <li><a href="#ebpf-读取-toa-优化-2">eBPF 读取 TOA 优化 2</a></li>
+        <li><a href="#ebpf-读取-toa-优化-3">eBPF 读取 TOA 优化 3</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>在 4 层 tcp 代理的场景下，一般使用 TOA option 将真实的客户端地址和端口信息传递给后端服务。</p>
+<p>在后端服务里，如果不使用内核模块读取 TOA，而是使用 eBPF 来读取 TOA，该如何实现呢？</p>
+<p>太长不读：以下提供了 4 种 eBPF 读取 TOA 的方式，仅供参考；不过它们只是通过了 verifier，未验证是否能读取到正确的 TOA。</p>
+<h2 id="内核模块读取-toa">内核模块读取 TOA</h2>
+<p>想要使用 eBPF 读取 TOA，先看看内核模块是如何读取 TOA 的。</p>
+<p>比如 UCloud 的实现方式，核心读取 TOA 的函数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// https://github.com/ucloud/ucloud-toa/blob/master/toa.c#L108
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/* Parse TCP options in skb, try to get client ip, port
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @param skb [in] received skb, it should be a ack/get-ack packet.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @return NULL if we don&#39;t get client ip/port;
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *         value of toa_data in ret_ptr if we get client ip/port.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">void</span> <span class="o">*</span><span class="nf">get_toa_data</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">tcphdr</span> <span class="o">*</span><span class="n">th</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">length</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">ptr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">toa_data</span> <span class="n">tdata</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">ret_ptr</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">//TOA_DBG(&#34;get_toa_data called\n&#34;);
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">skb</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">th</span> <span class="o">=</span> <span class="nf">tcp_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">length</span> <span class="o">=</span> <span class="p">(</span><span class="n">th</span><span class="o">-&gt;</span><span class="n">doff</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span> <span class="o">-</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ptr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span> <span class="p">(</span><span class="n">th</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">while</span> <span class="p">(</span><span class="n">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="kt">int</span> <span class="n">opcode</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="kt">int</span> <span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="k">switch</span> <span class="p">(</span><span class="n">opcode</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">case</span> <span class="nl">TCPOPT_EOL</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">case</span> <span class="nl">TCPOPT_NOP</span><span class="p">:</span>        <span class="cm">/* Ref: RFC 793 section 3.1 */</span>
+</span></span><span class="line"><span class="cl">                <span class="n">length</span><span class="o">--</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">default</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">                <span class="n">opsize</span> <span class="o">=</span> <span class="o">*</span><span class="n">ptr</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="k">if</span> <span class="p">(</span><span class="n">opsize</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span>     <span class="cm">/* &#34;silly options&#34; */</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="k">if</span> <span class="p">(</span><span class="n">opsize</span> <span class="o">&gt;</span> <span class="n">length</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>    <span class="cm">/* don&#39;t parse partial options */</span>
+</span></span><span class="line"><span class="cl">                <span class="k">if</span> <span class="p">((</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_UCLOUD</span> <span class="o">||</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_COMPAT</span> <span class="o">||</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_AKAMAI</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">                    <span class="n">opsize</span> <span class="o">==</span> <span class="n">TCPOLEN_TOA</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="nf">memcpy</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tdata</span><span class="p">,</span> <span class="n">ptr</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">tdata</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">                    <span class="c1">//TOA_DBG(&#34;find toa data: ip = %u.%u.%u.%u, port = %u\n&#34;, NIPQUAD(tdata.ip),
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                        <span class="c1">//ntohs(tdata.port));
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                    <span class="nf">memcpy</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ret_ptr</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">tdata</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ret_ptr</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">                    <span class="c1">//TOA_DBG(&#34;coded toa data: %p\n&#34;, ret_ptr);
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                    <span class="k">return</span> <span class="n">ret_ptr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="p">}</span>
+</span></span><span class="line"><span class="cl">                <span class="n">ptr</span> <span class="o">+=</span> <span class="n">opsize</span> <span class="o">-</span> <span class="mi">2</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="n">length</span> <span class="o">-=</span> <span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个函数的处理逻辑：</p>
+<ol>
+<li>读取 <code>opcode</code>，并判断 <code>opcode</code> 的值。</li>
+<li>读取 <code>opsize</code>，并判断 <code>opsize</code> 的值是否合理。</li>
+<li>判断 <code>opcode</code> 和 <code>opsize</code> 是否为预期的 TOA option。</li>
+<li>调整 <code>ptr</code> 和 <code>length</code>。</li>
+</ol>
+<p>看着不难呀，直接抄一下吧。</p>
+<h2 id="ebpf-读取-toa">eBPF 读取 TOA</h2>
+<p>eBPF 读取 TOA 的代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__read_toa_3</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span> <span class="o">*</span><span class="n">tcp</span><span class="p">,</span> <span class="k">struct</span> <span class="n">toa_data</span> <span class="o">*</span><span class="n">toa</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">buff</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">length</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">length</span>  <span class="o">=</span> <span class="nf">BPF_CORE_READ_BITFIELD_PROBED</span><span class="p">(</span><span class="n">tcp</span><span class="p">,</span> <span class="n">doff</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">length</span> <span class="o">-=</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">buff</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">tcp</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">while</span> <span class="p">(</span><span class="n">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__u8</span> <span class="n">opcode</span><span class="p">,</span> <span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">bpf_probe_read_kernel</span><span class="p">(</span><span class="o">&amp;</span><span class="n">opcode</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">opcode</span><span class="p">),</span> <span class="n">buff</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_EOL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_NOP</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* Ref: RFC 793 section 3.1 */</span>
+</span></span><span class="line"><span class="cl">            <span class="n">buff</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">length</span><span class="o">--</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">bpf_probe_read_kernel</span><span class="p">(</span><span class="o">&amp;</span><span class="n">opsize</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">opsize</span><span class="p">),</span> <span class="n">buff</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opsize</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span>             <span class="cm">/* &#34;silly options&#34; */</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opsize</span> <span class="o">&gt;</span> <span class="n">length</span><span class="p">)</span>        <span class="cm">/* don&#39;t parse partial options */</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_COMPAT</span> <span class="o">||</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_AKAMAI</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">opsize</span> <span class="o">==</span> <span class="n">TCPOLEN_TOA</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="k">if</span> <span class="p">(</span><span class="nf">bpf_probe_read_kernel</span><span class="p">(</span><span class="n">toa</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">toa</span><span class="p">),</span> <span class="n">buff</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">buff</span> <span class="o">+=</span> <span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">length</span> <span class="o">-=</span> <span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>基本照抄了内核模块的逻辑，有几个不一样的地方：</p>
+<ol>
+<li><code>bpf_probe_read_kernel()</code> 读取 <code>opcode</code> 和 <code>opsize</code>。</li>
+<li><code>bpf_probe_read_kernel()</code> 读取 <code>toa</code>。</li>
+</ol>
+<p>可以看出，每一次读取 option 时，至少需要两次 <code>bpf_probe_read_kernel()</code>。</p>
+<p>有没有办法减少 <code>bpf_probe_read_kernel()</code> 的次数呢？</p>
+<h2 id="ebpf-读取-toa-优化">eBPF 读取 TOA 优化</h2>
+<p>优化后的代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__read_toa_4</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span> <span class="o">*</span><span class="n">tcp</span><span class="p">,</span> <span class="k">struct</span> <span class="n">toa_data</span> <span class="o">*</span><span class="n">toa</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">buff</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">length</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">length</span>  <span class="o">=</span> <span class="nf">BPF_CORE_READ_BITFIELD_PROBED</span><span class="p">(</span><span class="n">tcp</span><span class="p">,</span> <span class="n">doff</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">length</span> <span class="o">-=</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">buff</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">tcp</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">while</span> <span class="p">(</span><span class="n">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">__u8</span> <span class="n">opcode</span><span class="p">,</span> <span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* bpf_probe_read_kernel() expects to read a toa option. If it fails to
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * read it, it won&#39;t be a toa option; then return false because there&#39;s
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * not enough data to read as a toa option.
+</span></span></span><span class="line"><span class="cl"><span class="cm">         */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">bpf_probe_read_kernel</span><span class="p">(</span><span class="n">toa</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">toa</span><span class="p">),</span> <span class="n">buff</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">opcode</span> <span class="o">=</span> <span class="n">toa</span><span class="o">-&gt;</span><span class="n">opcode</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">opsize</span> <span class="o">=</span> <span class="n">toa</span><span class="o">-&gt;</span><span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_EOL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_NOP</span><span class="p">)</span> <span class="p">{</span> <span class="cm">/* Ref: RFC 793 section 3.1 */</span>
+</span></span><span class="line"><span class="cl">            <span class="n">buff</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">length</span><span class="o">--</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opsize</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span>             <span class="cm">/* &#34;silly options&#34; */</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opsize</span> <span class="o">&gt;</span> <span class="n">length</span><span class="p">)</span>        <span class="cm">/* don&#39;t parse partial options */</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_COMPAT</span> <span class="o">||</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_AKAMAI</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">opsize</span> <span class="o">==</span> <span class="n">TCPOLEN_TOA</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">buff</span> <span class="o">+=</span> <span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">length</span> <span class="o">-=</span> <span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>优化的思路是：一次性读取整个 option，然后再判断是否为 TOA option。</p>
+<ol>
+<li>如果读取失败、异常的 option，直接返回 <code>false</code>。</li>
+<li>如果是 TOA option，则直接返回 <code>true</code>。</li>
+<li>如果不是 TOA option，则继续读取下一个 option。</li>
+</ol>
+<h2 id="ebpf-读取-toa-优化-2">eBPF 读取 TOA 优化 2</h2>
+<p>将 <code>while</code> 循环重构为迭代器：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">toa_prober</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">toa_data</span> <span class="o">*</span><span class="n">toa</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">length</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">offset</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__probe_toa</span><span class="p">(</span><span class="k">struct</span> <span class="n">toa_prober</span> <span class="o">*</span><span class="n">prober</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">buff</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">prober</span><span class="o">-&gt;</span><span class="n">offset</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">prober</span><span class="o">-&gt;</span><span class="n">length</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ret</span> <span class="o">=</span> <span class="nf">bpf_probe_read_kernel</span><span class="p">(</span><span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="p">),</span> <span class="n">buff</span> <span class="o">+</span> <span class="n">prober</span><span class="o">-&gt;</span><span class="n">offset</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="o">-&gt;</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_EOL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="o">-&gt;</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_NOP</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">prober</span><span class="o">-&gt;</span><span class="n">offset</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="o">-&gt;</span><span class="n">opsize</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span>                                <span class="cm">/* &#34;silly options&#34; */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">prober</span><span class="o">-&gt;</span><span class="n">offset</span> <span class="o">+</span> <span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="o">-&gt;</span><span class="n">opsize</span> <span class="o">&gt;</span> <span class="n">prober</span><span class="o">-&gt;</span><span class="n">length</span><span class="p">)</span>  <span class="cm">/* don&#39;t parse partial options */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="o">-&gt;</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_COMPAT</span> <span class="o">||</span> <span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="o">-&gt;</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_AKAMAI</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="o">-&gt;</span><span class="n">opsize</span> <span class="o">==</span> <span class="n">TCPOLEN_TOA</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">prober</span><span class="o">-&gt;</span><span class="n">offset</span> <span class="o">+=</span> <span class="n">prober</span><span class="o">-&gt;</span><span class="n">toa</span><span class="o">-&gt;</span><span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__read_toa_2</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span> <span class="o">*</span><span class="n">tcp</span><span class="p">,</span> <span class="k">struct</span> <span class="n">toa_data</span> <span class="o">*</span><span class="n">toa</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">buff</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">tcp</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">toa_prober</span> <span class="n">prober</span> <span class="o">=</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="p">.</span><span class="n">toa</span> <span class="o">=</span> <span class="n">toa</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">        <span class="p">.</span><span class="n">length</span> <span class="o">=</span> <span class="p">(</span><span class="nf">BPF_CORE_READ_BITFIELD_PROBED</span><span class="p">(</span><span class="n">tcp</span><span class="p">,</span> <span class="n">doff</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">        <span class="p">.</span><span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">    <span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Tell compiler and verifier that this for loop tries 32 times at most. */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">MAX_TCPOPT_LEN</span> <span class="o">-</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">toa</span><span class="p">);</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="nf">__probe_toa</span><span class="p">(</span><span class="o">&amp;</span><span class="n">prober</span><span class="p">,</span> <span class="n">buff</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>优化思路：</p>
+<ol>
+<li>将 <code>while</code> 循环转为有限次数的 <code>for</code> 循环。</li>
+<li>抽象 <code>struct toa_prober</code> 作为迭代器。</li>
+<li>每次循环都使用 <code>bpf_probe_read_kernel()</code> 读取整个 option。</li>
+</ol>
+<p>有没有更加极致的优化呢？</p>
+<h2 id="ebpf-读取-toa-优化-3">eBPF 读取 TOA 优化 3</h2>
+<p>毕竟 <code>bpf_probe_read_kernel()</code> 调用是有代价的，能尽量减少调用次数，就尽量减少调用次数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">bool</span>
+</span></span><span class="line"><span class="cl"><span class="nf">__read_toa</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span> <span class="o">*</span><span class="n">tcp</span><span class="p">,</span> <span class="k">struct</span> <span class="n">toa_data</span> <span class="o">*</span><span class="n">toa</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u8</span> <span class="n">buff</span><span class="p">[</span><span class="n">MAX_TCPOPT_LEN</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">length</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">length</span> <span class="o">=</span> <span class="nf">BPF_CORE_READ_BITFIELD_PROBED</span><span class="p">(</span><span class="n">tcp</span><span class="p">,</span> <span class="n">doff</span><span class="p">)</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">length</span> <span class="o">-=</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">bpf_probe_read_kernel</span><span class="p">(</span><span class="n">buff</span><span class="p">,</span> <span class="n">MAX_TCPOPT_LEN</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="n">tcp</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">MAX_TCPOPT_LEN</span> <span class="o">-</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">toa</span><span class="p">);</span> <span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="n">length</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">barrier_var</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="n">MAX_TCPOPT_LEN</span> <span class="o">-</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">toa</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">__u8</span> <span class="n">opcode</span> <span class="o">=</span> <span class="n">buff</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_EOL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_NOP</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* i becomes variable because of i++ */</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* it&#39;s necessary to check range of i again, or
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * invalid variable-offset read from stack R0 var_off=(0x0; 0x1ff) off=-40 size=1
+</span></span></span><span class="line"><span class="cl"><span class="cm">         */</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">barrier_var</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="n">MAX_TCPOPT_LEN</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">__u8</span> <span class="n">opsize</span> <span class="o">=</span> <span class="n">buff</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">opsize</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">((</span><span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_COMPAT</span> <span class="o">||</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">TCPOPT_TOA_AKAMAI</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">opsize</span> <span class="o">==</span> <span class="n">TCPOLEN_TOA</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="cm">/* it&#39;s necessary to check narrow range of i, or
+</span></span></span><span class="line"><span class="cl"><span class="cm">             * invalid variable-offset read from stack R0 var_off=(0x0; 0x1ff) off=-40 size=1
+</span></span></span><span class="line"><span class="cl"><span class="cm">             */</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">barrier_var</span><span class="p">(</span><span class="n">i</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="n">MAX_TCPOPT_LEN</span> <span class="o">-</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">toa</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="cm">/* it fails because of misalign:
+</span></span></span><span class="line"><span class="cl"><span class="cm">             * misaligned stack access off (0x10; 0xf)+-40+0 size 8
+</span></span></span><span class="line"><span class="cl"><span class="cm">             */</span>
+</span></span><span class="line"><span class="cl">            <span class="cm">/* *(__u64 *) toa = *(__u64 *) (buff + i); */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">            <span class="nf">bpf_probe_read_kernel</span><span class="p">(</span><span class="n">toa</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">toa</span><span class="p">),</span> <span class="n">buff</span> <span class="o">+</span> <span class="n">i</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">i</span> <span class="o">+=</span> <span class="n">opsize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>优化思路：</p>
+<ol>
+<li>一次性读取 40 字节的包含所有 option 的数据到 bpf 栈上；只要是内核空间的内存地址，一般不会读取失败。</li>
+<li>按需解析 bpf 栈上的数据。</li>
+<li>其中多次使用 <code>barrier_var()</code> 和 <code>i</code> 的范围判断，是为了避免 verifier 的报错。</li>
+<li>最后，使用 <code>bpf_probe_read_kernel()</code> 读取 TOA option，是为了避免 verifier 的 &ldquo;misaligned stack access&rdquo; 的报错。</li>
+</ol>
+<p>最终，最多只需要 2 次 <code>bpf_probe_read_kernel()</code>，就能读取到 TOA option。</p>
+<h2 id="总结">总结</h2>
+<p>eBPF 读取 TOA 的 4 种方式：</p>
+<ol>
+<li>方式 1: 按需调用 <code>bpf_probe_read_kernel()</code> 去读取内存，但 <code>bpf_probe_read_kernel()</code> 的调用次数较多。</li>
+<li>方式 2: 每次调用 <code>bpf_probe_read_kernel()</code> 读取整个 TOA option，减少 <code>bpf_probe_read_kernel()</code> 的调用次数。</li>
+<li>方式 3: 方式 2 的迭代器版本。</li>
+<li>方式 4: 一次性读取所有 option，然后按需解析。</li>
+</ol>
+<p>这 4 种方式，都通过了 verifier 校验。</p>
+<p>完整的源代码：<a href="https://github.com/Asphaltt/learn-by-example/blob/main/ebpf/toa/toa.c">learn-by-example toa.c</a>。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-08-11
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/toa/">toa</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-125-xdp-crc/">
+        <span class="next-text nav-default">eBPF Talk: 手撕 verifier log 一例</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
