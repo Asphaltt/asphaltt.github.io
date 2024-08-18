@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-08-18T21:23:42+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-08-18T21:59:58+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-98-contribute-pwru/">eBPF Talk: 给 pwru 添砖加瓦</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-15 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1133 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      近来，没怎么学习 eBPF，就给 pwru 做下贡献。 Replace objs with collection Support tracing tc-bpf Support tracking skb clones Accelerate attaching/detaching kprobes WIP Replace objs with collection 该 PR 重构了一下 pwru 中管理 bpf 对象的代码，将 bpf 对象的管理从 struct 改成 c
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-98-contribute-pwru/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-97-analyse-xdp/">eBPF Talk: 手撕 XDP 程序</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-76-introduce-bpf_link/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-86-tracepoint-__data_loc/">eBPF Talk: tracepoint __data_loc</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-04-05 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 529 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      书接上回：eBPF Talk: trace tracepoint 程序，本文将介绍在 bpf 里如何处理 tracepoint 中 __data_loc 描述的字段。 关于 tracepoint __data_loc 的资料超级少，网络上能找到的资料如下： tracepoint arguments are missing __data_loc char strings tracepoint: Support __data_loc fields
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-86-tracepoint-__data_loc/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
