@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 18 Aug 2024 21:59:58 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 25 Aug 2024 22:26:28 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: ringbuf 经验分享</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-129-ringbuf/</link>
+      <pubDate>Sun, 25 Aug 2024 22:26:28 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-129-ringbuf/</guid>
+      <description>最近在使用 ringbuf 的 bpf_ringbuf_reserve() 时踩了一个坑，记录一下。 ringbuf 简介 ringbuf 是 BPF 中能够取代 PERF_EVENT_ARRAY 的特殊 map 类型，提供了类似的 helpers: bpf_ringbuf_output(): 将数据写入 ringbuf。 bpf_ringbuf_reserve(): 为数据预留空间。 bpf_ringbuf_submit():</description>
+    </item>
     <item>
       <title>eBPF Talk: 给 x86 BPF JIT 做下优化</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-128-improve-x86-bpf-jit/</link>

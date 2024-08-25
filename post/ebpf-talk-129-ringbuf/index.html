@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: ringbuf 经验分享 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="最近在使用 ringbuf 的 bpf_ringbuf_reserve() 时踩了一个坑，记录一下。 ringbuf 简介 ringbuf 是 BPF 中能够取代 PERF_EVENT_ARRAY 的特殊 map 类型，提供了类似的 helpers: bpf_ringbuf_output(): 将数据写入 ringbuf。 bpf_ringbuf_reserve(): 为数据预留空间。 bpf_ringbuf_submit():" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-129-ringbuf/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: ringbuf 经验分享" />
+<meta property="og:description" content="最近在使用 ringbuf 的 bpf_ringbuf_reserve() 时踩了一个坑，记录一下。 ringbuf 简介 ringbuf 是 BPF 中能够取代 PERF_EVENT_ARRAY 的特殊 map 类型，提供了类似的 helpers: bpf_ringbuf_output(): 将数据写入 ringbuf。 bpf_ringbuf_reserve(): 为数据预留空间。 bpf_ringbuf_submit():" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-129-ringbuf/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-08-25T22:26:28+08:00" />
+<meta property="article:modified_time" content="2024-08-25T22:26:28+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: ringbuf 经验分享">
+  <meta itemprop="description" content="最近在使用 ringbuf 的 bpf_ringbuf_reserve() 时踩了一个坑，记录一下。 ringbuf 简介 ringbuf 是 BPF 中能够取代 PERF_EVENT_ARRAY 的特殊 map 类型，提供了类似的 helpers: bpf_ringbuf_output(): 将数据写入 ringbuf。 bpf_ringbuf_reserve(): 为数据预留空间。 bpf_ringbuf_submit():">
+  <meta itemprop="datePublished" content="2024-08-25T22:26:28+08:00">
+  <meta itemprop="dateModified" content="2024-08-25T22:26:28+08:00">
+  <meta itemprop="wordCount" content="1114">
+  <meta itemprop="keywords" content="EBPF,Ringbuf"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: ringbuf 经验分享"/>
+<meta name="twitter:description" content="最近在使用 ringbuf 的 bpf_ringbuf_reserve() 时踩了一个坑，记录一下。 ringbuf 简介 ringbuf 是 BPF 中能够取代 PERF_EVENT_ARRAY 的特殊 map 类型，提供了类似的 helpers: bpf_ringbuf_output(): 将数据写入 ringbuf。 bpf_ringbuf_reserve(): 为数据预留空间。 bpf_ringbuf_submit():"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: ringbuf 经验分享</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-08-25 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1114 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#ringbuf-简介">ringbuf 简介</a></li>
+        <li><a href="#bpf_ringbuf_reserve-有锁吗"><code>bpf_ringbuf_reserve()</code> 有锁吗？</a></li>
+        <li><a href="#bpf_ringbuf_query-bpf_rb_avail_data"><code>bpf_ringbuf_query()</code> <strong>BPF_RB_AVAIL_DATA</strong></a></li>
+        <li><a href="#ringbuf-的大小要求">ringbuf 的大小要求</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>最近在使用 ringbuf 的 <code>bpf_ringbuf_reserve()</code> 时踩了一个坑，记录一下。</p>
+<h2 id="ringbuf-简介">ringbuf 简介</h2>
+<p>ringbuf 是 BPF 中能够取代 <strong>PERF_EVENT_ARRAY</strong> 的特殊 map 类型，提供了类似的 helpers:</p>
+<ul>
+<li>
+<p><code>bpf_ringbuf_output()</code>: 将数据写入 ringbuf。</p>
+</li>
+<li>
+<p><code>bpf_ringbuf_reserve()</code>: 为数据预留空间。</p>
+</li>
+<li>
+<p><code>bpf_ringbuf_submit()</code>: 提交预留的数据。</p>
+</li>
+<li>
+<p><code>bpf_ringbuf_discard()</code>: 丢弃预留的数据。</p>
+</li>
+<li>
+<p><a href="https://github.com/torvalds/linux/commit/457f44363a8894135c85b7a9afd2bd8196db24ab">bpf: Implement BPF ring buffer and verifier support for it</a> since 5.8 kernel.</p>
+</li>
+</ul>
+<p>根据该 commit，推荐的用法是 <code>bpf_ringbuf_reserve()</code> 加 <code>bpf_ringbuf_submit()</code>/<code>bpf_ringbuf_discard()</code>，而不是 <code>bpf_ringbuf_output()</code>；因为 <code>bpf_ringbuf_output()</code> 需要拷贝数据。</p>
+<h2 id="bpf_ringbuf_reserve-有锁吗"><code>bpf_ringbuf_reserve()</code> 有锁吗？</h2>
+<p>答案：<strong>有</strong>。</p>
+<p>直接翻看 <code>bpf_ringbuf_reserve()</code> 的源码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// https://github.com/torvalds/linux/blob/5be63fc19fcaa4c236b307420483578a56986a37/kernel/bpf/ringbuf.c#L408
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">void</span> <span class="o">*</span><span class="nf">__bpf_ringbuf_reserve</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_ringbuf</span> <span class="o">*</span><span class="n">rb</span><span class="p">,</span> <span class="n">u64</span> <span class="n">size</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="n">cons_pos</span> <span class="o">=</span> <span class="nf">smp_load_acquire</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rb</span><span class="o">-&gt;</span><span class="n">consumer_pos</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">in_nmi</span><span class="p">())</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nf">spin_trylock_irqsave</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rb</span><span class="o">-&gt;</span><span class="n">spinlock</span><span class="p">,</span> <span class="n">flags</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">spin_lock_irqsave</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rb</span><span class="o">-&gt;</span><span class="n">spinlock</span><span class="p">,</span> <span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">pend_pos</span> <span class="o">=</span> <span class="n">rb</span><span class="o">-&gt;</span><span class="n">pending_pos</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">prod_pos</span> <span class="o">=</span> <span class="n">rb</span><span class="o">-&gt;</span><span class="n">producer_pos</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">new_prod_pos</span> <span class="o">=</span> <span class="n">prod_pos</span> <span class="o">+</span> <span class="n">len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* pairs with consumer&#39;s smp_load_acquire() */</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">smp_store_release</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rb</span><span class="o">-&gt;</span><span class="n">producer_pos</span><span class="p">,</span> <span class="n">new_prod_pos</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">spin_unlock_irqrestore</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rb</span><span class="o">-&gt;</span><span class="n">spinlock</span><span class="p">,</span> <span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="n">hdr</span> <span class="o">+</span> <span class="n">BPF_RINGBUF_HDR_SZ</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_CALL_3</span><span class="p">(</span><span class="n">bpf_ringbuf_reserve</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="p">,</span> <span class="n">map</span><span class="p">,</span> <span class="n">u64</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">u64</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_ringbuf_map</span> <span class="o">*</span><span class="n">rb_map</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="n">flags</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">rb_map</span> <span class="o">=</span> <span class="nf">container_of</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_ringbuf_map</span><span class="p">,</span> <span class="n">map</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="nf">__bpf_ringbuf_reserve</span><span class="p">(</span><span class="n">rb_map</span><span class="o">-&gt;</span><span class="n">rb</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在写 bpf 代码时，没留意该锁对性能的影响，导致性能变得很差。示例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">record_event</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="kt">event_t</span> <span class="o">*</span><span class="n">event</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">event</span> <span class="o">=</span> <span class="nf">bpf_ringbuf_reserve</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ringbuf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">event</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">event</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">event</span><span class="o">-&gt;</span><span class="n">pkt_len</span> <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data_end</span> <span class="o">-</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">event</span><span class="o">-&gt;</span><span class="n">pkt_len</span> <span class="o">&lt;=</span> <span class="n">MTU</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">__fill_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">xdp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_ringbuf_submit</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ringbuf</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>对于这种情况，需要将 <code>bpf_ringbuf_reserve()</code> 调整到 <code>if</code> 语句之后，避免不必要的锁操作：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">record_event</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="kt">event_t</span> <span class="o">*</span><span class="n">event</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">pkt_len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">pkt_len</span> <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data_end</span> <span class="o">-</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">pkt_len</span> <span class="o">&lt;=</span> <span class="n">MTU</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">event</span> <span class="o">=</span> <span class="nf">bpf_ringbuf_reserve</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ringbuf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">event</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">event</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">event</span><span class="o">-&gt;</span><span class="n">pkt_len</span> <span class="o">=</span> <span class="n">pkt_len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__fill_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">xdp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_ringbuf_submit</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ringbuf</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>有没有更高效率的使用办法呢？</p>
+<h2 id="bpf_ringbuf_query-bpf_rb_avail_data"><code>bpf_ringbuf_query()</code> <strong>BPF_RB_AVAIL_DATA</strong></h2>
+<p>查看 <code>bpf_ringbuf_query()</code> 的 helper 文档：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * bpf_ringbuf_query
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  Query various characteristics of provided ring buffer. What
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  exactly is queries is determined by *flags*:
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  * **BPF_RB_AVAIL_DATA**: Amount of data not yet consumed.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  * **BPF_RB_RING_SIZE**: The size of ring buffer.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  * **BPF_RB_CONS_POS**: Consumer position (can wrap around).
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  * **BPF_RB_PROD_POS**: Producer(s) position (can wrap around).
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  Data returned is just a momentary snapshot of actual values
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  and could be inaccurate, so this facility should be used to
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  power heuristics and for reporting, not to make 100% correct
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  calculation.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * Returns
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  Requested value, or 0, if *flags* are not recognized.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="nf">__u64</span> <span class="p">(</span><span class="o">*</span><span class="n">bpf_ringbuf_query</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ringbuf</span><span class="p">,</span> <span class="n">__u64</span> <span class="n">flags</span><span class="p">)</span> <span class="o">=</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span> <span class="mi">134</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以通过 <code>bpf_ringbuf_query()</code> 获取 ringbuf 未消费的数据量，从而推算出可用来塞数据的空间大小。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">record_event</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="kt">event_t</span> <span class="o">*</span><span class="n">event</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u64</span> <span class="n">avail_data</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">pkt_len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">pkt_len</span> <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data_end</span> <span class="o">-</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">pkt_len</span> <span class="o">&lt;=</span> <span class="n">MTU</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">avail_data</span> <span class="o">=</span> <span class="nf">bpf_ringbuf_query</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ringbuf</span><span class="p">,</span> <span class="n">BPF_RB_AVAIL_DATA</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">RINGBUF_SIZE</span> <span class="o">-</span> <span class="n">avail_data</span> <span class="o">&lt;</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">event</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">event</span> <span class="o">=</span> <span class="nf">bpf_ringbuf_reserve</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ringbuf</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">event</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">event</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">event</span><span class="o">-&gt;</span><span class="n">pkt_len</span> <span class="o">=</span> <span class="n">pkt_len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__fill_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">xdp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_ringbuf_submit</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ringbuf</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>不过，查询 <strong>BPF_RB_AVAIL_DATA</strong> 得付出一点代价：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// https://github.com/torvalds/linux/blob/5be63fc19fcaa4c236b307420483578a56986a37/kernel/bpf/ringbuf.c#L299
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="nf">ringbuf_avail_data_sz</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_ringbuf</span> <span class="o">*</span><span class="n">rb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">cons_pos</span><span class="p">,</span> <span class="n">prod_pos</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">cons_pos</span> <span class="o">=</span> <span class="nf">smp_load_acquire</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rb</span><span class="o">-&gt;</span><span class="n">consumer_pos</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">prod_pos</span> <span class="o">=</span> <span class="nf">smp_load_acquire</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rb</span><span class="o">-&gt;</span><span class="n">producer_pos</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">prod_pos</span> <span class="o">-</span> <span class="n">cons_pos</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_CALL_2</span><span class="p">(</span><span class="n">bpf_ringbuf_query</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="p">,</span> <span class="n">map</span><span class="p">,</span> <span class="n">u64</span><span class="p">,</span> <span class="n">flags</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_ringbuf</span> <span class="o">*</span><span class="n">rb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">rb</span> <span class="o">=</span> <span class="nf">container_of</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_ringbuf_map</span><span class="p">,</span> <span class="n">map</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">rb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">switch</span> <span class="p">(</span><span class="n">flags</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_RB_AVAIL_DATA</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">ringbuf_avail_data_sz</span><span class="p">(</span><span class="n">rb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_RB_RING_SIZE</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">ringbuf_total_data_sz</span><span class="p">(</span><span class="n">rb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_RB_CONS_POS</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">smp_load_acquire</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rb</span><span class="o">-&gt;</span><span class="n">consumer_pos</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="nl">BPF_RB_PROD_POS</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">smp_load_acquire</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rb</span><span class="o">-&gt;</span><span class="n">producer_pos</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">default</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中的 <code>smp_load_acquire()</code> 涉及到内存屏障，会有一定的开销。</p>
+<p>参考：<a href="https://www.kernel.org/doc/Documentation/memory-barriers.txt">LINUX KERNEL MEMORY BARRIERS</a>.</p>
+<h2 id="ringbuf-的大小要求">ringbuf 的大小要求</h2>
+<p>在使用 ringbuf 时，<code>max_entries</code> 必须是 2 的幂次方、而且还要求是 <strong>PAGE_SIZE</strong> 的倍数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// https://github.com/torvalds/linux/blob/5be63fc19fcaa4c236b307420483578a56986a37/kernel/bpf/ringbuf.c#L189
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="nf">ringbuf_map_alloc</span><span class="p">(</span><span class="k">union</span> <span class="n">bpf_attr</span> <span class="o">*</span><span class="n">attr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_ringbuf_map</span> <span class="o">*</span><span class="n">rb_map</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">attr</span><span class="o">-&gt;</span><span class="n">map_flags</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">RINGBUF_CREATE_FLAG_MASK</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">ERR_PTR</span><span class="p">(</span><span class="o">-</span><span class="n">EINVAL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">attr</span><span class="o">-&gt;</span><span class="n">key_size</span> <span class="o">||</span> <span class="n">attr</span><span class="o">-&gt;</span><span class="n">value_size</span> <span class="o">||</span>
+</span></span><span class="line"><span class="cl">        <span class="o">!</span><span class="nf">is_power_of_2</span><span class="p">(</span><span class="n">attr</span><span class="o">-&gt;</span><span class="n">max_entries</span><span class="p">)</span> <span class="o">||</span>
+</span></span><span class="line"><span class="cl">        <span class="o">!</span><span class="nf">PAGE_ALIGNED</span><span class="p">(</span><span class="n">attr</span><span class="o">-&gt;</span><span class="n">max_entries</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">ERR_PTR</span><span class="p">(</span><span class="o">-</span><span class="n">EINVAL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">rb_map</span> <span class="o">=</span> <span class="nf">bpf_map_area_alloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">rb_map</span><span class="p">),</span> <span class="n">NUMA_NO_NODE</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">rb_map</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">ERR_PTR</span><span class="p">(</span><span class="o">-</span><span class="n">ENOMEM</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_map_init_from_attr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">rb_map</span><span class="o">-&gt;</span><span class="n">map</span><span class="p">,</span> <span class="n">attr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">rb_map</span><span class="o">-&gt;</span><span class="n">rb</span> <span class="o">=</span> <span class="nf">bpf_ringbuf_alloc</span><span class="p">(</span><span class="n">attr</span><span class="o">-&gt;</span><span class="n">max_entries</span><span class="p">,</span> <span class="n">rb_map</span><span class="o">-&gt;</span><span class="n">map</span><span class="p">.</span><span class="n">numa_node</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">rb_map</span><span class="o">-&gt;</span><span class="n">rb</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_map_area_free</span><span class="p">(</span><span class="n">rb_map</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">ERR_PTR</span><span class="p">(</span><span class="o">-</span><span class="n">ENOMEM</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="o">&amp;</span><span class="n">rb_map</span><span class="o">-&gt;</span><span class="n">map</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="总结">总结</h2>
+<p>记住以下 3 点经验：</p>
+<ol start="0">
+<li>使用 <code>bpf_ringbuf_reserve()</code> 时，要注意锁的开销。</li>
+<li>可以通过 <code>bpf_ringbuf_query()</code> 查询 ringbuf 的未消费数据量，从而推算出可以用来塞数据的空间大小。</li>
+<li>ringbuf 的 <code>max_entries</code> 必须是 2 的幂次方、而且还要求是 <strong>PAGE_SIZE</strong> 的倍数。</li>
+</ol>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-08-25
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/ringbuf/">ringbuf</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-128-improve-x86-bpf-jit/">
+        <span class="next-text nav-default">eBPF Talk: 给 x86 BPF JIT 做下优化</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
