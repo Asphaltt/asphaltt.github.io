@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 21 Jul 2024 22:14:11 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 01 Sep 2024 21:25:01 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/tags/tailcall/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 又修了一个 tailcall 有关的 BUG</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-130-tailcall-and-freplace/</link>
+      <pubDate>Sun, 01 Sep 2024 21:25:01 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-130-tailcall-and-freplace/</guid>
+      <description>在 eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug 之后，再下一城，再次修复与 tailcall 有关的一个 BUG： bpf: Fix updating attached freplace prog to prog_array map BUG 危害 这个 BUG 会导致内核 panic： 1 2 3</description>
+    </item>
     <item>
       <title>eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-124-tailcall-hierarchy/</link>
