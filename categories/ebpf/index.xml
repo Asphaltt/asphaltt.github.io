@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 01 Sep 2024 21:25:01 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 08 Sep 2024 16:16:23 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 改进 XDP 解析 TCP options</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-131-improve-tcpoptions/</link>
+      <pubDate>Sun, 08 Sep 2024 16:16:23 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-131-improve-tcpoptions/</guid>
+      <description>在 eBPF Talk: XDP 解析所有 TCP options 里，已经做到了使用 XDP 解析所有 TCP options 的功能。 不过，其中使用了 percpu map 在 XDP 和 freplace 之间传递 offset；那么，是否有办法将该 percpu map 优化掉</description>
+    </item>
     <item>
       <title>eBPF Talk: 又修了一个 tailcall 有关的 BUG</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-130-tailcall-and-freplace/</link>

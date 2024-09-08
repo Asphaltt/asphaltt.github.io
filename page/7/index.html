@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-09-01T21:25:01+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-09-08T16:16:23+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-70-bpf-prog-stats/">eBPF Talk: bpf prog stats</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 714 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      根据以下两个 commit，可以看到，自 5.1 内核起，bpf prog 可以统计自己的运行情况了。 bpf: enable program stats 5.1 kernel. bpf: Sharing bpf runtime stats with BPF_ENABLE_STATS 5.8 kernel. bpf: Improve program stats run-time calculation 6.x kernel. stats 例子 以 bpf2bpf demo
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-70-bpf-prog-stats/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-69-packet-range-check/">eBPF Talk: packet range check</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-61-cfg-check-in-3.18-kernel/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-60-introduce-spinlock/">eBPF Talk: spinlock 详解</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-04-01 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1638 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      此 spinlock 指的是 eBPF 代码里使用的 struct bpf_spin_lock。 bpf: introduce bpf_spin_lock since kernel 5.1 从 eBPF Talk: 正确地进行统计 里学习到可以使用 spinlock 对统计进行保护。 spinlock 的用法就是那么简单
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-60-introduce-spinlock/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
