@@ -7,13 +7,48 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 08 Sep 2024 16:16:23 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 13 Oct 2024 22:59:44 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Cleanup</title>
+      <link>https://asphaltt.github.io/tags/cleanup/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://asphaltt.github.io/tags/cleanup/</guid>
+      <description></description>
+    </item>
     <item>
       <title>EBPF</title>
       <link>https://asphaltt.github.io/tags/ebpf/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       <guid>https://asphaltt.github.io/tags/ebpf/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Guard</title>
+      <link>https://asphaltt.github.io/tags/guard/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://asphaltt.github.io/tags/guard/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Perfevent</title>
+      <link>https://asphaltt.github.io/tags/perfevent/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://asphaltt.github.io/tags/perfevent/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Ringbuf</title>
+      <link>https://asphaltt.github.io/tags/ringbuf/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://asphaltt.github.io/tags/ringbuf/</guid>
+      <description></description>
+    </item>
+    <item>
+      <title>Spinlock</title>
+      <link>https://asphaltt.github.io/tags/spinlock/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://asphaltt.github.io/tags/spinlock/</guid>
       <description></description>
     </item>
     <item>
@@ -42,13 +77,6 @@
       <link>https://asphaltt.github.io/tags/tailcall/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       <guid>https://asphaltt.github.io/tags/tailcall/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Ringbuf</title>
-      <link>https://asphaltt.github.io/tags/ringbuf/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>https://asphaltt.github.io/tags/ringbuf/</guid>
       <description></description>
     </item>
     <item>
@@ -455,13 +483,6 @@
       <link>https://asphaltt.github.io/tags/bpf-map/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       <guid>https://asphaltt.github.io/tags/bpf-map/</guid>
-      <description></description>
-    </item>
-    <item>
-      <title>Spinlock</title>
-      <link>https://asphaltt.github.io/tags/spinlock/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      <guid>https://asphaltt.github.io/tags/spinlock/</guid>
       <description></description>
     </item>
     <item>

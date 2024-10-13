@@ -1,27 +1,20 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Spinlock on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/spinlock/</link>
-    <description>Recent content in Spinlock on LeonHwang&#39;s Blogs</description>
+    <title>Guard on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/guard/</link>
+    <description>Recent content in Guard on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 13 Oct 2024 22:59:44 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/spinlock/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://asphaltt.github.io/tags/guard/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: guard spinlock</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-133-guard-spinlock/</link>
       <pubDate>Sun, 13 Oct 2024 22:59:44 +0800</pubDate>
       <guid>https://asphaltt.github.io/post/ebpf-talk-133-guard-spinlock/</guid>
       <description>守护 spinlock。 eBPF Talk: spinlock 详解 当使用 spinlock 进行统计时 eBPF Talk: 正确地进行统计，必须要使用 bpf_spin_lock() 和 bpf_spin_unlock() 来保护 spinlock 变量： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 struct xdp_stat_item {</description>
-    </item>
-    <item>
-      <title>eBPF Talk: spinlock 详解</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-60-introduce-spinlock/</link>
-      <pubDate>Mon, 01 Apr 2024 22:49:57 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-60-introduce-spinlock/</guid>
-      <description>此 spinlock 指的是 eBPF 代码里使用的 struct bpf_spin_lock。 bpf: introduce bpf_spin_lock since kernel 5.1 从 eBPF Talk: 正确地进行统计 里学习到可以使用 spinlock 对统计进行保护。 spinlock 的用法就是那么简单</description>
     </item>
   </channel>
 </rss>
