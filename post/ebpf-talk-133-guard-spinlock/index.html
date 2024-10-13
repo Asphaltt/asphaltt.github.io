@@ -52,7 +52,7 @@
   <meta itemprop="description" content="守护 spinlock。 eBPF Talk: spinlock 详解 当使用 spinlock 进行统计时 eBPF Talk: 正确地进行统计，必须要使用 bpf_spin_lock() 和 bpf_spin_unlock() 来保护 spinlock 变量： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 struct xdp_stat_item {">
   <meta itemprop="datePublished" content="2024-10-13T22:59:44+08:00">
   <meta itemprop="dateModified" content="2024-10-13T22:59:44+08:00">
-  <meta itemprop="wordCount" content="899">
+  <meta itemprop="wordCount" content="885">
   <meta itemprop="keywords" content="EBPF,Guard,Cleanup,Spinlock,Ringbuf,Perfevent"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: guard spinlock"/>
 <meta name="twitter:description" content="守护 spinlock。 eBPF Talk: spinlock 详解 当使用 spinlock 进行统计时 eBPF Talk: 正确地进行统计，必须要使用 bpf_spin_lock() 和 bpf_spin_unlock() 来保护 spinlock 变量： 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 struct xdp_stat_item {"/>
 
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 899 字 </span>
+      <span class="more-meta"> 约 885 字 </span>
       <span class="more-meta"> 预计阅读 2 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -169,7 +169,7 @@
       <ul>
         <li><a href="#guard-实现">guard 实现</a></li>
         <li><a href="#cleanup-特性"><code>cleanup</code> 特性</a></li>
-        <li><a href="#将-cleanup-特性应用到-ringbuf-和-perfevent">将 <code>cleanup</code> 特性应用到 <code>ringbuf</code> 和 <code>perfevent</code></a></li>
+        <li><a href="#将-cleanup-特性应用到-ringbuf">将 <code>cleanup</code> 特性应用到 <code>ringbuf</code></a></li>
         <li><a href="#总结">总结</a></li>
       </ul>
     </li>
@@ -323,9 +323,9 @@
 <p>比如上面的 <code>guard(&amp;stat-&gt;lock)</code>，会展开成 <code>struct guard_spinlock_t var __attribute__((cleanup(guard_spinlock_destructor))) = ({ struct guard_spinlock_t guard = { &amp;stat-&gt;lock }; bpf_spin_lock(&amp;stat-&gt;lock); guard; })</code>。
 在定义局部变量 <code>var</code> 时，便已调用 <code>bpf_spin_lock(&amp;stat-&gt;lock)</code>；而在 <code>var</code> 超出作用域时，会在 <code>guard_spinlock_destructor()</code> 函数中调用 <code>bpf_spin_unlock(&amp;stat-&gt;lock)</code>。</p>
 <p>因此，<code>guard(&amp;stat-&gt;lock)</code> 的临界区便是其所在作用域的剩余部分。</p>
-<h2 id="将-cleanup-特性应用到-ringbuf-和-perfevent">将 <code>cleanup</code> 特性应用到 <code>ringbuf</code> 和 <code>perfevent</code></h2>
-<p>在使用 <code>ringbuf</code> 和 <code>perfevent</code> 时，如果使用 <code>reserve()</code> 和 <code>discard()/commit()</code>，可以使用 <code>cleanup</code> 特性来简化代码。</p>
-<p>比如 <code>ringbuf</code>，伪代码如下：</p>
+<h2 id="将-cleanup-特性应用到-ringbuf">将 <code>cleanup</code> 特性应用到 <code>ringbuf</code></h2>
+<p>在使用 <code>ringbuf</code> 时，如果使用 <code>reserve()</code> 和 <code>discard()/commit()</code>，可以使用 <code>cleanup</code> 特性来简化代码。</p>
+<p>伪代码如下：</p>
 <div class="highlight"><div class="chroma">
 <table class="lntable"><tr><td class="lntd">
 <pre tabindex="0" class="chroma"><code><span class="lnt"> 1
