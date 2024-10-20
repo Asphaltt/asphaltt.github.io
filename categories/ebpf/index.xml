@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 13 Oct 2024 22:59:44 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 20 Oct 2024 22:17:45 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 我禁用了 freplace tailcall freplace</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</link>
+      <pubDate>Sun, 20 Oct 2024 22:17:45 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</guid>
+      <description>在修复一个由 freplace 引起的 tailcall 无限循环的问题时，接纳社区的建议：禁止将 freplace prog 更新到 prog_array map 中。 使用场景 在项目中，freplace prog 当作 tail-callee 的用法如下： 在 dispatcher prog</description>
+    </item>
     <item>
       <title>eBPF Talk: guard spinlock</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-133-guard-spinlock/</link>

@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-10-13T22:59:44+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-10-20T22:17:45+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-90-dynamic-or-static-tailcall/">eBPF Talk: 动态或静态 tailcall</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-08-22 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1352 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      动态 tailcall？静态 tailcall？为什么 tailcall 会有动静之分呢？ 其实，就是看在使用 bpf_taill_call() 时，传入的 index 参数是常量还是变量。 动态 tailcall 在使用 bpf_tail_call() 时，传
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-90-dynamic-or-static-tailcall/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-44-trampoline-stack-on-x86/">eBPF Talk: trampoline stack on x86【汇编慎入】</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-36-xdp-redirect-to-af_xdp/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/">eBPF Talk: bpf2bpf &amp; tailcall 报错分析</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-23 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 864 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      终于要将 bpf2bpf &amp; tailcall 的组合落地到项目中了。 不过，当头一棒的是：tail_calls are not allowed when call stack of previous frames is 256 bytes. Too large。 幸好学习过 eBPF Talk: tailcall on x86，
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

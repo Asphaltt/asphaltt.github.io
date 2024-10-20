@@ -3,34 +3,76 @@
   
   <url>
     <loc>https://asphaltt.github.io/categories/</loc>
-    <lastmod>2024-10-13T22:59:44+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/cleanup/</loc>
-    <lastmod>2024-10-13T22:59:44+08:00</lastmod>
+    <lastmod>2024-10-20T22:17:45+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/ebpf/</loc>
-    <lastmod>2024-10-13T22:59:44+08:00</lastmod>
+    <lastmod>2024-10-20T22:17:45+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf/</loc>
-    <lastmod>2024-10-13T22:59:44+08:00</lastmod>
+    <lastmod>2024-10-20T22:17:45+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf-talk/</loc>
+    <lastmod>2024-10-20T22:17:45+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</loc>
+    <lastmod>2024-10-20T22:17:45+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/freplace/</loc>
+    <lastmod>2024-10-20T22:17:45+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/</loc>
+    <lastmod>2024-10-20T22:17:45+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/</loc>
+    <lastmod>2024-10-20T22:17:45+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/</loc>
+    <lastmod>2024-10-20T22:17:45+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/tailcall/</loc>
+    <lastmod>2024-10-20T22:17:45+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/cleanup/</loc>
     <lastmod>2024-10-13T22:59:44+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -51,20 +93,6 @@
   </url>
   
   <url>
-    <loc>https://asphaltt.github.io/</loc>
-    <lastmod>2024-10-13T22:59:44+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/post/</loc>
-    <lastmod>2024-10-13T22:59:44+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
     <loc>https://asphaltt.github.io/tags/ringbuf/</loc>
     <lastmod>2024-10-13T22:59:44+08:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -79,21 +107,7 @@
   </url>
   
   <url>
-    <loc>https://asphaltt.github.io/tags/</loc>
-    <lastmod>2024-10-13T22:59:44+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
     <loc>https://asphaltt.github.io/post/ebpf-talk-131-improve-tcpoptions/</loc>
-    <lastmod>2024-09-08T16:16:23+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/freplace/</loc>
     <lastmod>2024-09-08T16:16:23+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -115,13 +129,6 @@
   
   <url>
     <loc>https://asphaltt.github.io/post/ebpf-talk-130-tailcall-and-freplace/</loc>
-    <lastmod>2024-09-01T21:25:01+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/tailcall/</loc>
     <lastmod>2024-09-01T21:25:01+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 我禁用了 freplace tailcall freplace - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="在修复一个由 freplace 引起的 tailcall 无限循环的问题时，接纳社区的建议：禁止将 freplace prog 更新到 prog_array map 中。 使用场景 在项目中，freplace prog 当作 tail-callee 的用法如下： 在 dispatcher prog" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 我禁用了 freplace tailcall freplace" />
+<meta property="og:description" content="在修复一个由 freplace 引起的 tailcall 无限循环的问题时，接纳社区的建议：禁止将 freplace prog 更新到 prog_array map 中。 使用场景 在项目中，freplace prog 当作 tail-callee 的用法如下： 在 dispatcher prog" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-10-20T22:17:45+08:00" />
+<meta property="article:modified_time" content="2024-10-20T22:17:45+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 我禁用了 freplace tailcall freplace">
+  <meta itemprop="description" content="在修复一个由 freplace 引起的 tailcall 无限循环的问题时，接纳社区的建议：禁止将 freplace prog 更新到 prog_array map 中。 使用场景 在项目中，freplace prog 当作 tail-callee 的用法如下： 在 dispatcher prog">
+  <meta itemprop="datePublished" content="2024-10-20T22:17:45+08:00">
+  <meta itemprop="dateModified" content="2024-10-20T22:17:45+08:00">
+  <meta itemprop="wordCount" content="1130">
+  <meta itemprop="keywords" content="EBPF,Freplace,Tailcall"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 我禁用了 freplace tailcall freplace"/>
+<meta name="twitter:description" content="在修复一个由 freplace 引起的 tailcall 无限循环的问题时，接纳社区的建议：禁止将 freplace prog 更新到 prog_array map 中。 使用场景 在项目中，freplace prog 当作 tail-callee 的用法如下： 在 dispatcher prog"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 我禁用了 freplace tailcall freplace</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-10-20 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1130 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#使用场景">使用场景</a></li>
+        <li><a href="#禁止将-freplace-prog-更新到-prog_array-map-中">禁止将 <code>freplace</code> prog 更新到 <code>prog_array</code> map 中</a></li>
+        <li><a href="#绕过该限制">绕过该限制</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>在修复一个由 <code>freplace</code> 引起的 <code>tailcall</code> 无限循环的问题时，接纳社区的建议：禁止将 <code>freplace</code> prog 更新到 <code>prog_array</code> map 中。</p>
+<h2 id="使用场景">使用场景</h2>
+<p>在项目中，<code>freplace</code> prog 当作 <code>tail-callee</code> 的用法如下：</p>
+<ol>
+<li>在 <code>dispatcher</code> prog 中，调用 <code>subprog1</code>；</li>
+<li>在 <code>subprog1</code> 中，如果是 acl 模块，则还需要通过 <code>tailcall</code> 调用 acl algo prog。</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// dispatcher.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="n">__noinline</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">subprog1</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">volatile</span> <span class="kt">int</span> <span class="n">retval</span> <span class="o">=</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="n">__noinline</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">subprog2</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">volatile</span> <span class="kt">int</span> <span class="n">retval</span> <span class="o">=</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;XDP&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">dispatcher</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">retval</span> <span class="o">=</span> <span class="nf">subprog1</span><span class="p">(</span><span class="n">xdp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">retval</span> <span class="o">==</span> <span class="n">XDP_PASS</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">retval</span> <span class="o">=</span> <span class="nf">subprog2</span><span class="p">(</span><span class="n">xdp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// acl.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PROG_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">max_entries</span><span class="p">,</span> <span class="mi">2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">acl_progs</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">acl_algo</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">,</span> <span class="kt">int</span> <span class="n">prog_id</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">volatile</span> <span class="kt">int</span> <span class="n">retval</span> <span class="o">=</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_tail_call</span><span class="p">(</span><span class="n">xdp</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">acl_progs</span><span class="p">,</span> <span class="n">prog_id</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;freplace&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">acl</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">prog_id</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">acl_algo</span><span class="p">(</span><span class="n">xdp</span><span class="p">,</span> <span class="n">prog_id</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// acl_algo.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;freplace&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">acl_algo</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">volatile</span> <span class="kt">int</span> <span class="n">retval</span> <span class="o">=</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在 5.15 内核里，<code>acl</code> prog 能够 <code>tailcall</code> 到 <code>acl_algo</code> prog，因为 <code>acl_progs</code> 的 <code>owner.type</code> 是 <code>BPF_PROG_TYPE_EXT</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// https://github.com/torvalds/linux/blob/v5.15/kernel/bpf/core.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">bool</span> <span class="nf">bpf_prog_array_compatible</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_array</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                               <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">fp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">bool</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">kprobe_override</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">type</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* There&#39;s no owner yet where we could check for
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * compatibility.
+</span></span></span><span class="line"><span class="cl"><span class="cm">         */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">type</span>  <span class="o">=</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">type</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">jited</span> <span class="o">=</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">jited</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ret</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ret</span> <span class="o">=</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">type</span>  <span class="o">==</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">type</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">              <span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">jited</span> <span class="o">==</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">jited</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在 6.6 内核里，<code>acl</code> prog 可以 <code>tailcall</code> 到 <code>acl_algo</code> prog，因为 <code>acl_progs</code> 的 <code>owner.type</code> 是 <code>BPF_PROG_TYPE_XDP</code>。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// https://github.com/torvalds/linux/blob/v6.6/kernel/bpf/core.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">bool</span> <span class="nf">bpf_prog_map_compatible</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                             <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">fp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">enum</span> <span class="n">bpf_prog_type</span> <span class="n">prog_type</span> <span class="o">=</span> <span class="nf">resolve_prog_type</span><span class="p">(</span><span class="n">fp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">bool</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">kprobe_override</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* XDP programs inserted into maps are not guaranteed to run on
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * a particular netdev (and can run outside driver context entirely
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * in the case of devmap and cpumap). Until device checks
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * are implemented, prohibit adding dev-bound programs to program maps.
+</span></span></span><span class="line"><span class="cl"><span class="cm">     */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">bpf_prog_is_dev_bound</span><span class="p">(</span><span class="n">fp</span><span class="o">-&gt;</span><span class="n">aux</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">spin_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">type</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* There&#39;s no owner yet where we could check for
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * compatibility.
+</span></span></span><span class="line"><span class="cl"><span class="cm">         */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">map</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">type</span>  <span class="o">=</span> <span class="n">prog_type</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">map</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">jited</span> <span class="o">=</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">jited</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">map</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">xdp_has_frags</span> <span class="o">=</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">xdp_has_frags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ret</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ret</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">type</span>  <span class="o">==</span> <span class="n">prog_type</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">              <span class="n">map</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">jited</span> <span class="o">==</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">jited</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">              <span class="n">map</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">xdp_has_frags</span> <span class="o">==</span> <span class="n">fp</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">xdp_has_frags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">spin_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">owner</span><span class="p">.</span><span class="n">lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// https://github.com/torvalds/linux/blob/v6.6/include/linux/bpf_verifier.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="k">enum</span> <span class="n">bpf_prog_type</span> <span class="nf">resolve_prog_type</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">prog</span><span class="o">-&gt;</span><span class="n">type</span> <span class="o">==</span> <span class="n">BPF_PROG_TYPE_EXT</span> <span class="o">?</span>
+</span></span><span class="line"><span class="cl">           <span class="n">prog</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">dst_prog</span><span class="o">-&gt;</span><span class="nl">type</span> <span class="p">:</span> <span class="n">prog</span><span class="o">-&gt;</span><span class="n">type</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因为 <code>resolve_prog_type()</code> 会将 <code>freplace</code> prog 的 <code>type</code> 当作其 <code>dst_prog</code> 的 <code>type</code>，所以 <code>acl</code> prog 和 <code>acl_algo</code> prog 都被解析成 <code>BPF_PROG_TYPE_XDP</code>。</p>
+<h2 id="禁止将-freplace-prog-更新到-prog_array-map-中">禁止将 <code>freplace</code> prog 更新到 <code>prog_array</code> map 中</h2>
+<p>是这么实现的：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// https://github.com/kernel-patches/bpf/blob/bpf-next_base/kernel/bpf/arraymap.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">bpf_fd_array_map_update_elem</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">map_file</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                 <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">,</span> <span class="n">u64</span> <span class="n">map_flags</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_array</span> <span class="o">*</span><span class="n">array</span> <span class="o">=</span> <span class="nf">container_of</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_array</span><span class="p">,</span> <span class="n">map</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">new_ptr</span><span class="p">,</span> <span class="o">*</span><span class="n">old_ptr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">u32</span> <span class="n">index</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">u32</span> <span class="o">*</span><span class="p">)</span><span class="n">key</span><span class="p">,</span> <span class="n">ufd</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">map_flags</span> <span class="o">!=</span> <span class="n">BPF_ANY</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">map</span><span class="p">.</span><span class="n">max_entries</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="n">E2BIG</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">ufd</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">u32</span> <span class="o">*</span><span class="p">)</span><span class="n">value</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">new_ptr</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="nf">map_fd_get_ptr</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">map_file</span><span class="p">,</span> <span class="n">ufd</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">IS_ERR</span><span class="p">(</span><span class="n">new_ptr</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">PTR_ERR</span><span class="p">(</span><span class="n">new_ptr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="n">map_poke_run</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">mutex_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">poke_mutex</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">old_ptr</span> <span class="o">=</span> <span class="nf">xchg</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">ptrs</span> <span class="o">+</span> <span class="n">index</span><span class="p">,</span> <span class="n">new_ptr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">map</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="nf">map_poke_run</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">old_ptr</span><span class="p">,</span> <span class="n">new_ptr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">mutex_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">aux</span><span class="o">-&gt;</span><span class="n">poke_mutex</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">old_ptr</span> <span class="o">=</span> <span class="nf">xchg</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">ptrs</span> <span class="o">+</span> <span class="n">index</span><span class="p">,</span> <span class="n">new_ptr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">old_ptr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">map</span><span class="o">-&gt;</span><span class="n">ops</span><span class="o">-&gt;</span><span class="nf">map_fd_put_ptr</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">old_ptr</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">void</span> <span class="o">*</span><span class="nf">prog_fd_array_get_ptr</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_map</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                   <span class="k">struct</span> <span class="n">file</span> <span class="o">*</span><span class="n">map_file</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span> <span class="o">=</span> <span class="nf">bpf_prog_get</span><span class="p">(</span><span class="n">fd</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">bool</span> <span class="n">is_extended</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">IS_ERR</span><span class="p">(</span><span class="n">prog</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">prog</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">type</span> <span class="o">==</span> <span class="n">BPF_PROG_TYPE_EXT</span> <span class="o">||</span>
+</span></span><span class="line"><span class="cl">        <span class="o">!</span><span class="nf">bpf_prog_map_compatible</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">prog</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_prog_put</span><span class="p">(</span><span class="n">prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">ERR_PTR</span><span class="p">(</span><span class="o">-</span><span class="n">EINVAL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">prog</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这是在往 <code>prog_array</code> map 中更新 prog 、从 <code>fd</code> 获取 <code>prog</code> 时，如果 <code>prog</code> 的 <code>type</code> 是 <code>BPF_PROG_TYPE_EXT</code>，就返回 <code>-EINVAL</code>。</p>
+<h2 id="绕过该限制">绕过该限制</h2>
+<p>想要绕过该限制，比较简单，将 <code>acl_algo</code> prog 的 <code>type</code> 改成 <code>BPF_PROG_TYPE_XDP</code> 即可。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// acl_algo.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;XDP&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">acl_algo</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_md</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">volatile</span> <span class="kt">int</span> <span class="n">retval</span> <span class="o">=</span> <span class="n">XDP_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因为 <code>bpf_prog_map_compatible()</code> 里调用 <code>resolve_prog_type()</code> 时，<code>acl</code> prog 的 <code>type</code> 会被解析成 <code>BPF_PROG_TYPE_XDP</code>。</p>
+<h2 id="总结">总结</h2>
+<p>预计 6.12 内核里就会有这个限制，所以在 <code>freplace</code> prog 中使用 <code>tailcall</code> 时，需要注意这个限制。</p>
+<p>而在 6.12 内核之前，<code>freplace</code> prog 仍然可以 <code>tailcall</code> 到 <code>freplace</code> prog，只要 <code>freplace</code> prog 的 <code>type</code> 是 <code>BPF_PROG_TYPE_EXT</code>。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-10-20
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/freplace/">freplace</a>
+      <a href="/%20tags/tailcall/">tailcall</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-133-guard-spinlock/">
+        <span class="next-text nav-default">eBPF Talk: guard spinlock</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
