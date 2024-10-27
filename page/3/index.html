@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-10-20T22:17:45+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-10-27T23:38:15+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-114-introduce-xdp-dispatcher/">eBPF Talk: XDP dispatcher 简介</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 853 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      自 5.6 kernel bpf dispatcher 被引入到 Linux 内核中。 bpf: Introduce BPF dispatcher 到目前 6.9 kernel，仍然只有 XDP 程序在使用 bpf dispatcher。 bpf dispatcher 的引入，是为了解决间接调用叠加 retpoline 带
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-114-introduce-xdp-dispatcher/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-113-xdp-mastery-guide/">eBPF Talk: XDP 进阶手册</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-105-network-jitter/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-104-tailcall-in-bpf2bpf/">eBPF Talk: `tailcall` in `bpf2bpf` 踩坑一则</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-05-26 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 2339 字 </span>
-        <span class="more-meta"> 预计阅读 5 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在 bpf2bpf 里使用 tailcall 时，可以达到意想不到的效果： tailcall 目标 bpf prog 复用当前 subprog 的栈空间，而不是 subprog caller 的栈空间。 subprog caller 能获取到 tailcall 目标 bpf prog 的返回值。 tailcall in bpf2bpf 支持情况 从 5.10
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-104-tailcall-in-bpf2bpf/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

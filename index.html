@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-10-20T22:17:45+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-10-27T23:38:15+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-135-check-disas-of-bpf-prog/">eBPF Talk: 自制查看 bpf prog 反汇编的工具</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-10-27 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1613 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      目前，我知道的查看 bpf prog 反汇编的办法有： 使用 bpftool prog dump jited； 使用 gdb -q -c /proc/kcore -ex 'disas/r 0xffffffffc00a6188,+0x143' -ex 'quit'； 使用 drgn contrib/bpf_inspec.p
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-135-check-disas-of-bpf-prog/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/">eBPF Talk: 我禁用了 freplace tailcall freplace</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-125-xdp-crc/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-124-tailcall-hierarchy/">eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-07-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 3745 字 </span>
-        <span class="more-meta"> 预计阅读 8 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在 7 月 20 日早上醒来的时候，发现个好消息：修复 tailcall hierarchy 问题的 PATCH 被合并啦。 并得到 BPF 社区大佬 Alexei 的肯定： Thank you for sticking to it. Applied to bpf-next. It took almost a year, but the final fix is imo much better than all
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-124-tailcall-hierarchy/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

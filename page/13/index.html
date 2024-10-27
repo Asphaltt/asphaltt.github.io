@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-10-20T22:17:45+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-10-27T23:38:15+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-16-xdp-generic-mode/">eBPF Talk: 解密 XDP generic 模式</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-20 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1270 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      近期又得搞 XDP 了，就顺手研究了下 XDP generic 模式的源代码。 XDP generic 模式的函数位置 已知，内核协议栈会对每个 skb 都执行一次 XDP generic 模式处理，当然是启用了 XDP generic 模式的情
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-16-xdp-generic-mode/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-15-useful-histogram/">eBPF Talk: 好用的 histogram</a></h1>
@@ -352,30 +376,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-tailcall-intro/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-bpf2bpf-functions-call/">eBPF Talk: bpf2bpf 特性简介</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2022-11-16 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1156 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近才了解到 eBPF 里有 bpf2bpf 这个特性，故特意学习了一番。 bpf2bpf 简介 bpf2bpf 特性要求 4.16 内核版本，参考 BPF Features by Linux Kernel Version。 在 bpf2bpf 特性出现之前，eBPF 程序都要
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-bpf2bpf-functions-call/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

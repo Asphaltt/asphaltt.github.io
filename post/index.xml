@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 20 Oct 2024 22:17:45 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 27 Oct 2024 23:38:15 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 自制查看 bpf prog 反汇编的工具</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-135-check-disas-of-bpf-prog/</link>
+      <pubDate>Sun, 27 Oct 2024 23:38:15 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-135-check-disas-of-bpf-prog/</guid>
+      <description>目前，我知道的查看 bpf prog 反汇编的办法有： 使用 bpftool prog dump jited； 使用 gdb -q -c /proc/kcore -ex &#39;disas/r 0xffffffffc00a6188,+0x143&#39; -ex &#39;quit&#39;； 使用 drgn contrib/bpf_inspec.p</description>
+    </item>
     <item>
       <title>eBPF Talk: 我禁用了 freplace tailcall freplace</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</link>
