@@ -1,27 +1,20 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Gdb on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/gdb/</link>
-    <description>Recent content in Gdb on LeonHwang&#39;s Blogs</description>
+    <title>Libbfd on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/libbfd/</link>
+    <description>Recent content in Libbfd on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 03 Nov 2024 20:49:54 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/gdb/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://asphaltt.github.io/tags/libbfd/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: 修复了 bpftool 中存在了 7 年的 BUG</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-136-fix-bpftool-disasm-bug/</link>
       <pubDate>Sun, 03 Nov 2024 20:49:54 +0800</pubDate>
       <guid>https://asphaltt.github.io/post/ebpf-talk-136-fix-bpftool-disasm-bug/</guid>
       <description>在 eBPF Talk: 自制查看 bpf prog 反汇编的工具 里提到的 bpftool BUG Wrong callq address displayed，花了两三天时间将它给修了。 TL;DR [PATCH bpf v3] bpf, bpftool: Fix incorrect disasm pc 已合入 bpf 仓库。 BUG 复现 使用 bpftool</description>
-    </item>
-    <item>
-      <title>eBPF Talk: 自制查看 bpf prog 反汇编的工具</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-135-check-disas-of-bpf-prog/</link>
-      <pubDate>Sun, 27 Oct 2024 23:38:15 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-135-check-disas-of-bpf-prog/</guid>
-      <description>目前，我知道的查看 bpf prog 反汇编的办法有： 使用 bpftool prog dump jited； 使用 gdb -q -c /proc/kcore -ex &#39;disas/r 0xffffffffc00a6188,+0x143&#39; -ex &#39;quit&#39;； 使用 drgn contrib/bpf_inspec.p</description>
     </item>
   </channel>
 </rss>
