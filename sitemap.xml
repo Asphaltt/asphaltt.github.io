@@ -2,35 +2,77 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://asphaltt.github.io/tags/bpftool/</loc>
-    <lastmod>2024-11-03T20:49:54+08:00</lastmod>
+    <loc>https://asphaltt.github.io/tags/bpf-map/</loc>
+    <lastmod>2024-11-17T15:33:46+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/</loc>
-    <lastmod>2024-11-03T20:49:54+08:00</lastmod>
+    <lastmod>2024-11-17T15:33:46+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/ebpf/</loc>
-    <lastmod>2024-11-03T20:49:54+08:00</lastmod>
+    <lastmod>2024-11-17T15:33:46+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf/</loc>
-    <lastmod>2024-11-03T20:49:54+08:00</lastmod>
+    <lastmod>2024-11-17T15:33:46+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf-talk/</loc>
+    <lastmod>2024-11-17T15:33:46+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/ebpf-talk-137-monitor-map-update-and-deletion/</loc>
+    <lastmod>2024-11-17T15:33:46+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/</loc>
+    <lastmod>2024-11-17T15:33:46+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/mad/</loc>
+    <lastmod>2024-11-17T15:33:46+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/</loc>
+    <lastmod>2024-11-17T15:33:46+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/</loc>
+    <lastmod>2024-11-17T15:33:46+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/bpftool/</loc>
     <lastmod>2024-11-03T20:49:54+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -51,13 +93,6 @@
   </url>
   
   <url>
-    <loc>https://asphaltt.github.io/</loc>
-    <lastmod>2024-11-03T20:49:54+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
     <loc>https://asphaltt.github.io/tags/libbfd/</loc>
     <lastmod>2024-11-03T20:49:54+08:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -66,20 +101,6 @@
   
   <url>
     <loc>https://asphaltt.github.io/tags/llvm/</loc>
-    <lastmod>2024-11-03T20:49:54+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/post/</loc>
-    <lastmod>2024-11-03T20:49:54+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/</loc>
     <lastmod>2024-11-03T20:49:54+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -1039,13 +1060,6 @@
   
   <url>
     <loc>https://asphaltt.github.io/tags/bpf-helpers/</loc>
-    <lastmod>2024-04-03T22:40:29+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/bpf-map/</loc>
     <lastmod>2024-04-03T22:40:29+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>

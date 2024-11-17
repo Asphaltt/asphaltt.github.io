@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 谁动了我的 bpf map? - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="使用 bpf 跟踪 bpf map 的更新、删除函数，以此确认是谁动了 bpf map。 TL;DR 已实现对 bpf map 的更新、删除函数的跟踪，未实现批量操作 bpf map 函数的跟踪；源代码：git" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-137-monitor-map-update-and-deletion/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 谁动了我的 bpf map?" />
+<meta property="og:description" content="使用 bpf 跟踪 bpf map 的更新、删除函数，以此确认是谁动了 bpf map。 TL;DR 已实现对 bpf map 的更新、删除函数的跟踪，未实现批量操作 bpf map 函数的跟踪；源代码：git" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-137-monitor-map-update-and-deletion/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2024-11-17T15:33:46+08:00" />
+<meta property="article:modified_time" content="2024-11-17T15:33:46+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 谁动了我的 bpf map?">
+  <meta itemprop="description" content="使用 bpf 跟踪 bpf map 的更新、删除函数，以此确认是谁动了 bpf map。 TL;DR 已实现对 bpf map 的更新、删除函数的跟踪，未实现批量操作 bpf map 函数的跟踪；源代码：git">
+  <meta itemprop="datePublished" content="2024-11-17T15:33:46+08:00">
+  <meta itemprop="dateModified" content="2024-11-17T15:33:46+08:00">
+  <meta itemprop="wordCount" content="1135">
+  <meta itemprop="keywords" content="EBPF,Mad,Bpf Map"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 谁动了我的 bpf map?"/>
+<meta name="twitter:description" content="使用 bpf 跟踪 bpf map 的更新、删除函数，以此确认是谁动了 bpf map。 TL;DR 已实现对 bpf map 的更新、删除函数的跟踪，未实现批量操作 bpf map 函数的跟踪；源代码：git"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 谁动了我的 bpf map?</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2024-11-17 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1135 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#实现效果">实现效果</a></li>
+        <li><a href="#实现细节之识别目标函数">实现细节之识别目标函数</a></li>
+        <li><a href="#实现细节之根据-btf-信息解析-kv-数据">实现细节之根据 BTF 信息解析 kv 数据</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>使用 bpf 跟踪 bpf map 的更新、删除函数，以此确认是谁动了 bpf map。</p>
+<p>TL;DR 已实现对 bpf map 的更新、删除函数的跟踪，未实现批量操作 bpf map 函数的跟踪；源代码：<a href="https://github.com/Asphaltt/mad">github.com/Asphaltt/mad</a>。</p>
+<h2 id="实现效果">实现效果</h2>
+<p>跟踪 <code>pwru</code> 的配置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ./mad</span>
+</span></span><span class="line"><span class="cl">2024/11/17 07:06:47 mad is running ..
+</span></span><span class="line"><span class="cl">0: map<span class="o">(</span>5755:.rodata:Array<span class="o">)</span> is updated by process<span class="o">(</span>76052:pwru<span class="o">)</span>
+</span></span><span class="line"><span class="cl">key: <span class="m">00000000</span> <span class="o">[</span><span class="m">4</span> bytes<span class="o">]</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">0: map<span class="o">(</span>5755:.rodata:Array<span class="o">)</span> is updated by process<span class="o">(</span>76052:pwru<span class="o">)</span>
+</span></span><span class="line"><span class="cl">value: <span class="o">{</span><span class="s2">&#34;.rodata&#34;</span>: <span class="o">[{</span><span class="s2">&#34;CFG&#34;</span>: <span class="o">{</span><span class="s2">&#34;netns&#34;</span>: 0, <span class="s2">&#34;mark&#34;</span>: 0, <span class="s2">&#34;ifindex&#34;</span>: 0, <span class="s2">&#34;output_meta&#34;</span>: 0x1, <span class="s2">&#34;output_tuple&#34;</span>: 0x1, <span class="s2">&#34;output_skb&#34;</span>: 0x0, <span class="s2">&#34;output_shinfo&#34;</span>: 0x1, <span class="s2">&#34;output_stack&#34;</span>: 0x0, <span class="s2">&#34;output_caller&#34;</span>: 0x0, <span class="s2">&#34;output_unused&#34;</span>: 0x0, <span class="s2">&#34;is_set&#34;</span>: 0x1, <span class="s2">&#34;track_skb&#34;</span>: 0x0, <span class="s2">&#34;track_skb_by_stackid&#34;</span>: 0x0, <span class="s2">&#34;track_xdp&#34;</span>: 0x1, <span class="s2">&#34;unused&#34;</span>: 0x0, <span class="s2">&#34;skb_btf_id&#34;</span>: 1875, <span class="s2">&#34;shinfo_btf_id&#34;</span>: 21388<span class="o">}}</span>, <span class="o">{</span><span class="s2">&#34;TRUE&#34;</span>: true<span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;ZERO&#34;</span>: 0<span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;BPF_PROG_ADDR&#34;</span>: 0<span class="o">}]}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>即使是字符串，也能识别出来：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">3: map<span class="o">(</span>5766:retsnoop.data:Array<span class="o">)</span> is updated by process<span class="o">(</span>76100:retsnoop<span class="o">)</span>
+</span></span><span class="line"><span class="cl">key: <span class="m">00000000</span> <span class="o">[</span><span class="m">4</span> bytes<span class="o">]</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">3: map<span class="o">(</span>5766:retsnoop.data:Array<span class="o">)</span> is updated by process<span class="o">(</span>76100:retsnoop<span class="o">)</span>
+</span></span><span class="line"><span class="cl">value: <span class="o">{</span><span class="s2">&#34;.data&#34;</span>: <span class="o">[{</span><span class="s2">&#34;FMT_SUCC_VOID&#34;</span>: <span class="s2">&#34;    EXIT  %s%s [VOID]     &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_TRUE&#34;</span>: <span class="s2">&#34;    EXIT  %s%s [true]     &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_FALSE&#34;</span>: <span class="s2">&#34;    EXIT  %s%s [false]    &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_FAIL_NULL&#34;</span>: <span class="s2">&#34;[!] EXIT  %s%s [NULL]     &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_FAIL_PTR&#34;</span>: <span class="s2">&#34;[!] EXIT  %s%s [%d]       &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_PTR&#34;</span>: <span class="s2">&#34;    EXIT  %s%s [0x%lx]    &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_FAIL_LONG&#34;</span>: <span class="s2">&#34;[!] EXIT  %s%s [%ld]      &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_LONG&#34;</span>: <span class="s2">&#34;    EXIT  %s%s [%ld]      &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_FAIL_INT&#34;</span>: <span class="s2">&#34;[!] EXIT  %s%s [%d]       &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_INT&#34;</span>: <span class="s2">&#34;    EXIT  %s%s [%d]       &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_VOID_COMPAT&#34;</span>: <span class="s2">&#34;    EXIT  [%d] %s [VOID]  &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_TRUE_COMPAT&#34;</span>: <span class="s2">&#34;    EXIT  [%d] %s [true]  &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_FALSE_COMPAT&#34;</span>: <span class="s2">&#34;    EXIT  [%d] %s [false] &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_FAIL_NULL_COMPAT&#34;</span>: <span class="s2">&#34;[!] EXIT  [%d] %s [NULL]  &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_FAIL_PTR_COMPAT&#34;</span>: <span class="s2">&#34;[!] EXIT  [%d] %s [%d]    &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_PTR_COMPAT&#34;</span>: <span class="s2">&#34;    EXIT  [%d] %s [0x%lx] &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_FAIL_LONG_COMPAT&#34;</span>: <span class="s2">&#34;[!] EXIT  [%d] %s [%ld]   &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_LONG_COMPAT&#34;</span>: <span class="s2">&#34;    EXIT  [%d] %s [%ld]   &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_FAIL_INT_COMPAT&#34;</span>: <span class="s2">&#34;[!] EXIT  [%d] %s [%d]    &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;FMT_SUCC_INT_COMPAT&#34;</span>: <span class="s2">&#34;    EXIT  [%d] %s [%d]    &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;push_call_stack.___fmt&#34;</span>: <span class="s2">&#34;=== STARTING TRACING %s [COMM %s PID %d] === &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;push_call_stack.___fmt.1&#34;</span>: <span class="s2">&#34;    ENTER %s%s [...] &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;push_call_stack.___fmt.2&#34;</span>: <span class="s2">&#34;=== STARTING TRACING %s [PID %d] === &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;push_call_stack.___fmt.3&#34;</span>: <span class="s2">&#34;=== ...      TRACING [PID %d COMM %s] === &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;push_call_stack.___fmt.4&#34;</span>: <span class="s2">&#34;    ENTER [%d] %s [...] &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;save_stitch_stack.___fmt&#34;</span>: <span class="s2">&#34;SHOULDN&#39;T HAPPEN DEPTH %ld LEN %ld
+</span></span></span><span class="line"><span class="cl"><span class="s2"> &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;save_stitch_stack.___fmt.5&#34;</span>: <span class="s2">&#34;CURRENT DEPTH %d..%d &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;save_stitch_stack.___fmt.6&#34;</span>: <span class="s2">&#34;SAVED DEPTH %d..%d &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;save_stitch_stack.___fmt.7&#34;</span>: <span class="s2">&#34;STITCHED STACK %d..%d to ..%d
+</span></span></span><span class="line"><span class="cl"><span class="s2"> &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;save_stitch_stack.___fmt.8&#34;</span>: <span class="s2">&#34;EMIT PARTIAL STACK DEPTH %d..%d
+</span></span></span><span class="line"><span class="cl"><span class="s2"> &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;save_stitch_stack.___fmt.9&#34;</span>: <span class="s2">&#34;RESETTING SAVED ERR STACK %d..%d to %d..
+</span></span></span><span class="line"><span class="cl"><span class="s2"> &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;pop_call_stack.___fmt&#34;</span>: <span class="s2">&#34;POP(0) UNEXPECTED PID %d DEPTH %d MAX DEPTH %d &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;pop_call_stack.___fmt.10&#34;</span>: <span class="s2">&#34;POP(1) UNEXPECTED GOT  ID %d ADDR %lx NAME %s &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;pop_call_stack.___fmt.11&#34;</span>: <span class="s2">&#34;POP(2) UNEXPECTED WANT ID %u ADDR %lx NAME %s &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;pop_call_stack.___fmt.12&#34;</span>: <span class="s2">&#34;EMIT ERROR STACK DEPTH %d (SAVED ..%d)
+</span></span></span><span class="line"><span class="cl"><span class="s2"> &#34;</span><span class="o">}</span>, <span class="o">{</span><span class="s2">&#34;pop_call_stack.___fmt.13&#34;</span>: <span class="s2">&#34;EMIT SUCCESS STACK DEPTH %d (SAVED ..%d)
+</span></span></span><span class="line"><span class="cl"><span class="s2"> &#34;</span><span class="o">}]}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="实现细节之识别目标函数">实现细节之识别目标函数</h2>
+<p>在 <code>mad</code> 里，并没有写死所有要跟踪的内核函数，而是通过 BTF 去识别这些函数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="c1">// https://github.com/Asphaltt/mad/blob/main/bpf_btf.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">isTgtFunc</span><span class="p">(</span><span class="nx">typ</span> <span class="nx">btf</span><span class="p">.</span><span class="nx">Type</span><span class="p">)</span> <span class="p">(</span><span class="kt">string</span><span class="p">,</span> <span class="kt">bool</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">fn</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nx">typ</span><span class="p">.(</span><span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Func</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">!</span><span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">fnName</span> <span class="o">:=</span> <span class="nx">fn</span><span class="p">.</span><span class="nx">Name</span>
+</span></span><span class="line"><span class="cl">    <span class="nx">fnProto</span> <span class="o">:=</span> <span class="nx">fn</span><span class="p">.</span><span class="nx">Type</span><span class="p">.(</span><span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">FuncProto</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="nx">strings</span><span class="p">.</span><span class="nf">HasSuffix</span><span class="p">(</span><span class="nx">fnName</span><span class="p">,</span> <span class="s">&#34;_map_update_elem&#34;</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">fnProto</span><span class="p">.</span><span class="nx">Params</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nf">isBpfMap</span><span class="p">(</span><span class="nx">fnProto</span><span class="p">.</span><span class="nx">Params</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">Type</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nf">isVoid</span><span class="p">(</span><span class="nx">fnProto</span><span class="p">.</span><span class="nx">Params</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="nx">Type</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nf">isVoid</span><span class="p">(</span><span class="nx">fnProto</span><span class="p">.</span><span class="nx">Params</span><span class="p">[</span><span class="mi">2</span><span class="p">].</span><span class="nx">Type</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nx">fnName</span><span class="p">,</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="nx">strings</span><span class="p">.</span><span class="nf">HasSuffix</span><span class="p">(</span><span class="nx">fnName</span><span class="p">,</span> <span class="s">&#34;_map_delete_elem&#34;</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nb">len</span><span class="p">(</span><span class="nx">fnProto</span><span class="p">.</span><span class="nx">Params</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nf">isBpfMap</span><span class="p">(</span><span class="nx">fnProto</span><span class="p">.</span><span class="nx">Params</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">Type</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="nf">isVoid</span><span class="p">(</span><span class="nx">fnProto</span><span class="p">.</span><span class="nx">Params</span><span class="p">[</span><span class="mi">1</span><span class="p">].</span><span class="nx">Type</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="nx">fnName</span><span class="p">,</span> <span class="kc">true</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="s">&#34;&#34;</span><span class="p">,</span> <span class="kc">false</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="nf">retrieveHooks</span><span class="p">(</span><span class="nx">spec</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Spec</span><span class="p">)</span> <span class="p">([]</span><span class="kt">string</span><span class="p">,</span> <span class="kt">error</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kd">var</span> <span class="nx">hooks</span> <span class="p">[]</span><span class="kt">string</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nx">iter</span> <span class="o">:=</span> <span class="nx">spec</span><span class="p">.</span><span class="nf">Iterate</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="nx">iter</span><span class="p">.</span><span class="nf">Next</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="nx">name</span><span class="p">,</span> <span class="nx">ok</span> <span class="o">:=</span> <span class="nf">isTgtFunc</span><span class="p">(</span><span class="nx">iter</span><span class="p">.</span><span class="nx">Type</span><span class="p">);</span> <span class="nx">ok</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nx">hooks</span> <span class="p">=</span> <span class="nb">append</span><span class="p">(</span><span class="nx">hooks</span><span class="p">,</span> <span class="nx">name</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nx">hooks</span><span class="p">,</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如上代码片段的处理逻辑：</p>
+<ol>
+<li>遍历整个 BTF spec。</li>
+<li>判断遍历的 BTF 类型是不是函数。</li>
+<li>判断是不是更新 bpf map 的函数：函数名以 <code>_map_update_elem</code> 结尾且函数参数符合预期。</li>
+<li>判断是不是删除 bpf map 的函数：函数名以 <code>_map_delete_elem</code> 结尾且函数参数符合预期。</li>
+</ol>
+<h2 id="实现细节之根据-btf-信息解析-kv-数据">实现细节之根据 BTF 信息解析 kv 数据</h2>
+<p>使用 <code>bpftool</code> 命令查看 BPF map 的 key 和 value 的数据结构：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># bpftool m d i 5672</span>
+</span></span><span class="line"><span class="cl"><span class="o">[{</span>
+</span></span><span class="line"><span class="cl">        <span class="s2">&#34;value&#34;</span>: <span class="o">{</span>
+</span></span><span class="line"><span class="cl">            <span class="s2">&#34;.rodata&#34;</span>: <span class="o">[{</span>
+</span></span><span class="line"><span class="cl">                    <span class="s2">&#34;CFG&#34;</span>: <span class="o">{</span>
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;netns&#34;</span>: 0,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;mark&#34;</span>: 0,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;ifindex&#34;</span>: 0,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;output_meta&#34;</span>: 0x1,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;output_tuple&#34;</span>: 0x1,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;output_skb&#34;</span>: 0x0,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;output_shinfo&#34;</span>: 0x1,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;output_stack&#34;</span>: 0x0,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;output_caller&#34;</span>: 0x0,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;output_unused&#34;</span>: 0x0,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;is_set&#34;</span>: 0x1,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;track_skb&#34;</span>: 0x0,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;track_skb_by_stackid&#34;</span>: 0x0,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;track_xdp&#34;</span>: 0x1,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;unused&#34;</span>: 0x0,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;skb_btf_id&#34;</span>: 1875,
+</span></span><span class="line"><span class="cl">                        <span class="s2">&#34;shinfo_btf_id&#34;</span>: <span class="m">21388</span>
+</span></span><span class="line"><span class="cl">                    <span class="o">}</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>,<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="s2">&#34;TRUE&#34;</span>: <span class="nb">true</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>,<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="s2">&#34;ZERO&#34;</span>: <span class="m">0</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>,<span class="o">{</span>
+</span></span><span class="line"><span class="cl">                    <span class="s2">&#34;BPF_PROG_ADDR&#34;</span>: <span class="m">0</span>
+</span></span><span class="line"><span class="cl">                <span class="o">}</span>
+</span></span><span class="line"><span class="cl">            <span class="o">]</span>
+</span></span><span class="line"><span class="cl">        <span class="o">}</span>
+</span></span><span class="line"><span class="cl">    <span class="o">}</span>
+</span></span><span class="line"><span class="cl"><span class="o">]</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在 <code>mad</code> 里，能否实现同样的效果呢？</p>
+<p>是个苦力活，基本上抄一下 <code>bpftool</code> 的实现就好：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="c1">// https://github.com/Asphaltt/mybtf/blob/main/dump.go
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kd">func</span> <span class="p">(</span><span class="nx">dd</span> <span class="o">*</span><span class="nx">dataDumper</span><span class="p">)</span> <span class="nf">dumpData</span><span class="p">(</span><span class="nx">typ</span> <span class="nx">btf</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span> <span class="nx">bits</span> <span class="nx">bitsInfo</span><span class="p">,</span> <span class="nx">data</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">)</span> <span class="kt">error</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">switch</span> <span class="nx">v</span> <span class="o">:=</span> <span class="nx">typ</span><span class="p">.(</span><span class="kd">type</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Int</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpInt</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="nx">bits</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Struct</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpStruct</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Union</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpUnion</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Array</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpArray</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Enum</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpEnum</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Pointer</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpPointer</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Fwd</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">dd</span><span class="p">.</span><span class="nb">print</span><span class="p">(</span><span class="s">&#34;(fwd-kind-invalid)&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;fwd kind invalid&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Typedef</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpData</span><span class="p">(</span><span class="nx">v</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span> <span class="nx">bits</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Volatile</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpData</span><span class="p">(</span><span class="nx">v</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span> <span class="nx">bits</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Const</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpData</span><span class="p">(</span><span class="nx">v</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span> <span class="nx">bits</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Restrict</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpData</span><span class="p">(</span><span class="nx">v</span><span class="p">.</span><span class="nx">Type</span><span class="p">,</span> <span class="nx">bits</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Var</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpVar</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="nx">bits</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">case</span> <span class="o">*</span><span class="nx">btf</span><span class="p">.</span><span class="nx">Datasec</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">dd</span><span class="p">.</span><span class="nf">dumpDataSec</span><span class="p">(</span><span class="nx">v</span><span class="p">,</span> <span class="nx">data</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">default</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="nx">dd</span><span class="p">.</span><span class="nb">print</span><span class="p">(</span><span class="s">&#34;(unsupported-kind)&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nx">fmt</span><span class="p">.</span><span class="nf">Errorf</span><span class="p">(</span><span class="s">&#34;unsupported kind %T&#34;</span><span class="p">,</span> <span class="nx">v</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="kc">nil</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>以上，便实现了根据 BTF 信息解析数据的功能。</p>
+<h2 id="总结">总结</h2>
+<p>通过 BTF 信息，可以清楚地看出更新、删除 bpf map 的 kv 细节，这对于调试和排查问题是非常有帮助的。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2024-11-17
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/mad/">mad</a>
+      <a href="/%20tags/bpf-map/">bpf map</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-136-fix-bpftool-disasm-bug/">
+        <span class="next-text nav-default">eBPF Talk: 修复了 bpftool 中存在了 7 年的 BUG</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2024<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
