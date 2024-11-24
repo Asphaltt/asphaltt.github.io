@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-11-17T15:33:46+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-11-24T23:13:45+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-107-introduce-socketrace/">eBPF Talk: 打造自己的 socket 跟踪工具 socketrace</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 816 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      忽而蹦出个想法：何不参考 pwru 那样，跟踪所有带有 struct sock *sk 参数的函数？ 既然脱胎于 pwru，那么就直接复用 pwru 的代码，快速实现一个 socketrace 工具。 1 2 3 4 5 6 7
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-107-introduce-socketrace/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-106-introduce-ethtoolsnoop/">eBPF Talk: ethtool 跟踪工具 ethtoolsnoop</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-98-contribute-pwru/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-97-analyse-xdp/">eBPF Talk: 手撕 XDP 程序</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-05-15 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 2205 字 </span>
-        <span class="more-meta"> 预计阅读 5 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      前段时间，老板让我 手撕 分析 一个陌生的 XDP 程序。 责任重过山头，莫敢推辞，只能硬着头皮上了。 陌生的 XDP 程序 没有源代码，且发现该 XDP 程序还没带上 debug 信息；
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-97-analyse-xdp/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
