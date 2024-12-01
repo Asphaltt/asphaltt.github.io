@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 24 Nov 2024 23:13:45 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 01 Dec 2024 23:58:54 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/tags/tailcall-issues/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: tailcall 问题知多少</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-139-tailcall-issues/</link>
+      <pubDate>Sun, 01 Dec 2024 23:58:54 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-139-tailcall-issues/</guid>
+      <description>tailcall 是 v4.2 内核便已引入的一个特性，它允许一个 BPF 程序调用另一个程序，而无需返回原程序。 bpf: allow bpf programs to tail-call other bpf programs 然而，在 BPF 子系统不断地引入新特性的同时，t</description>
+    </item>
     <item>
       <title>eBPF Talk: 使用 fentry 调试 tailcall BUG</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/</link>
