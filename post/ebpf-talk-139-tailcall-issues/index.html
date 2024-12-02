@@ -52,7 +52,7 @@
   <meta itemprop="description" content="tailcall 是 v4.2 内核便已引入的一个特性，它允许一个 BPF 程序调用另一个程序，而无需返回原程序。 bpf: allow bpf programs to tail-call other bpf programs 然而，在 BPF 子系统不断地引入新特性的同时，t">
   <meta itemprop="datePublished" content="2024-12-01T23:58:54+08:00">
   <meta itemprop="dateModified" content="2024-12-01T23:58:54+08:00">
-  <meta itemprop="wordCount" content="998">
+  <meta itemprop="wordCount" content="1004">
   <meta itemprop="keywords" content="EBPF,Tailcall,Bpf2bpf,Freplace,Tailcall-Issues,Fentry,Fexit"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: tailcall 问题知多少"/>
 <meta name="twitter:description" content="tailcall 是 v4.2 内核便已引入的一个特性，它允许一个 BPF 程序调用另一个程序，而无需返回原程序。 bpf: allow bpf programs to tail-call other bpf programs 然而，在 BPF 子系统不断地引入新特性的同时，t"/>
 
@@ -154,8 +154,8 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 998 字 </span>
-      <span class="more-meta"> 预计阅读 2 分钟 </span>
+      <span class="more-meta"> 约 1004 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
   </header>
@@ -190,7 +190,7 @@
 <p>TL;DR 我整理出了 6 个 <code>tailcall</code> 问题，而且这些问题影响的内核版本范围比较大，在使用时需要注意。</p>
 <h2 id="1-把-freplace-当作非法的-tailcall-目标">1. 把 <code>freplace</code> 当作非法的 <code>tailcall</code> 目标</h2>
 <p>在 v5.6 内核引入 <code>freplace</code> 特性时，便一并引入了这个问题。</p>
-<p>在 v6.2 内核里，commit <code>4a9c7bbe2ed4 (&quot;bpf: Resolve to prog-&gt;aux-&gt;dst_prog-&gt;type only for BPF_PROG_TYPE_EXT&quot;)</code> 在无意中修复了这个问题。</p>
+<p>在 v6.2 内核里，commit <code>1c123c567fb1 (&quot;bpf: Resolve fext program type when checking map compatibility&quot;)</code> 在无意中修复了这个问题。</p>
 <h2 id="2-错误的-tail_call_cnt-加载偏移">2. 错误的 <code>tail_call_cnt</code> 加载偏移</h2>
 <p>如果在 subprog 里使用 <code>tailcall</code>，则需要注意一下这个问题。</p>
 <p>subprog 里使用 <code>tailcall</code> 的前提：<a href="https://github.com/torvalds/linux/commit/e411901c0b775a3ae7f3e2505f8d2d90ac696178">bpf: allow for tailcalls in BPF subprograms for x64 JIT</a> since v5.10 kernel。</p>
@@ -210,11 +210,11 @@
 <p>在 v6.12 内核里，commit <code>116e04ba1459 (&quot;bpf, x64: Fix tailcall hierarchy&quot;)</code> 修复了这个问题。</p>
 <p>更多细节请查看：<a href="/post/ebpf-talk-124-tailcall-hierarchy/">eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug</a>。</p>
 <h2 id="5-将-attached-freplace-程序加入到-prog_array-时内核崩溃问题">5. 将 attached <code>freplace</code> 程序加入到 <code>prog_array</code> 时内核崩溃问题</h2>
-<p>在 v6.2 内核里，commit <code>4a9c7bbe2ed4 (&quot;bpf: Resolve to prog-&gt;aux-&gt;dst_prog-&gt;type only for BPF_PROG_TYPE_EXT&quot;)</code> 引入了这个问题；因为没有考虑到 <code>freplace</code> 程序在 attach 之后会将 <code>prog-&gt;aux-&gt;dst_prog</code> 置空。</p>
+<p>在 v6.2 内核里，commit <code>1c123c567fb1 (&quot;bpf: Resolve fext program type when checking map compatibility&quot;)</code> 引入了这个问题；因为没有考虑到 <code>freplace</code> 程序在 attach 之后会将 <code>prog-&gt;aux-&gt;dst_prog</code> 置空。</p>
 <p>在 v6.11 内核里，commit <code>fdad456cbcca (&quot;bpf: Fix updating attached freplace prog in prog_array map&quot;)</code> 修复了这个问题。</p>
 <p>更多细节请查看：<a href="/post/ebpf-talk-130-tailcall-and-freplace/">eBPF Talk: 又修了一个 tailcall 有关的 BUG</a>。</p>
 <h2 id="6-由-freplace-叠加-tailcall-引起的-tailcall-无限循环问题">6. 由 <code>freplace</code> 叠加 <code>tailcall</code> 引起的 <code>tailcall</code> 无限循环问题</h2>
-<p>在 v6.2 内核里，commit <code>4a9c7bbe2ed4 (&quot;bpf: Resolve to prog-&gt;aux-&gt;dst_prog-&gt;type only for BPF_PROG_TYPE_EXT&quot;)</code> 引入了这个问题；因为在 <code>freplace</code> 程序执行的时候，<code>tail_call_cnt</code> 会被置零。</p>
+<p>在 v6.2 内核里，commit <code>1c123c567fb1 (&quot;bpf: Resolve fext program type when checking map compatibility&quot;)</code> 引入了这个问题；因为在 <code>freplace</code> 程序执行的时候，<code>tail_call_cnt</code> 会被置零。</p>
 <p>在 v6.13 内核里，commit <code>d6083f040d5d (&quot;bpf: Prevent tailcall infinite loop caused by freplace&quot;)</code> 修复了这个问题。</p>
 <h2 id="tailcall-问题检测"><code>tailcall</code> 问题检测</h2>
 <p>根据内核的行为特征，可以识别出当前内核有没有这些 <code>tailcall</code> 问题、这些问题有没有被修复了。</p>
