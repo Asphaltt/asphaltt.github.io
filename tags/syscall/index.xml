@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Syscall on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/syscall/</link>
+    <description>Recent content in Syscall on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo 0.125.0-DEV</generator>
+    <language>zh</language>
+    <copyright>Leon Hwang</copyright>
+    <lastBuildDate>Mon, 09 Dec 2024 00:24:48 +0800</lastBuildDate>
+    <atom:link href="https://asphaltt.github.io/tags/syscall/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 在 bpf 里将 fd 和 sock 关联起来</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-140-fd-socket/</link>
+      <pubDate>Mon, 09 Dec 2024 00:24:48 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-140-fd-socket/</guid>
+      <description>对于 socket 编程，在用户态看到的只能是 fd；而在内核态，大部分时候看到的是 sock。 fd 和 sock 之间的关系，是在内核态的 syscall 里建立的；所以，在 connect 和 accept 等 syscall 里</description>
+    </item>
+  </channel>
+</rss>
