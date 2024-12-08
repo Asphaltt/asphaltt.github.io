@@ -52,7 +52,7 @@
   <meta itemprop="description" content="对于 socket 编程，在用户态看到的只能是 fd；而在内核态，大部分时候看到的是 sock。 fd 和 sock 之间的关系，是在内核态的 syscall 里建立的；所以，在 connect 和 accept 等 syscall 里">
   <meta itemprop="datePublished" content="2024-12-09T00:24:48+08:00">
   <meta itemprop="dateModified" content="2024-12-09T00:24:48+08:00">
-  <meta itemprop="wordCount" content="1491">
+  <meta itemprop="wordCount" content="1509">
   <meta itemprop="keywords" content="EBPF,Socket,Fentry,Fexit,Syscall"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 在 bpf 里将 fd 和 sock 关联起来"/>
 <meta name="twitter:description" content="对于 socket 编程，在用户态看到的只能是 fd；而在内核态，大部分时候看到的是 sock。 fd 和 sock 之间的关系，是在内核态的 syscall 里建立的；所以，在 connect 和 accept 等 syscall 里"/>
 
@@ -154,8 +154,8 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 1491 字 </span>
-      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span class="more-meta"> 约 1509 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
   </header>
@@ -732,6 +732,7 @@
 </div>
 </div><h2 id="总结">总结</h2>
 <p>通过 hook <code>connect</code> 和 <code>accept</code> syscall，可以将 fd 和 sock 关联起来；然后通过 fd 对应的 sock，就可以拿到五元组信息。</p>
+<p>P.S. 本文的代码在 <a href="https://github.com/Asphaltt/learn-by-example/tree/main/ebpf/fd-socket">learn-by-example fd-socket</a>。</p>
 
   </div>
 
