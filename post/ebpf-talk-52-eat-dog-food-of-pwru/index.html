@@ -52,7 +52,7 @@
   <meta itemprop="description" content="当遇上 cilium/pwru 时，我便放弃维护自己的 skbtracer 了。 挖坑 之前，学习了 eBPF Talk: 全局变量实战指南，就打算在开源项目 GitHub cilium/pwru 上一展身手： PR bpf: make config as a constant 2023 年 2 月 4 日提了 PR">
   <meta itemprop="datePublished" content="2024-03-31T21:16:34+08:00">
   <meta itemprop="dateModified" content="2024-03-31T21:16:34+08:00">
-  <meta itemprop="wordCount" content="924">
+  <meta itemprop="wordCount" content="852">
   <meta itemprop="keywords" content="EBPF,Pwru"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: pwru 自己挖坑自己填"/>
 <meta name="twitter:description" content="当遇上 cilium/pwru 时，我便放弃维护自己的 skbtracer 了。 挖坑 之前，学习了 eBPF Talk: 全局变量实战指南，就打算在开源项目 GitHub cilium/pwru 上一展身手： PR bpf: make config as a constant 2023 年 2 月 4 日提了 PR"/>
 
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 924 字 </span>
+      <span class="more-meta"> 约 852 字 </span>
       <span class="more-meta"> 预计阅读 2 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -345,8 +345,6 @@
 <p>要么不挖坑，要么挖坑的同时得有能力填坑。</p>
 <p>发现是自己破坏了 <code>pwru</code>，心里有点难过；毕竟这是大家都可以使用的软件。</p>
 <p>还好是自己修复的，拿回了点心理补偿。</p>
-<p>Generate better sentence of this.  &ldquo;I think it&rsquo;s the behaviour of clang compiler. It eliminates the <code>addr_empty()</code> with considering a part of global variable <code>CFG</code> is not volatile. But with macro, it accesses <code>CFG</code> directly.&rdquo;</p>
-<p>I believe the behavior of the Clang compiler is to eliminate the <code>addr_empty()</code> function by assuming that a non-volatile portion of the global variable <code>CFG</code> does not change. However, when using a macro, <code>CFG</code> is accessed directly.</p>
 
   </div>
 
