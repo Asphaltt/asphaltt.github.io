@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Mon, 09 Dec 2024 00:24:48 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 16 Dec 2024 00:13:36 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/categories/ebpf-talk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 在 arm64 fentry 里手动做 backtrace</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-141-backtrace-on-arm64/</link>
+      <pubDate>Mon, 16 Dec 2024 00:13:36 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-141-backtrace-on-arm64/</guid>
+      <description>对于 fentry 程序而言，在 arm64 上做 backtrace 不像 x86 上那么简单；第一步找到可用的 frame pointer 就很费劲了。 毕竟，找到 frame pointer 之后，就可以通过 frame pointer 逐级回溯，找到调用者的 IP 和 FP</description>
+    </item>
     <item>
       <title>eBPF Talk: 在 bpf 里将 fd 和 sock 关联起来</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-140-fd-socket/</link>

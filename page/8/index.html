@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2024-12-09T00:24:48+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2024-12-16T00:13:36+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-69-packet-range-check/">eBPF Talk: packet range check</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 449 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在 XDP 或者 tc-bpf 中，经常要直接访问网络包内容；而在访问网络包内容之前，总是需要先检查访问的内容是否在 data_end 之内。 So，学习一下 packet range check 相关 commit 的历史；以史
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-69-packet-range-check/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-68-xdp-shit-on-mellanox/">eBPF Talk: 踩坑 XDP on Mellanox</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-60-introduce-spinlock/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-59-stats-bpf-prog-correctly/">eBPF Talk: 正确地进行统计</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-04-01 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 721 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在 bpf prog 里进行统计，该怎么做呢？ PERCPU bpf map 在 bpf prog 里使用 PERCPU bpf map 进行统计，在用户态应用程序里就可以读取该 bpf map 获取从而能够计算出最终的统计数据。 使用 PERCPU bpf
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-59-stats-bpf-prog-correctly/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
