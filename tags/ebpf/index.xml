@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 22 Dec 2024 21:29:52 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 19 Jan 2025 23:34:17 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 设备层抓包的那些事</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-143-capture-packets-on-netdev-layer/</link>
+      <pubDate>Sun, 19 Jan 2025 23:34:17 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-143-capture-packets-on-netdev-layer/</guid>
+      <description>设备层抓包？不就是 tcpdump 嘛。缺点是，-i any 时无法抓到各个 netns 内的网络包。 netif_receive_skb 和 net_dev_queue 这 2 个 tracepoint 呢？好，能抓到所有 netns 内的网络包了。但， tracepoint bpf prog 不支持 bpf_skb_output help</description>
+    </item>
     <item>
       <title>eBPF Talk: 使用 tcpw 获取 curl 的五元组信息</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-142-tcpw-introduction/</link>

@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 设备层抓包的那些事 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="设备层抓包？不就是 tcpdump 嘛。缺点是，-i any 时无法抓到各个 netns 内的网络包。 netif_receive_skb 和 net_dev_queue 这 2 个 tracepoint 呢？好，能抓到所有 netns 内的网络包了。但， tracepoint bpf prog 不支持 bpf_skb_output help" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-143-capture-packets-on-netdev-layer/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 设备层抓包的那些事" />
+<meta property="og:description" content="设备层抓包？不就是 tcpdump 嘛。缺点是，-i any 时无法抓到各个 netns 内的网络包。 netif_receive_skb 和 net_dev_queue 这 2 个 tracepoint 呢？好，能抓到所有 netns 内的网络包了。但， tracepoint bpf prog 不支持 bpf_skb_output help" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-143-capture-packets-on-netdev-layer/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2025-01-19T23:34:17+08:00" />
+<meta property="article:modified_time" content="2025-01-19T23:34:17+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 设备层抓包的那些事">
+  <meta itemprop="description" content="设备层抓包？不就是 tcpdump 嘛。缺点是，-i any 时无法抓到各个 netns 内的网络包。 netif_receive_skb 和 net_dev_queue 这 2 个 tracepoint 呢？好，能抓到所有 netns 内的网络包了。但， tracepoint bpf prog 不支持 bpf_skb_output help">
+  <meta itemprop="datePublished" content="2025-01-19T23:34:17+08:00">
+  <meta itemprop="dateModified" content="2025-01-19T23:34:17+08:00">
+  <meta itemprop="wordCount" content="1777">
+  <meta itemprop="keywords" content="EBPF"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 设备层抓包的那些事"/>
+<meta name="twitter:description" content="设备层抓包？不就是 tcpdump 嘛。缺点是，-i any 时无法抓到各个 netns 内的网络包。 netif_receive_skb 和 net_dev_queue 这 2 个 tracepoint 呢？好，能抓到所有 netns 内的网络包了。但， tracepoint bpf prog 不支持 bpf_skb_output help"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 设备层抓包的那些事</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2025-01-19 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1777 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#设备层抓包的需求">设备层抓包的需求</a></li>
+        <li><a href="#设备层抓包之-tcpdump">设备层抓包之 tcpdump</a></li>
+        <li><a href="#设备层抓包之-tracepoint">设备层抓包之 tracepoint</a></li>
+        <li><a href="#设备层抓包之-kprobe">设备层抓包之 kprobe</a></li>
+        <li><a href="#设备层抓包之-fentry">设备层抓包之 fentry</a></li>
+        <li><a href="#设备层抓包之-tp_btf">设备层抓包之 tp_btf</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>设备层抓包？不就是 <code>tcpdump</code> 嘛。缺点是，<code>-i any</code> 时无法抓到各个 netns 内的网络包。</p>
+<p><code>netif_receive_skb</code> 和 <code>net_dev_queue</code> 这 2 个 <code>tracepoint</code> 呢？好，能抓到所有 netns 内的网络包了。但， <code>tracepoint</code> bpf prog 不支持 <code>bpf_skb_output</code> helper，就无法将网络包传到用户态保存到 pcap 文件了。</p>
+<p><code>bpf_skb_output</code> helper 只能用在 <code>BPF_PROG_TYPE_TRACING</code> 类型的 bpf prog 上，因此 <code>kprobe</code> 也不行。</p>
+<p><code>fentry</code> 的 bpf prog 类型就是 <code>BPF_PROG_TYPE_TRACING</code>，而且 <code>__dev_queue_xmit()</code> 函数的第一个参数就是 <code>struct sk_buff *skb</code>；但是， <code>__netif_receive_skb_core()</code> 函数的第一个参数是 <code>struct sk_buff **pskb</code>，这就无法使用 <code>fentry</code> 了。</p>
+<p>经过一番研究，<code>tp_btf</code> bpf prog 的类型是 <code>BPF_PROG_TYPE_TRACING</code>，如此便能使用上述的那两个 <code>tracepoint</code> 了；尽管要求 v5.7+ 内核。</p>
+<h2 id="设备层抓包的需求">设备层抓包的需求</h2>
+<p>在原有的对 XDP 和 tc-bpf 抓包的基础上，实现设备层抓包的需求。</p>
+<p>即，该抓包工具在设备层能够：</p>
+<ol>
+<li>使用 <a href="https://www.tcpdump.org/manpages/pcap-filter.7.html">pcap-filter(7)</a> 语法过滤网络包。</li>
+<li>将网络包通过 <code>bpf_skb_output</code> helper 传到用户态，保存到 pcap 文件。</li>
+<li>无视 netns 隔离，抓到所有 netns 内的网络包。</li>
+</ol>
+<h2 id="设备层抓包之-tcpdump">设备层抓包之 tcpdump</h2>
+<p><code>tcpdump -i any</code> 抓当前 netns 所有网络设备的网络包。</p>
+<p>其工作在：</p>
+<p><img src="/ebpf-talk-143-tcpdump.jpg" alt="tcpdump on netdev layer"></p>
+<p>更多实现细节，请参考 <a href="https://mp.weixin.qq.com/s/ZX8Jluh-RgJXcVh3OvycRQ">用户态 tcpdump 如何实现抓到内核网络包的?</a>。</p>
+<h2 id="设备层抓包之-tracepoint">设备层抓包之 tracepoint</h2>
+<p>先看一下网络 <code>tracepoint</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ls /sys/kernel/debug/tracing/events/net/</span>
+</span></span><span class="line"><span class="cl"><span class="nb">enable</span>                napi_gro_frags_exit     net_dev_queue       net_dev_xmit_timeout     netif_receive_skb_exit        netif_rx
+</span></span><span class="line"><span class="cl">filter                napi_gro_receive_entry  net_dev_start_xmit  netif_receive_skb        netif_receive_skb_list_entry  netif_rx_entry
+</span></span><span class="line"><span class="cl">napi_gro_frags_entry  napi_gro_receive_exit   net_dev_xmit        netif_receive_skb_entry  netif_receive_skb_list_exit   netif_rx_exit
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>关注其中关键的 2 个 <code>tracepoint</code>, <code>netif_receive_skb</code> 和 <code>net_dev_queue</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">__netif_receive_skb_core</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">**</span><span class="n">pskb</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">pfmemalloc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                    <span class="k">struct</span> <span class="n">packet_type</span> <span class="o">**</span><span class="n">ppt_prev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nf">trace_netif_receive_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">static_branch_unlikely</span><span class="p">(</span><span class="o">&amp;</span><span class="n">generic_xdp_needed_key</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">ret2</span> <span class="o">=</span> <span class="nf">do_xdp_generic</span><span class="p">(</span><span class="nf">rcu_dereference</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">xdp_prog</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">                              <span class="o">&amp;</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">eth_type_vlan</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">protocol</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">skb</span> <span class="o">=</span> <span class="nf">skb_vlan_untag</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nf">list_for_each_entry_rcu</span><span class="p">(</span><span class="n">ptype</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">ptype_all</span><span class="p">,</span> <span class="n">list</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">pt_prev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">ret</span> <span class="o">=</span> <span class="nf">deliver_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">pt_prev</span><span class="p">,</span> <span class="n">orig_dev</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">pt_prev</span> <span class="o">=</span> <span class="n">ptype</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="p">(</span><span class="nf">static_branch_unlikely</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ingress_needed_key</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">skb</span> <span class="o">=</span> <span class="nf">sch_handle_ingress</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pt_prev</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ret</span><span class="p">,</span> <span class="n">orig_dev</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                 <span class="o">&amp;</span><span class="n">another</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">__dev_queue_xmit</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">sb_dev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="k">if</span> <span class="p">(</span><span class="nf">static_branch_unlikely</span><span class="p">(</span><span class="o">&amp;</span><span class="n">egress_needed_key</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="n">skb</span> <span class="o">=</span> <span class="nf">sch_handle_egress</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">rc</span><span class="p">,</span> <span class="n">dev</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nf">trace_net_dev_queue</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">q</span><span class="o">-&gt;</span><span class="n">enqueue</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">rc</span> <span class="o">=</span> <span class="nf">__dev_xmit_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">dev</span><span class="p">,</span> <span class="n">txq</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">goto</span> <span class="n">out</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="n">skb</span> <span class="o">=</span> <span class="nf">dev_hard_start_xmit</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">dev</span><span class="p">,</span> <span class="n">txq</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">rc</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因为 <code>__netif_receive_skb_core()</code> 函数和 <code>__dev_queue_xmit()</code> 函数不会被跳过，所以 <code>netif_receive_skb</code> 和 <code>net_dev_queue</code> 两个 <code>tracepoint</code> 可以用来 trace 网络包。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">netif_receive_skb_args</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u64</span> <span class="n">unused</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span> <span class="n">skbaddr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tp/net/netif_receive_skb&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">tp_netif_receive_skb</span><span class="p">(</span><span class="k">struct</span> <span class="n">netif_receive_skb_args</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">skb</span><span class="p">))</span> <span class="n">args</span><span class="o">-&gt;</span><span class="n">skbaddr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// Deal with skb ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">net_dev_queue_args</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u64</span> <span class="n">unused</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span> <span class="n">skbaddr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">len</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">};</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tp/net/net_dev_queue&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">tp_net_dev_queue</span><span class="p">(</span><span class="k">struct</span> <span class="n">net_dev_queue_args</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">skb</span><span class="p">))</span> <span class="n">args</span><span class="o">-&gt;</span><span class="n">skbaddr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// Deal with skb ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>正如前面所言，<code>BPF_PROG_TYPE_TRACEPOINT</code> 类型的 bpf prog 无法使用 <code>bpf_skb_output</code> helper，因此无法将网络包传到用户态保存到 pcap 文件。</p>
+<h2 id="设备层抓包之-kprobe">设备层抓包之 kprobe</h2>
+<p>类似 <code>tracepoint</code> 的实现方式，使用 <code>kprobe</code> 也能用来 trace 网络包。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/__netif_receive_skb_core&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">kprobe___netif_receive_skb_core</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">**</span><span class="n">pskb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_probe_read_kernel</span><span class="p">(</span><span class="o">&amp;</span><span class="n">skb</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">skb</span><span class="p">),</span> <span class="n">pskb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// Deal with skb ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/__dev_queue_xmit&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">kprobe___dev_queue_xmit</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">sb_dev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Deal with skb ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>BPF_PROG_TYPE_KPROBE</code> 类型的 bpf prog 也无法使用 <code>bpf_skb_output</code> helper，因此也无法将网络包传到用户态保存到 pcap 文件。</p>
+<p>而且，<code>__netif_receive_skb_core()</code> 函数并不一定能够被 <code>kprobe</code> 到，因为它大概率被内联了；比如 Ubuntu 24.04 6.8.0-35-generic 内核。</p>
+<h2 id="设备层抓包之-fentry">设备层抓包之 fentry</h2>
+<p>类似 <code>kprobe</code> 的实现方式，使用 <code>fentry</code> 也能用来 trace 网络包。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fentry/__netif_receive_skb_core&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fentry___netif_receive_skb_core</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">**</span><span class="n">pskb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_probe_read_kernel</span><span class="p">(</span><span class="o">&amp;</span><span class="n">skb</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">skb</span><span class="p">),</span> <span class="n">pskb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// Deal with skb ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fentry/__dev_queue_xmit&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">fentry___dev_queue_xmit</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">sb_dev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// Deal with skb ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>使用 <code>fentry</code> trace <code>__netif_receive_skb_core()</code> 函数的另一个问题是：其第一个参数是 <code>struct sk_buff **pskb</code>，而不是 <code>struct sk_buff *skb</code>，导致不能使用 <code>bpf_skb_output</code> helper。</p>
+<p>如果另寻函数，如：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">netif_receive_skb_core</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">rcu_read_lock</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">    <span class="n">ret</span> <span class="o">=</span> <span class="nf">__netif_receive_skb_one_core</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">rcu_read_unlock</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nf">EXPORT_SYMBOL</span><span class="p">(</span><span class="n">netif_receive_skb_core</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>则存在个问题：收包时可能不经过 <code>netif_receive_skb_core()</code> 函数，而是 <code>netif_receive_skb_list()</code> 函数。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// ${KERNEL}/net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">netif_receive_skb_list</span><span class="p">(</span><span class="k">struct</span> <span class="n">list_head</span> <span class="o">*</span><span class="n">head</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">list_empty</span><span class="p">(</span><span class="n">head</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">trace_netif_receive_skb_list_entry_enabled</span><span class="p">())</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">list_for_each_entry</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">head</span><span class="p">,</span> <span class="n">list</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">trace_netif_receive_skb_list_entry</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">netif_receive_skb_list_internal</span><span class="p">(</span><span class="n">head</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">trace_netif_receive_skb_list_exit</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nf">EXPORT_SYMBOL</span><span class="p">(</span><span class="n">netif_receive_skb_list</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>分析至此，<code>tracepoint</code>, <code>kprobe</code> 和 <code>fentry</code> 都无法满足设备层抓包的需求。</p>
+<p>当了解到 <code>tp_btf</code> bpf prog 的类型是 <code>BPF_PROG_TYPE_TRACING</code>，便将目光转向了它。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-Go" data-lang="Go"><span class="line"><span class="cl"><span class="c1">// https://github.com/cilium/ebpf/blob/fd1fe1b9ac2532d2aec6cc70e05e24e305f78f19/elf_sections.go#L45C1-L46C80
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span><span class="s">&#34;tp_btf+&#34;</span><span class="p">,</span> <span class="nx">sys</span><span class="p">.</span><span class="nx">BPF_PROG_TYPE_TRACING</span><span class="p">,</span> <span class="nx">sys</span><span class="p">.</span><span class="nx">BPF_TRACE_RAW_TP</span><span class="p">,</span> <span class="nx">_SEC_ATTACH_BTF</span><span class="p">},</span>
+</span></span><span class="line"><span class="cl">    <span class="p">{</span><span class="s">&#34;fentry+&#34;</span><span class="p">,</span> <span class="nx">sys</span><span class="p">.</span><span class="nx">BPF_PROG_TYPE_TRACING</span><span class="p">,</span> <span class="nx">sys</span><span class="p">.</span><span class="nx">BPF_TRACE_FENTRY</span><span class="p">,</span> <span class="nx">_SEC_ATTACH_BTF</span><span class="p">},</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="设备层抓包之-tp_btf">设备层抓包之 tp_btf</h2>
+<p>类似 <code>tracepoint</code> 的实现方式，使用 <code>tp_btf</code> 来 trace 网络包。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">__uint</span><span class="p">(</span><span class="n">type</span><span class="p">,</span> <span class="n">BPF_MAP_TYPE_PERF_EVENT_ARRAY</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span> <span class="n">events</span> <span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;.maps&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;tp_btf/netif_receive_skb&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">tp_btf_netif_receive_skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">ethhdr</span> <span class="o">*</span><span class="n">eth</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">eth</span><span class="p">))</span> <span class="p">(</span><span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">head</span><span class="p">)</span> <span class="o">+</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">mac_header</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">iphdr</span> <span class="o">*</span><span class="n">ip</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">ip</span><span class="p">))</span> <span class="p">(</span><span class="n">eth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">udphdr</span> <span class="o">*</span><span class="n">udp</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">udp</span><span class="p">))</span> <span class="p">(</span><span class="n">ip</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u64</span> <span class="n">skbaddr</span> <span class="o">=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="n">skb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">__u64</span> <span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">eth</span><span class="p">,</span> <span class="n">h_proto</span><span class="p">)</span> <span class="o">==</span> <span class="nf">bpf_htons</span><span class="p">(</span><span class="n">ETH_P_IP</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="n">protocol</span><span class="p">)</span> <span class="o">==</span> <span class="n">IPPROTO_ICMP</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_printk</span><span class="p">(</span><span class="s">&#34;tp_btf_netif_receive_skb: %d</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="n">protocol</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">flags</span> <span class="o">=</span> <span class="p">((</span><span class="n">__u64</span><span class="p">)</span> <span class="p">(</span><span class="mi">14</span> <span class="o">+</span> <span class="mi">20</span> <span class="o">+</span> <span class="mi">8</span><span class="p">))</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span> <span class="o">|</span> <span class="n">BPF_F_CURRENT_CPU</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">eth</span><span class="p">,</span> <span class="n">h_proto</span><span class="p">)</span> <span class="o">==</span> <span class="nf">bpf_htons</span><span class="p">(</span><span class="n">ETH_P_IP</span><span class="p">)</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">ip</span><span class="p">,</span> <span class="n">protocol</span><span class="p">)</span> <span class="o">==</span> <span class="n">IPPROTO_UDP</span> <span class="o">&amp;&amp;</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">udp</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span> <span class="o">==</span> <span class="nf">bpf_htons</span><span class="p">(</span><span class="mi">65535</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_skb_output</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">events</span><span class="p">,</span> <span class="n">flags</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">skbaddr</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">skbaddr</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>同时，能够使用 <code>bpf_skb_output</code> helper 将网络包传到用户态保存到 pcap 文件。</p>
+<p>该 demo 的源代码：<a href="https://github.com/Asphaltt/learn-by-example/tree/main/ebpf/tp_btf">learn-by-example tp_btf</a></p>
+<h2 id="总结">总结</h2>
+<p><code>tracepoint</code>, <code>kprobe</code> 和 <code>fentry</code> 都无法满足设备层抓包的需求:</p>
+<ol>
+<li><code>tracepoint</code> bpf prog 类型是 <code>BPF_PROG_TYPE_TRACEPOINT</code>，无法使用 <code>bpf_skb_output</code> helper。</li>
+<li><code>kprobe</code> bpf prog 类型是 <code>BPF_PROG_TYPE_KPROBE</code>，也无法使用 <code>bpf_skb_output</code> helper。</li>
+<li><code>fentry</code> bpf prog 类型是 <code>BPF_PROG_TYPE_TRACING</code>，可以使用 <code>bpf_skb_output</code> helper，但 <code>__netif_receive_skb_core()</code> 函数可能被内联。</li>
+</ol>
+<p><code>tp_btf</code> bpf prog 类型是 <code>BPF_PROG_TYPE_TRACING</code>，能够使用 <code>bpf_skb_output</code> helper，因此能够在 <code>netif_receive_skb</code> 和 <code>net_dev_queue</code> 两个 <code>tracepoint</code> 上 trace 网络包。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2025-01-19
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-142-tcpw-introduction/">
+        <span class="next-text nav-default">eBPF Talk: 使用 tcpw 获取 curl 的五元组信息</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2025<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
