@@ -434,7 +434,7 @@
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/__netif_receive_skb_core&#34;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">kprobe___netif_receive_skb_core</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">**</span><span class="n">pskb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_KPROBE</span><span class="p">(</span><span class="n">kprobe___netif_receive_skb_core</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">**</span><span class="n">pskb</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">
@@ -444,7 +444,7 @@
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;kprobe/__dev_queue_xmit&#34;</span><span class="p">)</span>
-</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">kprobe___dev_queue_xmit</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">sb_dev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_KPROBE</span><span class="p">(</span><span class="n">kprobe___dev_queue_xmit</span><span class="p">,</span> <span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">sb_dev</span><span class="p">)</span>
 </span></span><span class="line"><span class="cl"><span class="p">{</span>
 </span></span><span class="line"><span class="cl">    <span class="c1">// Deal with skb ...
 </span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
