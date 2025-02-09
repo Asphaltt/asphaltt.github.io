@@ -14,7 +14,7 @@
       <link>https://asphaltt.github.io/post/ebpf-talk-144-dynamic-filter-func-arg/</link>
       <pubDate>Sun, 09 Feb 2025 23:01:04 +0800</pubDate>
       <guid>https://asphaltt.github.io/post/ebpf-talk-144-dynamic-filter-func-arg/</guid>
-      <description>在使用 bpf 追踪内核函数的时候，通常都需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多</description>
+      <description>在使用 bpf 追踪内核函数的时候，通常需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多时</description>
     </item>
     <item>
       <title>eBPF Talk: 设备层抓包的那些事</title>

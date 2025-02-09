@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Bice on LeonHwang&#39;s Blogs</title>
+    <link>https://asphaltt.github.io/tags/bice/</link>
+    <description>Recent content in Bice on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo 0.125.0-DEV</generator>
+    <language>zh</language>
+    <copyright>Leon Hwang</copyright>
+    <lastBuildDate>Sun, 09 Feb 2025 23:01:04 +0800</lastBuildDate>
+    <atom:link href="https://asphaltt.github.io/tags/bice/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 动态过滤函数参数</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-144-dynamic-filter-func-arg/</link>
+      <pubDate>Sun, 09 Feb 2025 23:01:04 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-144-dynamic-filter-func-arg/</guid>
+      <description>在使用 bpf 追踪内核函数的时候，通常需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多时</description>
+    </item>
+  </channel>
+</rss>

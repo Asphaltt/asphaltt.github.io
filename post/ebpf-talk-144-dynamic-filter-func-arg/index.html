@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="" /><meta name="description" content="在使用 bpf 追踪内核函数的时候，通常都需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多" /><meta name="keywords"
+  content="" /><meta name="description" content="在使用 bpf 追踪内核函数的时候，通常需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多时" /><meta name="keywords"
   content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -42,19 +42,19 @@
 
 
 <meta property="og:title" content="eBPF Talk: 动态过滤函数参数" />
-<meta property="og:description" content="在使用 bpf 追踪内核函数的时候，通常都需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多" />
+<meta property="og:description" content="在使用 bpf 追踪内核函数的时候，通常需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多时" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-144-dynamic-filter-func-arg/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2025-02-09T23:01:04+08:00" />
 <meta property="article:modified_time" content="2025-02-09T23:01:04+08:00" />
 
   <meta itemprop="name" content="eBPF Talk: 动态过滤函数参数">
-  <meta itemprop="description" content="在使用 bpf 追踪内核函数的时候，通常都需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多">
+  <meta itemprop="description" content="在使用 bpf 追踪内核函数的时候，通常需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多时">
   <meta itemprop="datePublished" content="2025-02-09T23:01:04+08:00">
   <meta itemprop="dateModified" content="2025-02-09T23:01:04+08:00">
-  <meta itemprop="wordCount" content="2994">
-  <meta itemprop="keywords" content="EBPF"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 动态过滤函数参数"/>
-<meta name="twitter:description" content="在使用 bpf 追踪内核函数的时候，通常都需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多"/>
+  <meta itemprop="wordCount" content="2993">
+  <meta itemprop="keywords" content="EBPF,Pwru,Bice"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 动态过滤函数参数"/>
+<meta name="twitter:description" content="在使用 bpf 追踪内核函数的时候，通常需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多时"/>
 
 
 <!--[if lte IE 9]>
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 2994 字 </span>
+      <span class="more-meta"> 约 2993 字 </span>
       <span class="more-meta"> 预计阅读 6 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -188,7 +188,7 @@
   </div>
 </div>
   <div class="post-content">
-    <p>在使用 bpf 追踪内核函数的时候，通常都需要对函数参数进行过滤。</p>
+    <p>在使用 bpf 追踪内核函数的时候，通常需要对函数参数进行过滤。</p>
 <p>如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多时候用起来不够方便。</p>
 <p>而使用 bpf 进行开发时，过滤条件通常是写死在程序里的，这样就无法在运行的时候动态调整过滤条件了。</p>
 <p>有没有办法像 <a href="https://www.tcpdump.org/manpages/pcap-filter.7.html">pcap-filter(7)</a> 那样动态地过滤函数参数呢？</p>
@@ -1056,6 +1056,8 @@
 </div><footer class="post-footer">
     <div class="post-tags">
       <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/pwru/">pwru</a>
+      <a href="/%20tags/bice/">bice</a>
       </div>
     <nav class="post-nav">
       

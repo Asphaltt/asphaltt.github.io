@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://asphaltt.github.io/tags/bice/</loc>
+    <lastmod>2025-02-09T23:01:04+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
     <loc>https://asphaltt.github.io/categories/</loc>
     <lastmod>2025-02-09T23:01:04+08:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -45,6 +52,13 @@
   
   <url>
     <loc>https://asphaltt.github.io/post/</loc>
+    <lastmod>2025-02-09T23:01:04+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/pwru/</loc>
     <lastmod>2025-02-09T23:01:04+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -731,13 +745,6 @@
   
   <url>
     <loc>https://asphaltt.github.io/post/ebpf-talk-100-talk-from-a-pwru-issue/</loc>
-    <lastmod>2024-05-26T15:35:08+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/pwru/</loc>
     <lastmod>2024-05-26T15:35:08+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
