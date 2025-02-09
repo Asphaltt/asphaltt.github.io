@@ -52,7 +52,7 @@
   <meta itemprop="description" content="在使用 bpf 追踪内核函数的时候，通常需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多时">
   <meta itemprop="datePublished" content="2025-02-09T23:01:04+08:00">
   <meta itemprop="dateModified" content="2025-02-09T23:01:04+08:00">
-  <meta itemprop="wordCount" content="2993">
+  <meta itemprop="wordCount" content="2995">
   <meta itemprop="keywords" content="EBPF,Pwru,Bice"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 动态过滤函数参数"/>
 <meta name="twitter:description" content="在使用 bpf 追踪内核函数的时候，通常需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多时"/>
 
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 2993 字 </span>
+      <span class="more-meta"> 约 2995 字 </span>
       <span class="more-meta"> 预计阅读 6 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -179,7 +179,7 @@
             <li><a href="#转换后的结果">转换后的结果</a></li>
           </ul>
         </li>
-        <li><a href="#更通用的函数参数过滤的库">更通用的函数参数过滤的库</a></li>
+        <li><a href="#更通用的函数参数动态过滤的库">更通用的函数参数动态过滤的库</a></li>
         <li><a href="#总结">总结</a></li>
       </ul>
     </li>
@@ -1004,7 +1004,7 @@
 </span></span><span class="line"><span class="cl"><span class="err">0</span><span class="nl">xffffffffc03afef2:</span> <span class="nf">cc</span>                  <span class="no">int3</span>
 </span></span></code></pre></td></tr></table>
 </div>
-</div><h2 id="更通用的函数参数过滤的库">更通用的函数参数过滤的库</h2>
+</div><h2 id="更通用的函数参数动态过滤的库">更通用的函数参数动态过滤的库</h2>
 <p>在 pwru 里，过滤表达式限定了第一个结构体名称必须为 <code>skb</code> 或者 <code>xdp</code>。</p>
 <p>如果解除该限制，动态过滤函数参数的功能就可以用在更多地方了。</p>
 <p>该库的源代码将发布在 <a href="https://github.com/leonhwangprojects/bice">GitHub bice</a>。</p>
