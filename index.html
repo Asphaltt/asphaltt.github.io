@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-01-19T23:34:17+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-02-09T23:01:04+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-144-dynamic-filter-func-arg/">eBPF Talk: 动态过滤函数参数</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2025-02-09 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 2994 字 </span>
+        <span class="more-meta"> 预计阅读 6 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在使用 bpf 追踪内核函数的时候，通常都需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-144-dynamic-filter-func-arg/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-143-capture-packets-on-netdev-layer/">eBPF Talk: 设备层抓包的那些事</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-135-check-disas-of-bpf-prog/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/">eBPF Talk: 我禁用了 freplace tailcall freplace</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-10-20 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1130 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在修复一个由 freplace 引起的 tailcall 无限循环的问题时，接纳社区的建议：禁止将 freplace prog 更新到 prog_array map 中。 使用场景 在项目中，freplace prog 当作 tail-callee 的用法如下： 在 dispatcher prog
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

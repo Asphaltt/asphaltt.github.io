@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 19 Jan 2025 23:34:17 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 09 Feb 2025 23:01:04 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 动态过滤函数参数</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-144-dynamic-filter-func-arg/</link>
+      <pubDate>Sun, 09 Feb 2025 23:01:04 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-144-dynamic-filter-func-arg/</guid>
+      <description>在使用 bpf 追踪内核函数的时候，通常都需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多</description>
+    </item>
     <item>
       <title>eBPF Talk: 设备层抓包的那些事</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-143-capture-packets-on-netdev-layer/</link>
