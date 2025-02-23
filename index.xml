@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 09 Feb 2025 23:01:04 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 23 Feb 2025 23:41:14 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 使用 Last Branch Record 动态追踪内核函数</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-145-lbr/</link>
+      <pubDate>Sun, 23 Feb 2025 23:41:14 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-145-lbr/</guid>
+      <description>Last Branch Record，简称 LBR，是 CPU 提供的一种硬件功能，可以记录程序执行过程中的分支跳转信息；目前，Intel CPU、AMD CPU 均已支持 LBR 功能；</description>
+    </item>
     <item>
       <title>eBPF Talk: 动态过滤函数参数</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-144-dynamic-filter-func-arg/</link>

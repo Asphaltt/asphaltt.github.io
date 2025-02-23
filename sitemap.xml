@@ -3,35 +3,91 @@
   
   <url>
     <loc>https://asphaltt.github.io/tags/bice/</loc>
-    <lastmod>2025-02-09T23:01:04+08:00</lastmod>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/bpflbr/</loc>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/</loc>
-    <lastmod>2025-02-09T23:01:04+08:00</lastmod>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/tags/ebpf/</loc>
-    <lastmod>2025-02-09T23:01:04+08:00</lastmod>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf/</loc>
-    <lastmod>2025-02-09T23:01:04+08:00</lastmod>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://asphaltt.github.io/categories/ebpf-talk/</loc>
-    <lastmod>2025-02-09T23:01:04+08:00</lastmod>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/ebpf-talk-145-lbr/</loc>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/fentry/</loc>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/fexit/</loc>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/lbr/</loc>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/</loc>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/post/</loc>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://asphaltt.github.io/tags/</loc>
+    <lastmod>2025-02-23T23:41:14+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -44,28 +100,7 @@
   </url>
   
   <url>
-    <loc>https://asphaltt.github.io/</loc>
-    <lastmod>2025-02-09T23:01:04+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/post/</loc>
-    <lastmod>2025-02-09T23:01:04+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
     <loc>https://asphaltt.github.io/tags/pwru/</loc>
-    <lastmod>2025-02-09T23:01:04+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/</loc>
     <lastmod>2025-02-09T23:01:04+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -80,13 +115,6 @@
   
   <url>
     <loc>https://asphaltt.github.io/post/ebpf-talk-142-tcpw-introduction/</loc>
-    <lastmod>2024-12-22T21:29:52+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/fexit/</loc>
     <lastmod>2024-12-22T21:29:52+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -129,13 +157,6 @@
   
   <url>
     <loc>https://asphaltt.github.io/post/ebpf-talk-141-backtrace-on-arm64/</loc>
-    <lastmod>2024-12-16T00:13:36+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/fentry/</loc>
     <lastmod>2024-12-16T00:13:36+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -186,13 +207,6 @@
   <url>
     <loc>https://asphaltt.github.io/tags/tailcall-issues/</loc>
     <lastmod>2024-12-01T23:58:54+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://asphaltt.github.io/tags/bpflbr/</loc>
-    <lastmod>2024-11-24T23:13:45+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>

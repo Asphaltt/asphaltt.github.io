@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 使用 Last Branch Record 动态追踪内核函数 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="Last Branch Record，简称 LBR，是 CPU 提供的一种硬件功能，可以记录程序执行过程中的分支跳转信息；目前，Intel CPU、AMD CPU 均已支持 LBR 功能；" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-145-lbr/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 使用 Last Branch Record 动态追踪内核函数" />
+<meta property="og:description" content="Last Branch Record，简称 LBR，是 CPU 提供的一种硬件功能，可以记录程序执行过程中的分支跳转信息；目前，Intel CPU、AMD CPU 均已支持 LBR 功能；" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-145-lbr/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2025-02-23T23:41:14+08:00" />
+<meta property="article:modified_time" content="2025-02-23T23:41:14+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 使用 Last Branch Record 动态追踪内核函数">
+  <meta itemprop="description" content="Last Branch Record，简称 LBR，是 CPU 提供的一种硬件功能，可以记录程序执行过程中的分支跳转信息；目前，Intel CPU、AMD CPU 均已支持 LBR 功能；">
+  <meta itemprop="datePublished" content="2025-02-23T23:41:14+08:00">
+  <meta itemprop="dateModified" content="2025-02-23T23:41:14+08:00">
+  <meta itemprop="wordCount" content="1147">
+  <meta itemprop="keywords" content="EBPF,Bpflbr,LBR,Bice,Fentry,Fexit"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 使用 Last Branch Record 动态追踪内核函数"/>
+<meta name="twitter:description" content="Last Branch Record，简称 LBR，是 CPU 提供的一种硬件功能，可以记录程序执行过程中的分支跳转信息；目前，Intel CPU、AMD CPU 均已支持 LBR 功能；"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 使用 Last Branch Record 动态追踪内核函数</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2025-02-23 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1147 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#bpflbr-实现原理讲解">bpflbr: 实现原理讲解</a></li>
+        <li><a href="#bpflbr-功能列表">bpflbr: 功能列表</a>
+          <ul>
+            <li><a href="#bpflbr-lbr-功能展示">bpflbr: LBR 功能展示</a></li>
+            <li><a href="#bpflbr-输出函数调用栈">bpflbr: 输出函数调用栈</a></li>
+            <li><a href="#bpflbr-反汇编-bpf-prog">bpflbr: 反汇编 bpf prog</a></li>
+            <li><a href="#bpflbr-反汇编内核函数">bpflbr: 反汇编内核函数</a></li>
+          </ul>
+        </li>
+        <li><a href="#bpflbr-将具备更加强大的功能">bpflbr: 将具备更加强大的功能</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>Last Branch Record，简称 LBR，是 CPU 提供的一种硬件功能，可以记录程序执行过程中的分支跳转信息；目前，Intel CPU、AMD CPU 均已支持 LBR 功能；Linux 内核正在支持 ARM CPU 的分支跳转记录功能。</p>
+<p>即使是个人电脑的 Intel CPU，也支持 LBR 功能：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ dmesg <span class="p">|</span> grep -i lbr
+</span></span><span class="line"><span class="cl"><span class="o">[</span>    0.101727<span class="o">]</span> Performance Events: XSAVE Architectural LBR, PEBS fmt4+-baseline,  AnyThread deprecated, Alderlake Hybrid events, 32-deep LBR, full-width counters, Intel PMU driver.
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>LBR 的资料请参考：</p>
+<ul>
+<li><a href="https://www.intel.com/content/www/us/en/developer/articles/technical/intel-sdm.html">Intel® 64 and IA-32 Architectures Software Developer Manuals</a></li>
+<li><a href="https://lwn.net/Articles/680985/">An introduction to last branch records</a></li>
+<li><a href="https://lwn.net/Articles/680996/">Advanced usage of last branch records</a></li>
+</ul>
+<p>尽管不清楚 LBR 的工作原理，并不妨碍用来追踪内核函数；甚至可以用来追踪 bpf prog 的内部执行细节。</p>
+<p>在 bpf 中，从 <a href="https://github.com/torvalds/linux/commit/856c02dbce4f">commit (&ldquo;bpf: Introduce helper bpf_get_branch_snapshot&rdquo;)</a> v5.16 内核开始，引入了 <code>bpf_get_branch_snapshot</code> helper 函数，可以获取当前 CPU 的 LBR 记录。</p>
+<p><code>bpflbr</code> 便是使用 <code>bpf_get_branch_snapshot</code> helper 实现的 LBR 追踪工具，可以追踪内核函数的调用关系，以及 bpf prog 的执行细节。</p>
+<h2 id="bpflbr-实现原理讲解">bpflbr: 实现原理讲解</h2>
+<p><code>bpflbr</code> 分 2 部分：</p>
+<ol>
+<li><code>bpflbr</code> bpf prog，用于采集 LBR 记录。</li>
+<li><code>bpflbr</code> 用户态程序，用于解析 LBR 记录。</li>
+</ol>
+<p>因为 LBR 记录的是分支跳转记录，所以就需要在 <code>bpflbr</code> bpf prog 的最前面就调用 <code>bpf_get_branch_snapshot</code> helper 函数来获取 LBR 记录，避免 <code>bpflbr</code> bpf prog 本身的分支跳转记录。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">event</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">perf_branch_entry</span> <span class="n">lbr</span><span class="p">[</span><span class="n">MAX_LBR_ENTRIES</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span> <span class="nf">__attribute__</span><span class="p">((</span><span class="n">packed</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span> <span class="kt">int</span>
+</span></span><span class="line"><span class="cl"><span class="nf">emit_lbr_event</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">ctx</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">event</span> <span class="o">*</span><span class="n">event</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">cfg</span><span class="o">-&gt;</span><span class="n">suppress_lbr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">event</span><span class="o">-&gt;</span><span class="n">nr_bytes</span> <span class="o">=</span> <span class="nf">bpf_get_branch_snapshot</span><span class="p">(</span><span class="n">event</span><span class="o">-&gt;</span><span class="n">lbr</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">event</span><span class="o">-&gt;</span><span class="n">lbr</span><span class="p">),</span> <span class="mi">0</span><span class="p">);</span> <span class="cm">/* required 5.16 kernel. */</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_ringbuf_output</span><span class="p">(</span><span class="o">&amp;</span><span class="n">events</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">event</span><span class="p">),</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>然后，在用户态程序中，读取并解析 LBR 记录：</p>
+<ol>
+<li>如果是内核函数：
+<ol>
+<li>通过 <code>/proc/kallsyms</code> 符号表解析函数名。</li>
+<li>通过 <code>vmlinux</code> dbgsym 文件解析 line info。</li>
+</ol>
+</li>
+<li>如果是 bpf prog:
+<ol>
+<li>事先解析所有 bpf prog 的信息，包括函数名、line info。</li>
+</ol>
+</li>
+<li>通过 LBR 记录输出分支跳转信息。</li>
+</ol>
+<p>更详细的源代码讲解：<a href="https://mp.weixin.qq.com/s/-TCmNR_l2lhMjiaiSjxPYg">eBPF 项目源码分析-BPFLBR</a>。</p>
+<h2 id="bpflbr-功能列表">bpflbr: 功能列表</h2>
+<p><code>bpflbr</code> 已经实现了以下功能：</p>
+<ol>
+<li>使用 <code>fexit</code> 动态追踪 bpf prog 的内部执行细节。</li>
+<li>使用 <code>fentry</code> 动态追踪 bpf prog 执行前的内核函数分支跳转记录。</li>
+<li>使用 <code>fexit</code> 动态追踪内核函数的内部执行细节。</li>
+<li>使用 <code>fentry</code> 动态追踪内核函数执行前的分支跳转记录。</li>
+<li>通过 <code>--output-stack</code> 输出函数调用栈。</li>
+<li>默认输出函数参数、函数返回值的详细信息。</li>
+<li>通过 <a href="https://github.com/capstone-engine/capstone">capstone-engine</a> 反汇编内核函数和 bpf prog。</li>
+</ol>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ ./bpflbr -h
+</span></span><span class="line"><span class="cl">Usage of bpflbr:
+</span></span><span class="line"><span class="cl">  -d, --disasm                disasm bpf prog or kernel <span class="k">function</span>
+</span></span><span class="line"><span class="cl">  -B, --disasm-bytes uint     disasm bytes of kernel <span class="k">function</span>, <span class="m">0</span> to guess it automatically
+</span></span><span class="line"><span class="cl">      --disasm-intel-syntax   use Intel asm syntax <span class="k">for</span> disasm, ATT asm syntax by default
+</span></span><span class="line"><span class="cl">      --filter-pid uint32     filter pid <span class="k">for</span> tracing
+</span></span><span class="line"><span class="cl">  -k, --kfunc strings         filter kernel functions by shell wildcards way
+</span></span><span class="line"><span class="cl">      --kfunc-all-kmods       filter functions in all kernel modules
+</span></span><span class="line"><span class="cl">      --limit-events uint     limited number events to output, <span class="m">0</span> to output all events
+</span></span><span class="line"><span class="cl">  -m, --mode string           mode of lbr tracing, <span class="nb">exit</span> or entry <span class="o">(</span>default <span class="s2">&#34;exit&#34;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">  -o, --output string         output file <span class="k">for</span> the result, default is stdout
+</span></span><span class="line"><span class="cl">      --output-stack          output <span class="k">function</span> call stack
+</span></span><span class="line"><span class="cl">  -p, --prog strings          bpf prog info <span class="k">for</span> bpflbr in format PROG<span class="o">[</span>,PROG,..<span class="o">]</span>, PROG: PROGID<span class="o">[</span>:&lt;prog <span class="k">function</span> name&gt;<span class="o">]</span>, PROGID: &lt;prog ID&gt; or <span class="s1">&#39;i/id:&lt;prog ID&gt;&#39;</span> or <span class="s1">&#39;p/pinned:&lt;pinned file&gt;&#39;</span> or <span class="s1">&#39;t/tag:&lt;prog tag&gt;&#39;</span> or <span class="s1">&#39;n/name:&lt;prog full name&gt;&#39;</span> or <span class="s1">&#39;pid:&lt;pid&gt;&#39;</span><span class="p">;</span> all bpf progs will be traced <span class="k">if</span> <span class="s1">&#39;*&#39;</span> is specified
+</span></span><span class="line"><span class="cl">      --suppress-lbr          suppress LBR perf event
+</span></span><span class="line"><span class="cl">  -v, --verbose               output verbose log
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="bpflbr-lbr-功能展示">bpflbr: LBR 功能展示</h3>
+<p>使用 <code>fexit</code> 动态追踪 bpf prog 的内部执行细节：</p>
+<p><img src="/eBPF_Talk_145_bpflbr_pwru_exit_mode.png" alt="bpflbr pwru - exit mode"></p>
+<p>使用 <code>fentry</code> 动态追踪 bpf prog 执行前的内核函数分支跳转记录：</p>
+<p><img src="/eBPF_Talk_145_bpflbr_pwru_entry_mode.png" alt="bpflbr pwru - entry mode"></p>
+<h3 id="bpflbr-输出函数调用栈">bpflbr: 输出函数调用栈</h3>
+<p><img src="/eBPF_Talk_145_bpflbr_func_stack.png" alt="bpflbr func stack"></p>
+<h3 id="bpflbr-反汇编-bpf-prog">bpflbr: 反汇编 bpf prog</h3>
+<p><img src="/eBPF_Talk_145_bpflbr_disasm_bpf_prog.jpg" alt="bpflbr disasm bpf prog"></p>
+<h3 id="bpflbr-反汇编内核函数">bpflbr: 反汇编内核函数</h3>
+<p><img src="/eBPF_Talk_145_bpflbr_disasm_kfunc.jpg" alt="bpflbr disasm kfunc"></p>
+<h2 id="bpflbr-将具备更加强大的功能">bpflbr: 将具备更加强大的功能</h2>
+<p>计划将 <a href="/post/ebpf-talk-144-dynamic-filter-func-arg/">eBPF Talk: 动态过滤函数参数</a> 的能力整合进 <code>bpflbr</code>，使得可以动态过滤函数参数；甚至使用 <code>pcap-filter(7)</code> 的语法来过滤 skb/xdp 数据包。</p>
+<p>并打算参考 <a href="https://github.com/leonhwangprojects/bice">bice</a> 的原理，动态输出结构体/联合体指针函数参数的指定字段。</p>
+<h2 id="总结">总结</h2>
+<p><code>bpflbr</code> 是一个使用 LBR 功能追踪内核函数和 bpf prog 的工具，可以输出函数调用栈、函数参数、函数返回值的详细信息，还可以反汇编内核函数和 bpf prog。</p>
+<p><code>bpflbr</code> 的源代码在 <a href="https://github.com/Asphaltt/bpflbr">bpflbr</a>。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2025-02-23
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/bpflbr/">bpflbr</a>
+      <a href="/%20tags/lbr/">LBR</a>
+      <a href="/%20tags/bice/">bice</a>
+      <a href="/%20tags/fentry/">fentry</a>
+      <a href="/%20tags/fexit/">fexit</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-144-dynamic-filter-func-arg/">
+        <span class="next-text nav-default">eBPF Talk: 动态过滤函数参数</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2025<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
