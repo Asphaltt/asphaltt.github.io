@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 09 Feb 2025 23:01:04 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 09 Mar 2025 23:10:43 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/tags/pwru/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: btrace v0.2.0 发布</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-146-btrace-v0.2.0/</link>
+      <pubDate>Sun, 09 Mar 2025 23:10:43 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-146-btrace-v0.2.0/</guid>
+      <description>btrace 是什么？btrace 是一款 bpf 时代的现代化内核函数动态追踪工具。 btrace 重命名自 bpflbr，参考 eBPF Talk: 使用 Last Branch Record 动态追踪内核函数，在 bpflbr v0.1.0 的基础上，</description>
+    </item>
     <item>
       <title>eBPF Talk: 动态过滤函数参数</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-144-dynamic-filter-func-arg/</link>

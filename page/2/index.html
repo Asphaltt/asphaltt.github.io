@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-02-23T23:41:14+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-03-09T23:10:43+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-136-fix-bpftool-disasm-bug/">eBPF Talk: 修复了 bpftool 中存在了 7 年的 BUG</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-11-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1625 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在 eBPF Talk: 自制查看 bpf prog 反汇编的工具 里提到的 bpftool BUG Wrong callq address displayed，花了两三天时间将它给修了。 TL;DR [PATCH bpf v3] bpf, bpftool: Fix incorrect disasm pc 已合入 bpf 仓库。 BUG 复现 使用 bpftool
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-136-fix-bpftool-disasm-bug/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-135-check-disas-of-bpf-prog/">eBPF Talk: 自制查看 bpf prog 反汇编的工具</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-126-toa/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-125-xdp-crc/">eBPF Talk: 手撕 verifier log 一例</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-07-28 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1704 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      Ziv Chow 在微信群里问了个 verifier 的问题，一眼看上去肯定是 bpf 代码写得有问题，但是问题具体在哪里呢？ 数组访问 如上图，crc16tab[key] 访问 crc16tab 数组时
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-125-xdp-crc/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

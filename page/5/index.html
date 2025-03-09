@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-02-23T23:41:14+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-03-09T23:10:43+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-105-network-jitter/">eBPF Talk: 记录一次网络抖动排障</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-05-26 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 901 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近做了一次网络抖动排障，庆幸定位到了原因，记录一下。 网络抖动的表现 业务方是 DB 团队，他们对慢查询有监控，发现了一些慢查询；而且，确认是接入虚
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-105-network-jitter/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-104-tailcall-in-bpf2bpf/">eBPF Talk: `tailcall` in `bpf2bpf` 踩坑一则</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-96-kernel-bpf-contribution-/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-95-kernel-bpf-contribution/">eBPF Talk: 内核 bpf 子系统贡献之修复 tailcall 无限循环</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-05-15 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 802 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      梅开二度，再次向内核 bpf 子系统贡献 patch。 bpf, x64: Fix tailcall infinite loop 此次修复的是 x64 平台的一个 bug，该 bug 会导致 tailcall 陷入无限循环，最终导致宕机。 tailcall 无限循环 如
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-95-kernel-bpf-contribution/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
