@@ -52,7 +52,7 @@
   <meta itemprop="description" content="btrace 是什么？btrace 是一款 bpf 时代的现代化内核函数动态追踪工具。 btrace 重命名自 bpflbr，参考 eBPF Talk: 使用 Last Branch Record 动态追踪内核函数，在 bpflbr v0.1.0 的基础上，">
   <meta itemprop="datePublished" content="2025-03-09T23:10:43+08:00">
   <meta itemprop="dateModified" content="2025-03-09T23:10:43+08:00">
-  <meta itemprop="wordCount" content="1266">
+  <meta itemprop="wordCount" content="1269">
   <meta itemprop="keywords" content="EBPF,Btrace,Bpflbr,Bice,Pwru,Socketrace,Elibpcap"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: btrace v0.2.0 发布"/>
 <meta name="twitter:description" content="btrace 是什么？btrace 是一款 bpf 时代的现代化内核函数动态追踪工具。 btrace 重命名自 bpflbr，参考 eBPF Talk: 使用 Last Branch Record 动态追踪内核函数，在 bpflbr v0.1.0 的基础上，"/>
 
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 1266 字 </span>
+      <span class="more-meta"> 约 1269 字 </span>
       <span class="more-meta"> 预计阅读 3 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -167,7 +167,7 @@
   <ul>
     <li>
       <ul>
-        <li><a href="#使用简单的-c-表达式过来函数参数的属性">使用简单的 C 表达式过来函数参数的属性</a></li>
+        <li><a href="#使用简单的-c-表达式来过滤函数参数的属性">使用简单的 C 表达式来过滤函数参数的属性</a></li>
         <li><a href="#根据函数参数来过滤需要动态追踪的内核函数列表">根据函数参数来过滤需要动态追踪的内核函数列表</a></li>
         <li><a href="#使用-pcap-filter7-语法来过滤网络包">使用 pcap-filter(7) 语法来过滤网络包</a></li>
         <li><a href="#支持---output-pkt-输出网络包里的五元组信息">支持 <code>--output-pkt</code> 输出网络包里的五元组信息</a></li>
@@ -182,12 +182,12 @@
     <p><code>btrace</code> 是什么？<code>btrace</code> 是一款 bpf 时代的现代化内核函数动态追踪工具。</p>
 <p><code>btrace</code> 重命名自 <code>bpflbr</code>，参考 <a href="/post/ebpf-talk-145-lbr/">eBPF Talk: 使用 Last Branch Record 动态追踪内核函数</a>，在 <code>bpflbr</code> v0.1.0 的基础上，新增了几个重要的功能：</p>
 <ol>
-<li>使用简单的 C 表达式过来函数参数的属性。</li>
+<li>使用简单的 C 表达式来过滤函数参数的属性。</li>
 <li>根据函数参数来过滤需要动态追踪的内核函数列表。</li>
 <li>使用 <a href="https://www.tcpdump.org/manpages/pcap-filter.7.html">pcap-filter(7)</a> 语法来过滤网络包。</li>
 <li>支持 <code>--output-pkt</code> 输出网络包里的五元组信息。</li>
 </ol>
-<h2 id="使用简单的-c-表达式过来函数参数的属性">使用简单的 C 表达式过来函数参数的属性</h2>
+<h2 id="使用简单的-c-表达式来过滤函数参数的属性">使用简单的 C 表达式来过滤函数参数的属性</h2>
 <p>使用 <a href="/post/ebpf-talk-144-dynamic-filter-func-arg/">eBPF Talk: 动态过滤函数参数</a> 里介绍的 <a href="https://github.com/leonhwangprojects/bice">bice</a> 库，<code>btrace</code> 可以使用简单的 C 表达式来过滤函数参数的属性。</p>
 <p><img src="/eBPF_Talk_146_btrace_filter_arg.png" alt="btrace &ndash;filter-arg"></p>
 <p>基于 <code>bice</code> 库，该功能的实现原理：</p>
@@ -327,7 +327,7 @@
 <li>支持反汇编内核函数和 bpf prog。</li>
 <li>支持输出函数调用栈。</li>
 <li>支持输出带类型信息的参数和带类型的返回值。</li>
-<li>支持使用简单的 C 表达式过来函数参数的属性。</li>
+<li>支持使用简单的 C 表达式来过滤函数参数的属性。</li>
 <li>支持根据函数参数来过滤需要动态追踪的内核函数列表。</li>
 <li>支持使用 <strong>pcap-filter(7)</strong> 语法来过滤网络包。</li>
 <li>支持 <code>--output-pkt</code> 输出网络包里的五元组信息。</li>
@@ -382,7 +382,11 @@
       <a href="/%20tags/elibpcap/">elibpcap</a>
       </div>
     <nav class="post-nav">
-      
+      <a class="prev" href="/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
       <a class="next" href="/post/ebpf-talk-145-lbr/">
         <span class="next-text nav-default">eBPF Talk: 使用 Last Branch Record 动态追踪内核函数</span>
         <span class="next-text nav-mobile">下一篇</span>

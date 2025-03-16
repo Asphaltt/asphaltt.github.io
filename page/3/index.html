@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-03-09T23:10:43+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-03-17T00:25:07+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-126-toa/">eBPF Talk: BPF 读取 TOA 的 4 种方式</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-08-11 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 2124 字 </span>
+        <span class="more-meta"> 预计阅读 5 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在 4 层 tcp 代理的场景下，一般使用 TOA option 将真实的客户端地址和端口信息传递给后端服务。 在后端服务里，如果不使用内核模块读取 TOA，而是使用 eBPF 来读取 T
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-126-toa/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-125-xdp-crc/">eBPF Talk: 手撕 verifier log 一例</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-117-pcap-in-vista/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-116-upgrade-xdp-costlessly/">eBPF Talk: 混部环境下无损升级 XDP 程序的思路</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-05-26 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 920 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      混部环境指的是当前服务器不是 XDP 程序独占的，部署有其它的网络服务。 如果服务器使用的是 Intel 网卡、而且 XDP 程序采用 Native 模式挂载到网卡上，那么在挂载和卸载
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-116-upgrade-xdp-costlessly/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

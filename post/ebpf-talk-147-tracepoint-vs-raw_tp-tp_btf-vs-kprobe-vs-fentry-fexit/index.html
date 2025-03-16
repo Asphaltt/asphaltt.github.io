@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="凑个热闹，静态地对比一下 tracepoint、raw_tp/tp_btf、kprobe 和 fentry/fexit 四种 bpf 动态追踪技术的运行时性能。 eBPF代码性能调" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能" />
+<meta property="og:description" content="凑个热闹，静态地对比一下 tracepoint、raw_tp/tp_btf、kprobe 和 fentry/fexit 四种 bpf 动态追踪技术的运行时性能。 eBPF代码性能调" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2025-03-17T00:25:07+08:00" />
+<meta property="article:modified_time" content="2025-03-17T00:25:07+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能">
+  <meta itemprop="description" content="凑个热闹，静态地对比一下 tracepoint、raw_tp/tp_btf、kprobe 和 fentry/fexit 四种 bpf 动态追踪技术的运行时性能。 eBPF代码性能调">
+  <meta itemprop="datePublished" content="2025-03-17T00:25:07+08:00">
+  <meta itemprop="dateModified" content="2025-03-17T00:25:07+08:00">
+  <meta itemprop="wordCount" content="3709">
+  <meta itemprop="keywords" content="EBPF,Btrace,Tracepoint,Raw_tp,Tp_btf,Kprobe,Fentry,Fexit,LBR"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能"/>
+<meta name="twitter:description" content="凑个热闹，静态地对比一下 tracepoint、raw_tp/tp_btf、kprobe 和 fentry/fexit 四种 bpf 动态追踪技术的运行时性能。 eBPF代码性能调"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2025-03-17 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 3709 字 </span>
+      <span class="more-meta"> 预计阅读 8 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#实验环境">实验环境</a></li>
+        <li><a href="#分析-tracepoint-的-bpf-程序被调用前的函数调用栈逻辑分支记录栈和反汇编的机器码">分析 tracepoint 的 bpf 程序被调用前的函数调用栈、逻辑分支记录栈和反汇编的机器码</a>
+          <ul>
+            <li><a href="#tracepoint-的-bpf-程序被调用前的函数调用栈">tracepoint 的 bpf 程序被调用前的函数调用栈</a></li>
+            <li><a href="#tracepoint-的-bpf-程序被调用前的逻辑分支记录栈">tracepoint 的 bpf 程序被调用前的逻辑分支记录栈</a></li>
+            <li><a href="#tracepoint-的-bpf-程序被调用前的反汇编的机器码">tracepoint 的 bpf 程序被调用前的反汇编的机器码</a></li>
+          </ul>
+        </li>
+        <li><a href="#分析-raw_tptp_btf-的-bpf-程序被调用前的函数调用栈逻辑分支记录栈和反汇编的机器码">分析 raw_tp/tp_btf 的 bpf 程序被调用前的函数调用栈、逻辑分支记录栈和反汇编的机器码</a>
+          <ul>
+            <li><a href="#raw_tptp_btf-的-bpf-程序被调用前的函数调用栈">raw_tp/tp_btf 的 bpf 程序被调用前的函数调用栈</a></li>
+            <li><a href="#raw_tptp_btf-的-bpf-程序被调用前的逻辑分支记录栈">raw_tp/tp_btf 的 bpf 程序被调用前的逻辑分支记录栈</a></li>
+            <li><a href="#raw_tptp_btf-的-bpf-程序被调用前的反汇编的机器码">raw_tp/tp_btf 的 bpf 程序被调用前的反汇编的机器码</a></li>
+          </ul>
+        </li>
+        <li><a href="#分析-kprobe-的-bpf-程序被调用前的函数调用栈逻辑分支记录栈和反汇编的机器码">分析 kprobe 的 bpf 程序被调用前的函数调用栈、逻辑分支记录栈和反汇编的机器码</a>
+          <ul>
+            <li><a href="#kprobe-的-bpf-程序被调用前的逻辑分支记录栈">kprobe 的 bpf 程序被调用前的逻辑分支记录栈</a></li>
+            <li><a href="#kprobe-的-bpf-程序被调用前的反汇编的机器码">kprobe 的 bpf 程序被调用前的反汇编的机器码</a></li>
+          </ul>
+        </li>
+        <li><a href="#分析-fentryfexit-的-bpf-程序被调用前的函数调用栈逻辑分支记录栈和反汇编的机器码">分析 fentry/fexit 的 bpf 程序被调用前的函数调用栈、逻辑分支记录栈和反汇编的机器码</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>凑个热闹，静态地对比一下 tracepoint、raw_tp/tp_btf、kprobe 和 fentry/fexit 四种 bpf 动态追踪技术的运行时性能。</p>
+<ul>
+<li><a href="https://mp.weixin.qq.com/s/RW9q8_Dqw_I8oZZrf060cA">eBPF代码性能调优必知必会-tracing篇</a></li>
+<li><a href="https://mp.weixin.qq.com/s/HapngOAw22MqCzC4HOSePg">tracepoint真的比kprobe开销更小吗？？？</a></li>
+</ul>
+<p>什么？看到那位大佬用调试内核的方式来对比 tracepoint 和 kprobe 的性能，简直牛刀小用，可操作性不是普通人能及的。</p>
+<p>那么，既然已经到了 bpf 时代，有没有使用 bpf 且简单可行的方式来对比他们的运行时性能呢？</p>
+<p><code>btrace</code> 是一款 bpf 时代的现代化内核函数动态追踪工具，能够用来追踪 tracee 的函数调用栈、<a href="https://mp.weixin.qq.com/s/IIxw1iBfDQE3k7K-Adyd1Q">逻辑分支记录栈</a>，也能够通过反汇编的方式分析 tracee 的机器码。</p>
+<p>本文将使用 <code>btrace</code> 来静态地对比它们的运行时性能。</p>
+<p>P.S. <code>btrace</code> 项目源代码：<a href="https://github.com/leonhwangprojects/btrace">github.com/leonhwangprojects/btrace</a>。</p>
+<h2 id="实验环境">实验环境</h2>
+<p>这是一台 Intel CPU 的小主机，安装了 Ubuntu 24.10 LTS 操作系统；该 Intel CPU 支持 LBR 特性。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ dmesg <span class="p">|</span> grep -i lbr
+</span></span><span class="line"><span class="cl"><span class="o">[</span>    0.101408<span class="o">]</span> Performance Events: XSAVE Architectural LBR, PEBS fmt4+-baseline,  AnyThread deprecated, Alderlake Hybrid events, 32-deep LBR, full-width counters, Intel PMU driver.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ uname -a
+</span></span><span class="line"><span class="cl">Linux bpf-dev 6.11.0-8-generic <span class="c1">#8-Ubuntu SMP PREEMPT_DYNAMIC Mon Sep 16 13:41:20 UTC 2024 x86_64 x86_64 x86_64 GNU/Linux</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ lsb_release -a
+</span></span><span class="line"><span class="cl">No LSB modules are available.
+</span></span><span class="line"><span class="cl">Distributor ID: Ubuntu
+</span></span><span class="line"><span class="cl">Description:    Ubuntu 24.10
+</span></span><span class="line"><span class="cl">Release:        24.10
+</span></span><span class="line"><span class="cl">Codename:       oracular
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ clang --version
+</span></span><span class="line"><span class="cl">Ubuntu clang version 18.1.8 <span class="o">(</span>11<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Target: x86_64-pc-linux-gnu
+</span></span><span class="line"><span class="cl">Thread model: posix
+</span></span><span class="line"><span class="cl">InstalledDir: /usr/bin
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ go version
+</span></span><span class="line"><span class="cl">go version go1.24.0 linux/amd64
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="分析-tracepoint-的-bpf-程序被调用前的函数调用栈逻辑分支记录栈和反汇编的机器码">分析 tracepoint 的 bpf 程序被调用前的函数调用栈、逻辑分支记录栈和反汇编的机器码</h2>
+<p>tracepoint 学习资料推荐：</p>
+<ul>
+<li><a href="https://github.com/mannkafai/bpf-inside/blob/main/doc/03-tracepoint%20inside.md">Tracepoint的内核实现</a></li>
+<li><a href="http://terenceli.github.io/%E6%8A%80%E6%9C%AF/2020/08/08/trace-event-framework">Linux tracing - trace event framework</a></li>
+</ul>
+<p>以 <code>netlink/netlink_extack</code> tracepoint 为例：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ cat /sys/kernel/debug/tracing/events/netlink/netlink_extack/format
+</span></span><span class="line"><span class="cl">name: netlink_extack
+</span></span><span class="line"><span class="cl">ID: <span class="m">1680</span>
+</span></span><span class="line"><span class="cl">format:
+</span></span><span class="line"><span class="cl">    field:unsigned short common_type<span class="p">;</span>   offset:0<span class="p">;</span>   size:2<span class="p">;</span> signed:0<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    field:unsigned char common_flags<span class="p">;</span>   offset:2<span class="p">;</span>   size:1<span class="p">;</span> signed:0<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    field:unsigned char common_preempt_count<span class="p">;</span>   offset:3<span class="p">;</span>   size:1<span class="p">;</span> signed:0<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    field:int common_pid<span class="p">;</span>   offset:4<span class="p">;</span>   size:4<span class="p">;</span> signed:1<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    field:__data_loc char<span class="o">[]</span> msg<span class="p">;</span>    offset:8<span class="p">;</span>   size:4<span class="p">;</span> signed:0<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">print fmt: <span class="s2">&#34;msg=%s&#34;</span>, __get_str<span class="o">(</span>msg<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// net/netlink/af_netlink.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">do_trace_netlink_extack</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">trace_netlink_extack</span><span class="p">(</span><span class="n">msg</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nf">EXPORT_SYMBOL</span><span class="p">(</span><span class="n">do_trace_netlink_extack</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h3 id="tracepoint-的-bpf-程序被调用前的函数调用栈">tracepoint 的 bpf 程序被调用前的函数调用栈</h3>
+<p>使用 <a href="/post/ebpf-talk-85-trace-tracepoint-program/">eBPF Talk: trace tracepoint 程序</a> 里的例子，直接使用 <code>btrace</code> 看看 tracepoint 里调用 bpf 程序的函数调用栈：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -p <span class="m">183</span> --output-stack --limit-events <span class="m">1</span> -v
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">2025/03/16 21:34:53 btrace is running..
+</span></span><span class="line"><span class="cl">tp__netlink_extack<span class="o">[</span>bpf<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>struct netlink_extack_error_ctx *<span class="o">)</span><span class="nv">ctx</span><span class="o">=</span>0xffffc0c73f208470<span class="o">)</span> <span class="nv">retval</span><span class="o">=(</span>int<span class="o">)</span><span class="m">0</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">8</span> <span class="nv">process</span><span class="o">=(</span>14792:fentry_fexit-tr<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Func stack:
+</span></span><span class="line"><span class="cl">  ...
+</span></span><span class="line"><span class="cl">  0xffffffffc03836a1:tp__netlink_extack+0x5                             <span class="p">;</span> tracepoint.c:27
+</span></span><span class="line"><span class="cl">  0xffffffffbbbb7873:perf_trace_run_bpf_submit+0x43                     <span class="p">;</span> kernel/events/core.c:10315
+</span></span><span class="line"><span class="cl">  0xffffffffbc7952a4:perf_trace_netlink_extack+0x104                    <span class="p">;</span> include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl">  0xffffffffbc794619:do_trace_netlink_extack+0x49                       <span class="p">;</span> include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl">  0xffffffffbc787308:__tcf_qdisc_find.part.0+0x1a8                      <span class="p">;</span> net/sched/cls_api.c:1214
+</span></span><span class="line"><span class="cl">  0xffffffffbc78c95a:tc_new_tfilter+0x16a                               <span class="p">;</span> net/sched/cls_api.c:1195
+</span></span><span class="line"><span class="cl">  0xffffffffbc71a400:rtnetlink_rcv_msg+0x380                            <span class="p">;</span> net/core/rtnetlink.c:6638
+</span></span><span class="line"><span class="cl">  0xffffffffbc79a872:netlink_rcv_skb+0x52                               <span class="p">;</span> net/netlink/af_netlink.c:2550
+</span></span><span class="line"><span class="cl">  0xffffffffbc7180c5:rtnetlink_rcv+0x15                                 <span class="p">;</span> net/core/rtnetlink.c:6666
+</span></span><span class="line"><span class="cl">  0xffffffffbc799fa5:netlink_unicast+0x245                              <span class="p">;</span> net/netlink/af_netlink.c:1331
+</span></span><span class="line"><span class="cl">  0xffffffffbc79a314:netlink_sendmsg+0x214                              <span class="p">;</span> net/netlink/af_netlink.c:1901
+</span></span><span class="line"><span class="cl">  ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到，从 <code>__tcf_qdisc_find</code> 到 <code>tp__netlink_extack</code> bpf 程序有 4 个函数调用深度。</p>
+<h3 id="tracepoint-的-bpf-程序被调用前的逻辑分支记录栈">tracepoint 的 bpf 程序被调用前的逻辑分支记录栈</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -p <span class="m">321</span> --mode entry --output-lbr --limit-events <span class="m">1</span> -v
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">2025/03/16 23:36:20 btrace is running..
+</span></span><span class="line"><span class="cl">tp__netlink_extack<span class="o">[</span>bpf<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>struct netlink_extack_error_ctx *<span class="o">)</span><span class="nv">ctx</span><span class="o">=</span>0xffffc0c73ef10ec0<span class="o">)</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">2</span> <span class="nv">process</span><span class="o">=(</span>23656:fentry_fexit-tr<span class="o">)</span>
+</span></span><span class="line"><span class="cl">LBR stack:
+</span></span><span class="line"><span class="cl"><span class="o">[</span><span class="c1">#31] 0xffffffffbc9b4937:strlen+0x17                               (lib/string.c:402)                     -&gt; 0xffffffffbc9b4930:strlen+0x10                               (lib/string.c:402)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc9b4937:strlen+0x17                               <span class="o">(</span>lib/string.c:402<span class="o">)</span>                     -&gt; 0xffffffffbc9b4930:strlen+0x10                               <span class="o">(</span>lib/string.c:402<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc9b4937:strlen+0x17                               <span class="o">(</span>lib/string.c:402<span class="o">)</span>                     -&gt; 0xffffffffbc9b4930:strlen+0x10                               <span class="o">(</span>lib/string.c:402<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc9b4937:strlen+0x17                               <span class="o">(</span>lib/string.c:402<span class="o">)</span>                     -&gt; 0xffffffffbc9b4930:strlen+0x10                               <span class="o">(</span>lib/string.c:402<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc9b4937:strlen+0x17                               <span class="o">(</span>lib/string.c:402<span class="o">)</span>                     -&gt; 0xffffffffbc9b4930:strlen+0x10                               <span class="o">(</span>lib/string.c:402<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc9b493e:strlen+0x1e                               <span class="o">(</span>lib/string.c:404<span class="o">)</span>                     -&gt; 0xffffffffbc7951e4:perf_trace_netlink_extack+0x44            <span class="o">(</span>include/trace/events/netlink.h:9<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc795221:perf_trace_netlink_extack+0x81            <span class="o">(</span>include/trace/events/netlink.h:9<span class="o">)</span>     -&gt; 0xffffffffbbacbc60:perf_trace_buf_alloc+0x0                  <span class="o">(</span>kernel/trace/trace_event_perf.c:393<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbacbc81:perf_trace_buf_alloc+0x21                 <span class="o">(</span>kernel/trace/trace_event_perf.c:404<span class="o">)</span>  -&gt; 0xffffffffbbba7350:perf_swevent_get_recursion_context+0x0    <span class="o">(</span>kernel/events/core.c:10000<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbba73a5:perf_swevent_get_recursion_context+0x55   <span class="o">(</span>kernel/events/core.c:10002<span class="o">)</span>           -&gt; 0xffffffffbbacbc86:perf_trace_buf_alloc+0x26                 <span class="o">(</span>kernel/trace/trace_event_perf.c:404<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbacbceb:perf_trace_buf_alloc+0x8b                 <span class="o">(</span>kernel/trace/trace_event_perf.c:415<span class="o">)</span>  -&gt; 0xffffffffbc795226:perf_trace_netlink_extack+0x86            <span class="o">(</span>include/trace/events/netlink.h:9<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc795276:perf_trace_netlink_extack+0xd6            <span class="o">(</span>include/trace/events/netlink.h:9<span class="o">)</span>     -&gt; 0xffffffffbcac4fe0:__memcpy+0x0                              <span class="o">(</span>arch/x86/lib/memcpy_64.S:34<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbcac4fea:__memcpy+0xa                              <span class="o">(</span>arch/x86/lib/memcpy_64.S:39<span class="o">)</span>          -&gt; 0xffffffffbc79527b:perf_trace_netlink_extack+0xdb            <span class="o">(</span>include/trace/events/netlink.h:9<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc79529f:perf_trace_netlink_extack+0xff            <span class="o">(</span>include/trace/events/netlink.h:9<span class="o">)</span>     -&gt; 0xffffffffbbbb7830:perf_trace_run_bpf_submit+0x0             <span class="o">(</span>kernel/events/core.c:10312<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbbb786e:perf_trace_run_bpf_submit+0x3e            <span class="o">(</span>kernel/events/core.c:10315<span class="o">)</span>           -&gt; 0xffffffffbbaf0ad0:trace_call_bpf+0x0                        <span class="o">(</span>kernel/trace/bpf_trace.c:112<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaf0b0a:trace_call_bpf+0x3a                       <span class="o">(</span>kernel/trace/bpf_trace.c:117<span class="o">)</span>         -&gt; 0xffffffffbb9d3a20:__rcu_read_lock+0x0                       <span class="o">(</span>kernel/rcu/tree_plugin.h:411<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb9d3a45:__rcu_read_lock+0x25                      <span class="o">(</span>kernel/rcu/tree_plugin.h:418<span class="o">)</span>         -&gt; 0xffffffffbbaf0b0f:trace_call_bpf+0x3f                       <span class="o">(</span>kernel/trace/bpf_trace.c:147<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaf0b38:trace_call_bpf+0x68                       <span class="o">(</span>include/linux/bpf.h:2099<span class="o">)</span>             -&gt; 0xffffffffbb952360:migrate_disable+0x0                       <span class="o">(</span>kernel/sched/core.c:2232<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb952377:migrate_disable+0x17                      <span class="o">(</span>kernel/sched/core.c:2235<span class="o">)</span>             -&gt; 0xffffffffbb95238c:migrate_disable+0x2c                      <span class="o">(</span>kernel/sched/core.c:2237<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb9523bb:migrate_disable+0x5b                      <span class="o">(</span>include/linux/preempt.h:480<span class="o">)</span>          -&gt; 0xffffffffbbaf0b3d:trace_call_bpf+0x6d                       <span class="o">(</span>include/linux/bpf.h:2099<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaf0b84:trace_call_bpf+0xb4                       <span class="o">(</span>include/linux/bpf.h:1243<span class="o">)</span>             -&gt; 0xffffffffc0383688:tp__netlink_extack+0x0                    <span class="o">(</span>tracepoint.c:27<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffc0383688:tp__netlink_extack+0x0                    <span class="o">(</span>tracepoint.c:27<span class="o">)</span>                      -&gt; 0xffffffffc03a1dc0:bpf_trampoline_1378684502017+0x0
+</span></span><span class="line"><span class="cl">      ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Emm，无法完整地记录从 <code>__tcf_qdisc_find</code> 到 <code>tp__netlink_extack</code> bpf 程序的逻辑分支记录栈；说明期间涉及的逻辑分支有点多，LBR 有限，无法完全记录。</p>
+<h3 id="tracepoint-的-bpf-程序被调用前的反汇编的机器码">tracepoint 的 bpf 程序被调用前的反汇编的机器码</h3>
+<p><code>btrace</code> 提供了对内核函数和 bpf 程序进行反汇编的能力，可以看看 <code>tp__netlink_extack</code> bpf 程序被调用前的反汇编的机器码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -d -k __tcf_qdisc_find.part.0
+</span></span><span class="line"><span class="cl">2025/03/16 21:34:08 Disassembling __tcf_qdisc_find.part.0 at 0xffffffffbc787160 <span class="o">(</span><span class="m">464</span> bytes<span class="o">)</span> ..
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __tcf_qdisc_find.part.0+0x0 net/sched/cls_api.c:1187
+</span></span><span class="line"><span class="cl">0xffffffffbc787160: 0f 1f <span class="m">44</span> <span class="m">00</span> <span class="m">00</span>          nopl    <span class="o">(</span>%rax, %rax<span class="o">)</span>
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __tcf_qdisc_find.part.0+0xb5 net/sched/cls_api.c:1212
+</span></span><span class="line"><span class="cl">0xffffffffbc787215: <span class="m">66</span> <span class="m">31</span> f6                xorw    %si, %si
+</span></span><span class="line"><span class="cl">0xffffffffbc787218: <span class="m">48</span> <span class="m">89</span> c7                movq    %rax, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffbc78721b: e8 <span class="m">40</span> ed ff ff          callq   0xffffffffbc785f60  <span class="p">;</span> qdisc_lookup_rcu+0x0 net/sched/sch_api.c:319
+</span></span><span class="line"><span class="cl">0xffffffffbc787220: <span class="m">49</span> <span class="m">89</span> <span class="m">04</span> <span class="m">24</span>             movq    %rax, <span class="o">(</span>%r12<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffbc787224: <span class="m">48</span> <span class="m">89</span> c3                movq    %rax, %rbx
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __tcf_qdisc_find.part.0+0xc7 net/sched/cls_api.c:1213
+</span></span><span class="line"><span class="cl">0xffffffffbc787227: <span class="m">48</span> <span class="m">85</span> c0                testq   %rax, %rax
+</span></span><span class="line"><span class="cl">0xffffffffbc78722a: 0f <span class="m">84</span> cc <span class="m">00</span> <span class="m">00</span> <span class="m">00</span>       je      0xffffffffbc7872fc  <span class="p">;</span> __tcf_qdisc_find.part.0+0x19c net/sched/cls_api.c:1214
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __tcf_qdisc_find.part.0+0x19c net/sched/cls_api.c:1214
+</span></span><span class="line"><span class="cl">0xffffffffbc7872fc: <span class="m">48</span> c7 c7 <span class="m">10</span> de f7 bc    movq    <span class="nv">$-</span>0x430821f0, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffbc787303: e8 c8 d2 <span class="m">00</span> <span class="m">00</span>          callq   0xffffffffbc7945d0  <span class="p">;</span> do_trace_netlink_extack+0x0 net/netlink/af_netlink.c:155
+</span></span><span class="line"><span class="cl">0xffffffffbc787308: 4d <span class="m">85</span> ed                testq   %r13, %r13
+</span></span><span class="line"><span class="cl">0xffffffffbc78730b: 0f <span class="m">84</span> <span class="m">74</span> ff ff ff       je      0xffffffffbc787285  <span class="p">;</span> __tcf_qdisc_find.part.0+0x125 net/sched/cls_api.c:1215
+</span></span><span class="line"><span class="cl">0xffffffffbc787311: <span class="m">49</span> c7 <span class="m">45</span> <span class="m">00</span> <span class="m">10</span> de f7 bc movq    <span class="nv">$-</span>0x430821f0, <span class="o">(</span>%r13<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffbc787319: e9 <span class="m">67</span> ff ff ff          jmp     0xffffffffbc787285  <span class="p">;</span> __tcf_qdisc_find.part.0+0x125 net/sched/cls_api.c:1215
+</span></span><span class="line"><span class="cl">0xffffffffbc78731e: e8 6d <span class="m">28</span> <span class="m">25</span> ff          callq   0xffffffffbb9d9b90  <span class="p">;</span> __rcu_read_unlock+0x0 kernel/rcu/tree_plugin.h:429
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __tcf_qdisc_find.part.0+0x1c3 net/sched/cls_api.c:1204
+</span></span><span class="line"><span class="cl">0xffffffffbc787323: bb ed ff ff ff          movl    <span class="nv">$0</span>xffffffed, %ebx
+</span></span><span class="line"><span class="cl">0xffffffffbc787328: e9 c5 fe ff ff          jmp 0xffffffffbc7871f2      <span class="p">;</span> __tcf_qdisc_find.part.0+0x92 net/sched/cls_api.c:1260
+</span></span><span class="line"><span class="cl">0xffffffffbc78732d: 0f 1f <span class="m">00</span>                nopl    <span class="o">(</span>%rax<span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ sudo ./btrace -d -k do_trace_netlink_extack
+</span></span><span class="line"><span class="cl">2025/03/16 21:47:23 Disassembling do_trace_netlink_extack at 0xffffffffbc7945d0 <span class="o">(</span><span class="m">128</span> bytes<span class="o">)</span> ..
+</span></span><span class="line"><span class="cl"><span class="p">;</span> do_trace_netlink_extack+0x0 net/netlink/af_netlink.c:155
+</span></span><span class="line"><span class="cl">0xffffffffbc7945d0: 0f 1f <span class="m">44</span> <span class="m">00</span> <span class="m">00</span>          nopl    <span class="o">(</span>%rax, %rax<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffbc7945d5: <span class="m">66</span> <span class="m">90</span>                   nop
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">0xffffffffbc794614: e8 <span class="m">77</span> fb ff ff          callq   0xffffffffbc794190  <span class="p">;</span> __traceiter_netlink_extack+0x0 include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl">0xffffffffbc794619: <span class="m">65</span> ff 0d a8 <span class="m">16</span> 8a <span class="m">43</span>    decl    %gs:0x438a16a8<span class="o">(</span>%rip<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffbc794620: <span class="m">74</span> <span class="m">17</span>                   je      0xffffffffbc794639  <span class="p">;</span> do_trace_netlink_extack+0x69 include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl"><span class="p">;</span> do_trace_netlink_extack+0x52 net/netlink/af_netlink.c:157
+</span></span><span class="line"><span class="cl">0xffffffffbc794622: 5d                      popq    %rbp
+</span></span><span class="line"><span class="cl">0xffffffffbc794623: <span class="m">31</span> c0                   xorl    %eax, %eax
+</span></span><span class="line"><span class="cl">0xffffffffbc794625: <span class="m">31</span> f6                   xorl    %esi, %esi
+</span></span><span class="line"><span class="cl">0xffffffffbc794627: <span class="m">31</span> ff                   xorl    %edi, %edi
+</span></span><span class="line"><span class="cl">0xffffffffbc794629: c3                      retq
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ sudo ./btrace -d -k perf_trace_netlink_extack
+</span></span><span class="line"><span class="cl">2025/03/16 21:51:42 Disassembling perf_trace_netlink_extack at 0xffffffffbc7951a0 <span class="o">(</span><span class="m">368</span> bytes<span class="o">)</span> ..
+</span></span><span class="line"><span class="cl"><span class="p">;</span> perf_trace_netlink_extack+0x0 include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl">0xffffffffbc7951a0: <span class="m">55</span>                      pushq   %rbp
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">0xffffffffbc795298: 4c 8b 4d c8             movq    -0x38<span class="o">(</span>%rbp<span class="o">)</span>, %r9
+</span></span><span class="line"><span class="cl">0xffffffffbc79529c: 8b <span class="m">55</span> c4                movl    -0x3c<span class="o">(</span>%rbp<span class="o">)</span>, %edx
+</span></span><span class="line"><span class="cl">0xffffffffbc79529f: e8 8c <span class="m">25</span> <span class="m">42</span> ff          callq   0xffffffffbbbb7830  <span class="p">;</span> perf_trace_run_bpf_submit+0x0 kernel/events/core.c:10312
+</span></span><span class="line"><span class="cl">0xffffffffbc7952a4: <span class="m">59</span>                      popq    %rcx
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ sudo ./btrace -d -k perf_trace_run_bpf_submit
+</span></span><span class="line"><span class="cl">2025/03/16 21:54:09 Disassembling perf_trace_run_bpf_submit at 0xffffffffbbbb7830 <span class="o">(</span><span class="m">224</span> bytes<span class="o">)</span> ..
+</span></span><span class="line"><span class="cl"><span class="p">;</span> perf_trace_run_bpf_submit+0x0 kernel/events/core.c:10312
+</span></span><span class="line"><span class="cl">0xffffffffbbbb7830: 0f 1f <span class="m">44</span> <span class="m">00</span> <span class="m">00</span>          nopl    <span class="o">(</span>%rax, %rax<span class="o">)</span>
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl"><span class="p">;</span> perf_trace_run_bpf_submit+0x38 kernel/events/core.c:10315
+</span></span><span class="line"><span class="cl">0xffffffffbbbb7868: <span class="m">48</span> <span class="m">89</span> fe                movq    %rdi, %rsi
+</span></span><span class="line"><span class="cl">0xffffffffbbbb786b: <span class="m">48</span> <span class="m">89</span> cf                movq    %rcx, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffbbbb786e: e8 5d <span class="m">92</span> f3 ff          callq   0xffffffffbbaf0ad0  <span class="p">;</span> trace_call_bpf+0x0 kernel/trace/bpf_trace.c:112
+</span></span><span class="line"><span class="cl">0xffffffffbbbb7873: <span class="m">85</span> c0                   testl   %eax, %eax
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ <span class="nb">echo</span> ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="分析-raw_tptp_btf-的-bpf-程序被调用前的函数调用栈逻辑分支记录栈和反汇编的机器码">分析 raw_tp/tp_btf 的 bpf 程序被调用前的函数调用栈、逻辑分支记录栈和反汇编的机器码</h2>
+<p>raw_tp/tp_btf 学习资料推荐：</p>
+<ul>
+<li><a href="https://github.com/mannkafai/bpf-inside/blob/main/doc/08-raw%20tracepoint.md">RAW TRACEPOINT的内核实现</a></li>
+</ul>
+<p><code>raw_tp</code> 和 <code>tp_btf</code> 声称比 <code>tracepoint</code> 性能更优的动态追踪技术；而它们之间的区别在于 <code>tp_btf</code> 使用了 BTF 信息；它们的运行时是没有区别的。</p>
+<p>以 <code>netlink/netlink_extack</code> tp_btf 为例。</p>
+<h3 id="raw_tptp_btf-的-bpf-程序被调用前的函数调用栈">raw_tp/tp_btf 的 bpf 程序被调用前的函数调用栈</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -p <span class="m">221</span> --output-stack --limit-events <span class="m">1</span> -v
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">2025/03/16 22:26:04 btrace is running..
+</span></span><span class="line"><span class="cl">tp__netlink_extack<span class="o">[</span>bpf<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>unsigned long long *<span class="o">)</span><span class="nv">ctx</span><span class="o">=</span>0xffffa0c74a59b7f0<span class="o">(</span>0xffffffffbcf7de10<span class="o">))</span> <span class="nv">retval</span><span class="o">=(</span>int<span class="o">)</span><span class="m">0</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">4</span> <span class="nv">process</span><span class="o">=(</span>18217:fentry_fexit-tr<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Func stack:
+</span></span><span class="line"><span class="cl">  ...
+</span></span><span class="line"><span class="cl">  0xffffffffc0383655:tp__netlink_extack+0x5                             <span class="p">;</span> tp_btf.c:12
+</span></span><span class="line"><span class="cl">  0xffffffffbc7946e9:__bpf_trace_netlink_extack+0x9                     <span class="p">;</span> include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl">  0xffffffffbc794619:do_trace_netlink_extack+0x49                       <span class="p">;</span> include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl">  0xffffffffbc787308:__tcf_qdisc_find.part.0+0x1a8                      <span class="p">;</span> net/sched/cls_api.c:1214
+</span></span><span class="line"><span class="cl">  0xffffffffbc78c95a:tc_new_tfilter+0x16a                               <span class="p">;</span> net/sched/cls_api.c:1195
+</span></span><span class="line"><span class="cl">  0xffffffffbc71a400:rtnetlink_rcv_msg+0x380                            <span class="p">;</span> net/core/rtnetlink.c:6638
+</span></span><span class="line"><span class="cl">  0xffffffffbc79a872:netlink_rcv_skb+0x52                               <span class="p">;</span> net/netlink/af_netlink.c:2550
+</span></span><span class="line"><span class="cl">  0xffffffffbc7180c5:rtnetlink_rcv+0x15                                 <span class="p">;</span> net/core/rtnetlink.c:6666
+</span></span><span class="line"><span class="cl">  0xffffffffbc799fa5:netlink_unicast+0x245                              <span class="p">;</span> net/netlink/af_netlink.c:1331
+</span></span><span class="line"><span class="cl">  0xffffffffbc79a314:netlink_sendmsg+0x214                              <span class="p">;</span> net/netlink/af_netlink.c:1901
+</span></span><span class="line"><span class="cl">  ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>tp_btf</code> 确实比 <code>tracepoint</code> 的性能更好，从 <code>__tcf_qdisc_find</code> 到 <code>tp__netlink_extack</code> bpf 程序有 3 个函数调用深度，少了 1 个函数调用。</p>
+<h3 id="raw_tptp_btf-的-bpf-程序被调用前的逻辑分支记录栈">raw_tp/tp_btf 的 bpf 程序被调用前的逻辑分支记录栈</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -p <span class="m">221</span> --mode entry --output-lbr --limit-events <span class="m">1</span> -v
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">2025/03/16 22:33:05 btrace is running..
+</span></span><span class="line"><span class="cl">tp__netlink_extack<span class="o">[</span>bpf<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>unsigned long long *<span class="o">)</span><span class="nv">ctx</span><span class="o">=</span>0xffffa0c74a2136c0<span class="o">(</span>0xffffffffbcf7de10<span class="o">))</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">0</span> <span class="nv">process</span><span class="o">=(</span>18217:fentry_fexit-tr<span class="o">)</span>
+</span></span><span class="line"><span class="cl">LBR stack:
+</span></span><span class="line"><span class="cl"><span class="o">[</span><span class="c1">#31] ...</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc785fc2:qdisc_lookup_rcu+0x62                     <span class="o">(</span>net/sched/sch_api.c:335<span class="o">)</span>              -&gt; 0xffffffffbc787220:__tcf_qdisc_find.part.0+0xc0              <span class="o">(</span>net/sched/cls_api.c:1212<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc78722a:__tcf_qdisc_find.part.0+0xca              <span class="o">(</span>net/sched/cls_api.c:1213<span class="o">)</span>             -&gt; 0xffffffffbc7872fc:__tcf_qdisc_find.part.0+0x19c             <span class="o">(</span>net/sched/cls_api.c:1214<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc787303:__tcf_qdisc_find.part.0+0x1a3             <span class="o">(</span>net/sched/cls_api.c:1214<span class="o">)</span>             -&gt; 0xffffffffbc7945d0:do_trace_netlink_extack+0x0               <span class="o">(</span>net/netlink/af_netlink.c:155<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc7945d5:do_trace_netlink_extack+0x5               <span class="o">(</span>net/netlink/af_netlink.c:155<span class="o">)</span>         -&gt; 0xffffffffbc7945e2:do_trace_netlink_extack+0x12              <span class="o">(</span>include/trace/events/netlink.h:9<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc794614:do_trace_netlink_extack+0x44              <span class="o">(</span>include/trace/events/netlink.h:9<span class="o">)</span>     -&gt; 0xffffffffbc7946e0:__bpf_trace_netlink_extack+0x0            <span class="o">(</span>include/trace/events/netlink.h:9<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc7946e4:__bpf_trace_netlink_extack+0x4            <span class="o">(</span>include/trace/events/netlink.h:9<span class="o">)</span>     -&gt; 0xffffffffbbaebe90:bpf_trace_run1+0x0                        <span class="o">(</span>kernel/trace/bpf_trace.c:2446<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaebeff:bpf_trace_run1+0x6f                       <span class="o">(</span>kernel/trace/bpf_trace.c:2402<span class="o">)</span>        -&gt; 0xffffffffbb9d3a20:__rcu_read_lock+0x0                       <span class="o">(</span>kernel/rcu/tree_plugin.h:411<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb9d3a45:__rcu_read_lock+0x25                      <span class="o">(</span>kernel/rcu/tree_plugin.h:418<span class="o">)</span>         -&gt; 0xffffffffbbaebf04:bpf_trace_run1+0x74                       <span class="o">(</span>arch/x86/include/asm/jump_label.h:27<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaebf12:bpf_trace_run1+0x82                       <span class="o">(</span>include/linux/bpf.h:1243<span class="o">)</span>             -&gt; 0xffffffffc0383650:tp__netlink_extack+0x0                    <span class="o">(</span>tp_btf.c:12<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffc0383650:tp__netlink_extack+0x0                    <span class="o">(</span>tp_btf.c:12<span class="o">)</span>                          -&gt; 0xffffffffc03a1c00:bpf_trampoline_949187772417+0x0
+</span></span><span class="line"><span class="cl">      ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这次终于能完整地记录从 <code>__tcf_qdisc_find</code> 到 <code>tp__netlink_extack</code> bpf 程序的逻辑分支记录栈了，总共 8 个逻辑分支。</p>
+<h3 id="raw_tptp_btf-的-bpf-程序被调用前的反汇编的机器码">raw_tp/tp_btf 的 bpf 程序被调用前的反汇编的机器码</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -d -k __tcf_qdisc_find.part.0
+</span></span><span class="line"><span class="cl">2025/03/16 21:34:08 Disassembling __tcf_qdisc_find.part.0 at 0xffffffffbc787160 <span class="o">(</span><span class="m">464</span> bytes<span class="o">)</span> ..
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __tcf_qdisc_find.part.0+0x0 net/sched/cls_api.c:1187
+</span></span><span class="line"><span class="cl">0xffffffffbc787160: 0f 1f <span class="m">44</span> <span class="m">00</span> <span class="m">00</span>          nopl    <span class="o">(</span>%rax, %rax<span class="o">)</span>
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __tcf_qdisc_find.part.0+0xb5 net/sched/cls_api.c:1212
+</span></span><span class="line"><span class="cl">0xffffffffbc787215: <span class="m">66</span> <span class="m">31</span> f6                xorw    %si, %si
+</span></span><span class="line"><span class="cl">0xffffffffbc787218: <span class="m">48</span> <span class="m">89</span> c7                movq    %rax, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffbc78721b: e8 <span class="m">40</span> ed ff ff          callq   0xffffffffbc785f60  <span class="p">;</span> qdisc_lookup_rcu+0x0 net/sched/sch_api.c:319
+</span></span><span class="line"><span class="cl">0xffffffffbc787220: <span class="m">49</span> <span class="m">89</span> <span class="m">04</span> <span class="m">24</span>             movq    %rax, <span class="o">(</span>%r12<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffbc787224: <span class="m">48</span> <span class="m">89</span> c3                movq    %rax, %rbx
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __tcf_qdisc_find.part.0+0xc7 net/sched/cls_api.c:1213
+</span></span><span class="line"><span class="cl">0xffffffffbc787227: <span class="m">48</span> <span class="m">85</span> c0                testq   %rax, %rax
+</span></span><span class="line"><span class="cl">0xffffffffbc78722a: 0f <span class="m">84</span> cc <span class="m">00</span> <span class="m">00</span> <span class="m">00</span>       je      0xffffffffbc7872fc  <span class="p">;</span> __tcf_qdisc_find.part.0+0x19c net/sched/cls_api.c:1214
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __tcf_qdisc_find.part.0+0x19c net/sched/cls_api.c:1214
+</span></span><span class="line"><span class="cl">0xffffffffbc7872fc: <span class="m">48</span> c7 c7 <span class="m">10</span> de f7 bc    movq    <span class="nv">$-</span>0x430821f0, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffbc787303: e8 c8 d2 <span class="m">00</span> <span class="m">00</span>          callq   0xffffffffbc7945d0  <span class="p">;</span> do_trace_netlink_extack+0x0 net/netlink/af_netlink.c:155
+</span></span><span class="line"><span class="cl">0xffffffffbc787308: 4d <span class="m">85</span> ed                testq   %r13, %r13
+</span></span><span class="line"><span class="cl">0xffffffffbc78730b: 0f <span class="m">84</span> <span class="m">74</span> ff ff ff       je      0xffffffffbc787285  <span class="p">;</span> __tcf_qdisc_find.part.0+0x125 net/sched/cls_api.c:1215
+</span></span><span class="line"><span class="cl">0xffffffffbc787311: <span class="m">49</span> c7 <span class="m">45</span> <span class="m">00</span> <span class="m">10</span> de f7 bc movq    <span class="nv">$-</span>0x430821f0, <span class="o">(</span>%r13<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffbc787319: e9 <span class="m">67</span> ff ff ff          jmp     0xffffffffbc787285  <span class="p">;</span> __tcf_qdisc_find.part.0+0x125 net/sched/cls_api.c:1215
+</span></span><span class="line"><span class="cl">0xffffffffbc78731e: e8 6d <span class="m">28</span> <span class="m">25</span> ff          callq   0xffffffffbb9d9b90  <span class="p">;</span> __rcu_read_unlock+0x0 kernel/rcu/tree_plugin.h:429
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __tcf_qdisc_find.part.0+0x1c3 net/sched/cls_api.c:1204
+</span></span><span class="line"><span class="cl">0xffffffffbc787323: bb ed ff ff ff          movl    <span class="nv">$0</span>xffffffed, %ebx
+</span></span><span class="line"><span class="cl">0xffffffffbc787328: e9 c5 fe ff ff          jmp 0xffffffffbc7871f2      <span class="p">;</span> __tcf_qdisc_find.part.0+0x92 net/sched/cls_api.c:1260
+</span></span><span class="line"><span class="cl">0xffffffffbc78732d: 0f 1f <span class="m">00</span>                nopl    <span class="o">(</span>%rax<span class="o">)</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ sudo ./btrace -d -k do_trace_netlink_extack
+</span></span><span class="line"><span class="cl">2025/03/16 22:43:02 Disassembling do_trace_netlink_extack at 0xffffffffbc7945d0 <span class="o">(</span><span class="m">128</span> bytes<span class="o">)</span> ..
+</span></span><span class="line"><span class="cl"><span class="p">;</span> do_trace_netlink_extack+0x0 net/netlink/af_netlink.c:155
+</span></span><span class="line"><span class="cl">0xffffffffbc7945d0: 0f 1f <span class="m">44</span> <span class="m">00</span> <span class="m">00</span>          nopl    <span class="o">(</span>%rax, %rax<span class="o">)</span>
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl"><span class="p">;</span> do_trace_netlink_extack+0x2e include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl">0xffffffffbc7945fe: <span class="m">48</span> 8b <span class="m">05</span> <span class="m">83</span> db a8 <span class="m">01</span>    movq    0x1a8db83<span class="o">(</span>%rip<span class="o">)</span>, %rax
+</span></span><span class="line"><span class="cl">0xffffffffbc794605: <span class="m">48</span> <span class="m">85</span> c0                testq   %rax, %rax
+</span></span><span class="line"><span class="cl">0xffffffffbc794608: <span class="m">74</span> 0f                   je      0xffffffffbc794619  <span class="p">;</span> do_trace_netlink_extack+0x49 include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl">0xffffffffbc79460a: <span class="m">48</span> 8b <span class="m">40</span> <span class="m">08</span>             movq    8<span class="o">(</span>%rax<span class="o">)</span>, %rax
+</span></span><span class="line"><span class="cl">0xffffffffbc79460e: <span class="m">48</span> <span class="m">89</span> fe                movq    %rdi, %rsi
+</span></span><span class="line"><span class="cl">0xffffffffbc794611: <span class="m">48</span> <span class="m">89</span> c7                movq    %rax, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffbc794614: e8 c7 <span class="m">00</span> <span class="m">00</span> <span class="m">00</span>          callq   0xffffffffbc7946e0  <span class="p">;</span> __bpf_trace_netlink_extack+0x0 include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl">0xffffffffbc794619: <span class="m">65</span> ff 0d a8 <span class="m">16</span> 8a <span class="m">43</span>    decl    %gs:0x438a16a8<span class="o">(</span>%rip<span class="o">)</span>
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ sudo  ./btrace -d -k __bpf_trace_netlink_extack
+</span></span><span class="line"><span class="cl">2025/03/16 22:44:56 Disassembling __bpf_trace_netlink_extack at 0xffffffffbc7946e0 <span class="o">(</span><span class="m">31</span> bytes<span class="o">)</span> ..
+</span></span><span class="line"><span class="cl"><span class="p">;</span> __bpf_trace_netlink_extack+0x0 include/trace/events/netlink.h:9
+</span></span><span class="line"><span class="cl">0xffffffffbc7946e0: <span class="m">55</span>                      pushq   %rbp
+</span></span><span class="line"><span class="cl">0xffffffffbc7946e1: <span class="m">48</span> <span class="m">89</span> e5                movq    %rsp, %rbp
+</span></span><span class="line"><span class="cl">0xffffffffbc7946e4: e8 a7 <span class="m">77</span> <span class="m">35</span> ff          callq   0xffffffffbbaebe90  <span class="p">;</span> bpf_trace_run1+0x0 kernel/trace/bpf_trace.c:2446
+</span></span><span class="line"><span class="cl">0xffffffffbc7946e9: 5d                      popq    %rbp
+</span></span><span class="line"><span class="cl">0xffffffffbc7946ea: <span class="m">31</span> f6                   xorl    %esi, %esi
+</span></span><span class="line"><span class="cl">0xffffffffbc7946ec: <span class="m">31</span> ff                   xorl    %edi, %edi
+</span></span><span class="line"><span class="cl">0xffffffffbc7946ee: c3                      retq
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ sudo ./btrace -d -k bpf_trace_run1
+</span></span><span class="line"><span class="cl">2025/03/16 22:46:58 Disassembling bpf_trace_run1 at 0xffffffffbbaebe90 <span class="o">(</span><span class="m">272</span> bytes<span class="o">)</span> ..
+</span></span><span class="line"><span class="cl"><span class="p">;</span> bpf_trace_run1+0x0 kernel/trace/bpf_trace.c:2446
+</span></span><span class="line"><span class="cl">0xffffffffbbaebe90: <span class="m">55</span>                      pushq   %rbp
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl"><span class="p">;</span> bpf_trace_run1+0x7e include/linux/bpf.h:1243
+</span></span><span class="line"><span class="cl">0xffffffffbbaebf0e: <span class="m">48</span> 8d 7d d0             leaq    -0x30<span class="o">(</span>%rbp<span class="o">)</span>, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffbbaebf12: ff d0                   callq   *%rax
+</span></span><span class="line"><span class="cl">0xffffffffbbaebf14: 0f 1f <span class="m">00</span>                nopl    <span class="o">(</span>%rax<span class="o">)</span>
+</span></span><span class="line"><span class="cl">...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>Emm，用的还是 indirect call &hellip;&hellip;</p>
+<h2 id="分析-kprobe-的-bpf-程序被调用前的函数调用栈逻辑分支记录栈和反汇编的机器码">分析 kprobe 的 bpf 程序被调用前的函数调用栈、逻辑分支记录栈和反汇编的机器码</h2>
+<p>kprobe 学习资料推荐：</p>
+<ul>
+<li><a href="https://github.com/mannkafai/bpf-inside/blob/main/doc/06-kprobe%20pmu.md">KPROBE的内核实现</a></li>
+</ul>
+<p>使用 <a href="/post/ebpf-talk-84-trace-kprobe-program/">eBPF Talk: trace kprobe 程序</a> 里的例子，直接使用 <code>btrace</code> 看看 kprobe 里调用 bpf 程序的函数调用栈：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -p <span class="m">254</span> --output-stack --limit-events <span class="m">1</span> -v
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">2025/03/16 23:03:57 btrace is running..
+</span></span><span class="line"><span class="cl">k_tcp_connect<span class="o">[</span>bpf<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>struct pt_regs *<span class="o">)</span><span class="nv">ctx</span><span class="o">=</span>0xffffa0c7446279c0<span class="o">)</span> <span class="nv">retval</span><span class="o">=(</span>int<span class="o">)</span><span class="m">0</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">11</span> <span class="nv">process</span><span class="o">=(</span>21237:curl<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Func stack:
+</span></span><span class="line"><span class="cl">  ...
+</span></span><span class="line"><span class="cl">  0xffffffffc038371d:k_tcp_connect+0x5                                  <span class="p">;</span> tcp-connecting.c:31
+</span></span><span class="line"><span class="cl">  0xffffffffbbaf54da:kprobe_perf_func+0x5a                              <span class="p">;</span> kernel/trace/trace_kprobe.c:1673
+</span></span><span class="line"><span class="cl">  0xffffffffbbaf57bd:kprobe_dispatcher+0x6d                             <span class="p">;</span> kernel/trace/trace_kprobe.c:1809
+</span></span><span class="line"><span class="cl">  0xffffffffbb8c0983:kprobe_ftrace_handler+0x153                        <span class="p">;</span> arch/x86/kernel/kprobes/ftrace.c:45
+</span></span><span class="line"><span class="cl">  0xffffffffc1eb00f5:+0x0
+</span></span><span class="line"><span class="cl">  0xffffffffbc7fe131:tcp_connect+0x1                                    <span class="p">;</span> net/ipv4/tcp_output.c:4066
+</span></span><span class="line"><span class="cl">  0xffffffffbc82f323:__inet_stream_connect+0x113                        <span class="p">;</span> net/ipv4/af_inet.c:679
+</span></span><span class="line"><span class="cl">  0xffffffffbc82f62b:inet_stream_connect+0x3b                           <span class="p">;</span> net/ipv4/af_inet.c:751
+</span></span><span class="line"><span class="cl">  0xffffffffbc6c9bab:__sys_connect_file+0x6b                            <span class="p">;</span> net/socket.c:2061
+</span></span><span class="line"><span class="cl">  0xffffffffbc6c9c9f:__sys_connect+0xbf                                 <span class="p">;</span> include/linux/file.h:47
+</span></span><span class="line"><span class="cl">  0xffffffffbc6c9cf8:__x64_sys_connect+0x18                             <span class="p">;</span> net/socket.c:2085
+</span></span><span class="line"><span class="cl">  0xffffffffbb80b95f:x64_sys_call+0x212f                                <span class="p">;</span> arch/x86/entry/syscall_64.c:36
+</span></span><span class="line"><span class="cl">  0xffffffffbcabb25e:do_syscall_64+0x7e                                 <span class="p">;</span> arch/x86/entry/common.c:52
+</span></span><span class="line"><span class="cl">  0xffffffffbcc0012b:entry_SYSCALL_64_after_hwframe+0x76                <span class="p">;</span> arch/x86/entry/entry_64.S:130
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>从 <code>tcp_connect</code> 到 <code>k_tcp_connect</code> bpf 程序有 5 个函数调用深度。</p>
+<h3 id="kprobe-的-bpf-程序被调用前的逻辑分支记录栈">kprobe 的 bpf 程序被调用前的逻辑分支记录栈</h3>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -p <span class="m">302</span> --mode entry --output-lbr --limit-events <span class="m">1</span> -v
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">2025/03/16 23:31:32 btrace is running..
+</span></span><span class="line"><span class="cl">k_tcp_connect<span class="o">[</span>bpf<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>struct pt_regs *<span class="o">)</span><span class="nv">ctx</span><span class="o">=</span>0xffffa0c743453ba0<span class="o">)</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">0</span> <span class="nv">process</span><span class="o">=(</span>23295:curl<span class="o">)</span>
+</span></span><span class="line"><span class="cl">LBR stack:
+</span></span><span class="line"><span class="cl"><span class="o">[</span><span class="c1">#31] ...</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbc7fe130:tcp_connect+0x0                           <span class="o">(</span>net/ipv4/tcp_output.c:4066<span class="o">)</span>           -&gt; 0xffffffffc1eb0000:ftrace_trampoline+0x0
+</span></span><span class="line"><span class="cl"><span class="o">[</span><span class="c1">#30] 0xffffffffc1eb00f0:+0x0                                                                             -&gt; 0xffffffffbb8c0830:kprobe_ftrace_handler+0x0                 (arch/x86/kernel/kprobes/ftrace.c:18)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb8c08e4:kprobe_ftrace_handler+0xb4                <span class="o">(</span>arch/x86/kernel/kprobes/ftrace.c:31<span class="o">)</span>  -&gt; 0xffffffffbba69850:get_kprobe+0x0                            <span class="o">(</span>kernel/kprobes.c:377<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbba69876:get_kprobe+0x26                           <span class="o">(</span>kernel/kprobes.c:382<span class="o">)</span>                 -&gt; 0xffffffffbba69888:get_kprobe+0x38                           <span class="o">(</span>kernel/kprobes.c:384<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbba69893:get_kprobe+0x43                           <span class="o">(</span>kernel/kprobes.c:389<span class="o">)</span>                 -&gt; 0xffffffffbb8c08e9:kprobe_ftrace_handler+0xb9                <span class="o">(</span>arch/x86/kernel/kprobes/ftrace.c:31<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb8c0900:kprobe_ftrace_handler+0xd0                <span class="o">(</span>arch/x86/kernel/kprobes/ftrace.c:36<span class="o">)</span>  -&gt; 0xffffffffbb8c093b:kprobe_ftrace_handler+0x10b               <span class="o">(</span>include/linux/kprobes.h:408<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb8c0981:kprobe_ftrace_handler+0x151               <span class="o">(</span>arch/x86/kernel/kprobes/ftrace.c:45<span class="o">)</span>  -&gt; 0xffffffffbbaf5750:kprobe_dispatcher+0x0                     <span class="o">(</span>kernel/trace/trace_kprobe.c:1796<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaf577d:kprobe_dispatcher+0x2d                    <span class="o">(</span>kernel/trace/trace_kprobe.c:1805<span class="o">)</span>     -&gt; 0xffffffffbbaf57b5:kprobe_dispatcher+0x65                    <span class="o">(</span>kernel/trace/trace_kprobe.c:1806<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaf57b8:kprobe_dispatcher+0x68                    <span class="o">(</span>kernel/trace/trace_kprobe.c:1806<span class="o">)</span>     -&gt; 0xffffffffbbaf5480:kprobe_perf_func+0x0                      <span class="o">(</span>kernel/trace/trace_kprobe.c:1654<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaf54d5:kprobe_perf_func+0x55                     <span class="o">(</span>kernel/trace/trace_kprobe.c:1665<span class="o">)</span>     -&gt; 0xffffffffbbaf0ad0:trace_call_bpf+0x0                        <span class="o">(</span>kernel/trace/bpf_trace.c:112<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaf0b0a:trace_call_bpf+0x3a                       <span class="o">(</span>kernel/trace/bpf_trace.c:117<span class="o">)</span>         -&gt; 0xffffffffbb9d3a20:__rcu_read_lock+0x0                       <span class="o">(</span>kernel/rcu/tree_plugin.h:411<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb9d3a45:__rcu_read_lock+0x25                      <span class="o">(</span>kernel/rcu/tree_plugin.h:418<span class="o">)</span>         -&gt; 0xffffffffbbaf0b0f:trace_call_bpf+0x3f                       <span class="o">(</span>kernel/trace/bpf_trace.c:147<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaf0b38:trace_call_bpf+0x68                       <span class="o">(</span>include/linux/bpf.h:2099<span class="o">)</span>             -&gt; 0xffffffffbb952360:migrate_disable+0x0                       <span class="o">(</span>kernel/sched/core.c:2232<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb952377:migrate_disable+0x17                      <span class="o">(</span>kernel/sched/core.c:2235<span class="o">)</span>             -&gt; 0xffffffffbb95238c:migrate_disable+0x2c                      <span class="o">(</span>kernel/sched/core.c:2237<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb9523bb:migrate_disable+0x5b                      <span class="o">(</span>include/linux/preempt.h:480<span class="o">)</span>          -&gt; 0xffffffffbbaf0b3d:trace_call_bpf+0x6d                       <span class="o">(</span>include/linux/bpf.h:2099<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbbaf0b84:trace_call_bpf+0xb4                       <span class="o">(</span>include/linux/bpf.h:1243<span class="o">)</span>             -&gt; 0xffffffffc0383708:k_tcp_connect+0x0                         <span class="o">(</span>tcp-connecting.c:31<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffc0383708:k_tcp_connect+0x0                         <span class="o">(</span>tcp-connecting.c:31<span class="o">)</span>                  -&gt; 0xffffffffc03a1ac0:bpf_trampoline_1297080123393+0x0
+</span></span><span class="line"><span class="cl">      ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>从 <code>tcp_connect</code> 到 <code>k_tcp_connect</code> bpf 程序的逻辑分支记录栈有 16 个逻辑分支。</p>
+<h3 id="kprobe-的-bpf-程序被调用前的反汇编的机器码">kprobe 的 bpf 程序被调用前的反汇编的机器码</h3>
+<p>笔者有点懒，请读者自行分析吧。</p>
+<h2 id="分析-fentryfexit-的-bpf-程序被调用前的函数调用栈逻辑分支记录栈和反汇编的机器码">分析 fentry/fexit 的 bpf 程序被调用前的函数调用栈、逻辑分支记录栈和反汇编的机器码</h2>
+<p>其实，<code>btrace</code> 使用的就是 <code>fentry</code> 和 <code>fexit</code>；以 kprobe 为例，看看 <code>fentry</code> 和 <code>fexit</code> 的 bpf 程序被调用前的函数调用栈：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -p <span class="m">254</span> --output-stack --limit-events <span class="m">1</span> -v
+</span></span><span class="line"><span class="cl">2025/03/16 23:03:57 btrace is running..
+</span></span><span class="line"><span class="cl">k_tcp_connect<span class="o">[</span>bpf<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>struct pt_regs *<span class="o">)</span><span class="nv">ctx</span><span class="o">=</span>0xffffa0c7446279c0<span class="o">)</span> <span class="nv">retval</span><span class="o">=(</span>int<span class="o">)</span><span class="m">0</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">11</span> <span class="nv">process</span><span class="o">=(</span>21237:curl<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Func stack:
+</span></span><span class="line"><span class="cl">  0xffffffffc03a34bf:fexit_fn+0x34b                                     <span class="p">;</span> bpf/btrace.c:106
+</span></span><span class="line"><span class="cl">  0xffffffffc03a34bf:fexit_fn+0x34b                                     <span class="p">;</span> bpf/btrace.c:106
+</span></span><span class="line"><span class="cl">  0xffffffffc03a1d77:bpf_trampoline_1090921693185+0xb7
+</span></span><span class="line"><span class="cl">  0xffffffffc038371d:k_tcp_connect+0x5                                  <span class="p">;</span> tcp-connecting.c:31
+</span></span><span class="line"><span class="cl">  ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>从 <code>k_tcp_connect</code> 到 <code>fexit_fn</code> 只有 2 个函数调用深度。</p>
+<p>看看 <code>fentry</code> 和 <code>fexit</code> 的 bpf 程序被调用前的逻辑分支记录栈：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -p <span class="m">348</span> --mode entry --output-lbr --limit-events <span class="m">1</span> -v
+</span></span><span class="line"><span class="cl">。。。
+</span></span><span class="line"><span class="cl">2025/03/16 23:41:51 btrace is running..
+</span></span><span class="line"><span class="cl">k_tcp_connect<span class="o">[</span>bpf<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>struct pt_regs *<span class="o">)</span><span class="nv">ctx</span><span class="o">=</span>0xffffa0c7434dbbe0<span class="o">)</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">0</span> <span class="nv">process</span><span class="o">=(</span>24048:curl<span class="o">)</span>
+</span></span><span class="line"><span class="cl">LBR stack:
+</span></span><span class="line"><span class="cl"><span class="o">[</span><span class="c1">#31] ...</span>
+</span></span><span class="line"><span class="cl">      0xffffffffc0383708:k_tcp_connect+0x0                         <span class="o">(</span>tcp-connecting.c:31<span class="o">)</span>                  -&gt; 0xffffffffc03a1ac0:bpf_trampoline_1494648619009+0x0
+</span></span><span class="line"><span class="cl">      0xffffffffc03a1af9:bpf_trampoline_1494648619009+0x39                                                -&gt; 0xffffffffbbb6c5c0:__bpf_prog_enter_recur+0x0
+</span></span><span class="line"><span class="cl">      0xffffffffbbb6c5cd:__bpf_prog_enter_recur+0xd                                                       -&gt; 0xffffffffbb9d3a20:__rcu_read_lock+0x0                       <span class="o">(</span>kernel/rcu/tree_plugin.h:411<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb9d3a45:__rcu_read_lock+0x25                      <span class="o">(</span>kernel/rcu/tree_plugin.h:418<span class="o">)</span>         -&gt; 0xffffffffbbb6c5d2:__bpf_prog_enter_recur+0x12
+</span></span><span class="line"><span class="cl">      0xffffffffbbb6c5d2:__bpf_prog_enter_recur+0x12                                                      -&gt; 0xffffffffbb952360:migrate_disable+0x0                       <span class="o">(</span>kernel/sched/core.c:2232<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffbb952387:migrate_disable+0x27                      <span class="o">(</span>kernel/sched/core.c:2237<span class="o">)</span>             -&gt; 0xffffffffbbb6c5d7:__bpf_prog_enter_recur+0x17
+</span></span><span class="line"><span class="cl">      0xffffffffbbb6c614:__bpf_prog_enter_recur+0x54                                                      -&gt; 0xffffffffc03a1afe:bpf_trampoline_1494648619009+0x3e
+</span></span><span class="line"><span class="cl">      0xffffffffc03a1b0a:bpf_trampoline_1494648619009+0x4a                                                -&gt; 0xffffffffc03a3160:fentry_fn+0x0                             <span class="o">(</span>bpf/btrace.c:129<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      0xffffffffc03a3200:fentry_fn+0xa0                            <span class="o">(</span>bpf/btrace.c:83<span class="o">)</span>                      -&gt; 0xffffffffbb81e680:intel_pmu_snapshot_arch_branch_stack+0x0  <span class="o">(</span>arch/x86/events/intel/core.c:2359<span class="o">)</span>
+</span></span><span class="line"><span class="cl">      ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>从 <code>k_tcp_connect</code> 到 <code>fentry_fn</code> 有 8 个逻辑分支。</p>
+<p>有点不合理；这 8 个逻辑分支完全没有存在的必要；笔者已经计划提 patch 将这些无用的逻辑分支记录优化掉。</p>
+<p>快速看看 <code>fentry</code> 和 <code>fexit</code> 的 bpf 程序被调用前的反汇编的机器码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./btrace -d -k bpf_trampoline_1494648619009 -B <span class="m">500</span>
+</span></span><span class="line"><span class="cl">2025/03/16 23:44:18 Disassembling bpf_trampoline_1494648619009 at 0xffffffffc03a1ac0 <span class="o">(</span><span class="m">183</span> bytes<span class="o">)</span> ..
+</span></span><span class="line"><span class="cl"><span class="p">;</span> bpf_trampoline_1494648619009+0x0
+</span></span><span class="line"><span class="cl">0xffffffffc03a1ac0: <span class="m">55</span>                    pushq   %rbp
+</span></span><span class="line"><span class="cl">0xffffffffc03a1ac1: <span class="m">48</span> <span class="m">89</span> e5              movq    %rsp, %rbp
+</span></span><span class="line"><span class="cl">0xffffffffc03a1ac4: <span class="m">48</span> <span class="m">83</span> ec <span class="m">30</span>           subq    <span class="nv">$0</span>x30, %rsp
+</span></span><span class="line"><span class="cl">0xffffffffc03a1ac8: <span class="m">50</span>                    pushq   %rax
+</span></span><span class="line"><span class="cl">0xffffffffc03a1ac9: <span class="m">48</span> <span class="m">89</span> 5d e0           movq    %rbx, -0x20<span class="o">(</span>%rbp<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffc03a1acd: b8 <span class="m">01</span> <span class="m">00</span> <span class="m">00</span> <span class="m">00</span>        movl    <span class="nv">$1</span>, %eax
+</span></span><span class="line"><span class="cl">0xffffffffc03a1ad2: <span class="m">48</span> <span class="m">89</span> <span class="m">45</span> f0           movq    %rax, -0x10<span class="o">(</span>%rbp<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffc03a1ad6: <span class="m">48</span> c7 c0 <span class="m">08</span> <span class="m">37</span> <span class="m">38</span> c0  movq    <span class="nv">$-</span>0x3fc7c8f8, %rax
+</span></span><span class="line"><span class="cl">0xffffffffc03a1add: <span class="m">48</span> <span class="m">89</span> <span class="m">45</span> e8           movq    %rax, -0x18<span class="o">(</span>%rbp<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffc03a1ae1: <span class="m">48</span> <span class="m">89</span> 7d f8           movq    %rdi, -8<span class="o">(</span>%rbp<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffc03a1ae5: <span class="m">31</span> ff                 xorl    %edi, %edi
+</span></span><span class="line"><span class="cl">0xffffffffc03a1ae7: <span class="m">48</span> <span class="m">89</span> 7d d0           movq    %rdi, -0x30<span class="o">(</span>%rbp<span class="o">)</span>
+</span></span><span class="line"><span class="cl">0xffffffffc03a1aeb: <span class="m">48</span> bf <span class="m">00</span> <span class="m">70</span> <span class="m">50</span> <span class="m">40</span> c7 a0 ff ff   movabsq   <span class="nv">$0</span>xffffa0c740507000, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffc03a1af5: <span class="m">48</span> 8d <span class="m">75</span> d0           leaq    -0x30<span class="o">(</span>%rbp<span class="o">)</span>, %rsi
+</span></span><span class="line"><span class="cl">0xffffffffc03a1af9: e8 c2 aa 7c fb        callq   0xffffffffbbb6c5c0    <span class="p">;</span> __bpf_prog_enter_recur+0x0
+</span></span><span class="line"><span class="cl">0xffffffffc03a1afe: <span class="m">48</span> <span class="m">89</span> c3              movq    %rax, %rbx
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b01: <span class="m">48</span> <span class="m">85</span> c0              testq   %rax, %rax
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b04: <span class="m">74</span> <span class="m">09</span>                 je      0xffffffffc03a1b0f    <span class="p">;</span> bpf_trampoline_1494648619009+0x4f
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b06: <span class="m">48</span> 8d 7d f8           leaq    -8<span class="o">(</span>%rbp<span class="o">)</span>, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b0a: e8 <span class="m">51</span> <span class="m">16</span> <span class="m">00</span> <span class="m">00</span>        callq   0xffffffffc03a3160    <span class="p">;</span> fentry_fn+0x0 bpf/btrace.c:129 <span class="o">[</span>bpf<span class="o">]</span>
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b0f: <span class="m">48</span> bf <span class="m">00</span> <span class="m">70</span> <span class="m">50</span> <span class="m">40</span> c7 a0 ff ff   movabsq   <span class="nv">$0</span>xffffa0c740507000, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b19: <span class="m">48</span> <span class="m">89</span> de              movq    %rbx, %rsi
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b1c: <span class="m">48</span> 8d <span class="m">55</span> d0           leaq    -0x30<span class="o">(</span>%rbp<span class="o">)</span>, %rdx
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b20: e8 db ad 7c fb        callq   0xffffffffbbb6c900    <span class="p">;</span> __bpf_prog_exit_recur+0x0
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b25: <span class="m">48</span> 8b 7d f8           movq    -8<span class="o">(</span>%rbp<span class="o">)</span>, %rdi
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b29: <span class="m">48</span> 8b <span class="m">85</span> c8 ff ff ff  movq    -0x38<span class="o">(</span>%rbp<span class="o">)</span>, %rax
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b30: <span class="m">48</span> 8b 5d e0           movq    -0x20<span class="o">(</span>%rbp<span class="o">)</span>, %rbx
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b34: c9                    leave
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b35: c3                    retq
+</span></span><span class="line"><span class="cl">0xffffffffc03a1b36: cc                    int3
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>可以看到，在 trampoline 里便直接调用了 <code>fentry_fn</code>。</p>
+<blockquote>
+<p>除了 <code>--output-lbr</code> 对 CPU 特性有要求外，<code>-d</code> 不依赖内核，其它功能就需要在 Linux v5.17+ 上才能正常使用。</p>
+</blockquote>
+<h2 id="总结">总结</h2>
+<p><code>btrace</code> 提供了一种简单的方法来分析 bpf 程序被调用前的函数调用栈、逻辑分支记录栈和反汇编的机器码，方便开发者快速定位问题。</p>
+<p>在分析了 <code>tracepoint</code>、<code>raw_tp/tp_btf</code>、<code>kprobe</code> 和 <code>fentry/fexit</code> 的 bpf 程序被调用前的函数调用栈、逻辑分支记录栈和反汇编的机器码后，发现 <code>fentry/fexit</code> 的 bpf 程序被调用前的函数调用栈和逻辑分支记录栈最简洁，而 <code>tracepoint</code> 的 bpf 程序被调用前的逻辑分支记录栈最复杂。</p>
+<p>笔者推荐，能用 <code>fentry/fexit</code> 就用 <code>fentry/fexit</code>；需要使用 <code>tracepoint</code> 时，推荐使用 <code>raw_tp/tp_btf</code>。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2025-03-17
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/btrace/">btrace</a>
+      <a href="/%20tags/tracepoint/">tracepoint</a>
+      <a href="/%20tags/raw_tp/">raw_tp</a>
+      <a href="/%20tags/tp_btf/">tp_btf</a>
+      <a href="/%20tags/kprobe/">kprobe</a>
+      <a href="/%20tags/fentry/">fentry</a>
+      <a href="/%20tags/fexit/">fexit</a>
+      <a href="/%20tags/lbr/">LBR</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-146-btrace-v0.2.0/">
+        <span class="next-text nav-default">eBPF Talk: btrace v0.2.0 发布</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2025<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

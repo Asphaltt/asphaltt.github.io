@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 09 Mar 2025 23:10:43 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 17 Mar 2025 00:25:07 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/</link>
+      <pubDate>Mon, 17 Mar 2025 00:25:07 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/</guid>
+      <description>凑个热闹，静态地对比一下 tracepoint、raw_tp/tp_btf、kprobe 和 fentry/fexit 四种 bpf 动态追踪技术的运行时性能。 eBPF代码性能调</description>
+    </item>
     <item>
       <title>eBPF Talk: btrace v0.2.0 发布</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-146-btrace-v0.2.0/</link>
