@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-03-17T00:25:07+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-03-23T22:54:19+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-148-tp_btf/">eBPF Talk: tp_btf 经验分享</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2025-03-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1466 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      分享两条 bpfsnoop（emm 从 btrace 改名而来）使用 tp_btf 支持动态追踪 tracepoint 的经验。 如何确定 tracepoint 对应的参数？ 如何绕过 verifier 校验 tp_btf prog 的 BUG？ bpfsnoop 里的解法请参考
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-148-tp_btf/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/">eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-139-tailcall-issues/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/">eBPF Talk: 使用 fentry 调试 tailcall BUG</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-11-24 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 3949 字 </span>
-        <span class="more-meta"> 预计阅读 8 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近，在上线 XDP 网关新版本的时候，触发了 v5.15 内核的一个 tailcall BUG，导致了一个很奇怪的问题：在一个 XDP 程序的 subprog 里，调用了 bpf_tail_call()
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

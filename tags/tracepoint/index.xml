@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Mon, 17 Mar 2025 00:25:07 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 23 Mar 2025 22:54:19 +0800</lastBuildDate>
     <atom:link href="https://asphaltt.github.io/tags/tracepoint/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: tp_btf 经验分享</title>
+      <link>https://asphaltt.github.io/post/ebpf-talk-148-tp_btf/</link>
+      <pubDate>Sun, 23 Mar 2025 22:54:19 +0800</pubDate>
+      <guid>https://asphaltt.github.io/post/ebpf-talk-148-tp_btf/</guid>
+      <description>分享两条 bpfsnoop（emm 从 btrace 改名而来）使用 tp_btf 支持动态追踪 tracepoint 的经验。 如何确定 tracepoint 对应的参数？ 如何绕过 verifier 校验 tp_btf prog 的 BUG？ bpfsnoop 里的解法请参考</description>
+    </item>
     <item>
       <title>eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能</title>
       <link>https://asphaltt.github.io/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/</link>

@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: tp_btf 经验分享 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="分享两条 bpfsnoop（emm 从 btrace 改名而来）使用 tp_btf 支持动态追踪 tracepoint 的经验。 如何确定 tracepoint 对应的参数？ 如何绕过 verifier 校验 tp_btf prog 的 BUG？ bpfsnoop 里的解法请参考" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://asphaltt.github.io/post/ebpf-talk-148-tp_btf/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: tp_btf 经验分享" />
+<meta property="og:description" content="分享两条 bpfsnoop（emm 从 btrace 改名而来）使用 tp_btf 支持动态追踪 tracepoint 的经验。 如何确定 tracepoint 对应的参数？ 如何绕过 verifier 校验 tp_btf prog 的 BUG？ bpfsnoop 里的解法请参考" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://asphaltt.github.io/post/ebpf-talk-148-tp_btf/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2025-03-23T22:54:19+08:00" />
+<meta property="article:modified_time" content="2025-03-23T22:54:19+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: tp_btf 经验分享">
+  <meta itemprop="description" content="分享两条 bpfsnoop（emm 从 btrace 改名而来）使用 tp_btf 支持动态追踪 tracepoint 的经验。 如何确定 tracepoint 对应的参数？ 如何绕过 verifier 校验 tp_btf prog 的 BUG？ bpfsnoop 里的解法请参考">
+  <meta itemprop="datePublished" content="2025-03-23T22:54:19+08:00">
+  <meta itemprop="dateModified" content="2025-03-23T22:54:19+08:00">
+  <meta itemprop="wordCount" content="1466">
+  <meta itemprop="keywords" content="EBPF,Bpfsnoop,Btrace,Tp_btf,Tracepoint"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: tp_btf 经验分享"/>
+<meta name="twitter:description" content="分享两条 bpfsnoop（emm 从 btrace 改名而来）使用 tp_btf 支持动态追踪 tracepoint 的经验。 如何确定 tracepoint 对应的参数？ 如何绕过 verifier 校验 tp_btf prog 的 BUG？ bpfsnoop 里的解法请参考"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: tp_btf 经验分享</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2025-03-23 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1466 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#tp_btf-简介">tp_btf 简介</a></li>
+        <li><a href="#如何确定-tracepoint-对应的参数">如何确定 tracepoint 对应的参数？</a></li>
+        <li><a href="#如何绕过-verifier-校验-tp_btf-prog-的-bug">如何绕过 verifier 校验 <code>tp_btf</code> prog 的 BUG？</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>分享两条 <code>bpfsnoop</code>（emm 从 <code>btrace</code> 改名而来）使用 <code>tp_btf</code> 支持动态追踪 tracepoint 的经验。</p>
+<ol>
+<li>如何确定 tracepoint 对应的参数？</li>
+<li>如何绕过 verifier 校验 <code>tp_btf</code> prog 的 BUG？</li>
+</ol>
+<p><code>bpfsnoop</code> 里的解法请参考：<a href="https://github.com/bpfsnoop/bpfsnoop/pull/55">PR tp: Trace tracepoints</a>。</p>
+<h2 id="tp_btf-简介">tp_btf 简介</h2>
+<p><code>tp_btf</code> 是 <code>bpf</code> 子系统在 <code>v5.5</code> 内核引入的新特性，方便在 <code>tp_btf</code> prog 里直接使用 tracepoint 的参数。</p>
+<p><code>tp_btf</code> 是 <code>raw_tracepoint</code> 的 BTF 版本；直接讲解 <code>tp_btf</code> 的资料较少，可以参考 <code>raw_tracepoint</code> 的资料：</p>
+<ul>
+<li><a href="https://github.com/mannkafai/bpf-inside/blob/main/doc/08-raw%20tracepoint.md">RAW TRACEPOINT的内核实现</a></li>
+<li><a href="https://mp.weixin.qq.com/s/QJx-4rMYHj1yECAdwYEP-w">BPF 高性能稳定跟踪机制 rawtracepoint 介绍和样例</a></li>
+</ul>
+<h2 id="如何确定-tracepoint-对应的参数">如何确定 tracepoint 对应的参数？</h2>
+<p><code>tp_btf</code> prog 里使用的参数指 <code>/sys/kernel/debug/tracing/events</code> 下的 tracepoint 参数吗？</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ cat /sys/kernel/debug/tracing/events/sched/sched_process_fork/format
+</span></span><span class="line"><span class="cl">name: sched_process_fork
+</span></span><span class="line"><span class="cl">ID: <span class="m">324</span>
+</span></span><span class="line"><span class="cl">format:
+</span></span><span class="line"><span class="cl">    field:unsigned short common_type<span class="p">;</span>   offset:0<span class="p">;</span>   size:2<span class="p">;</span> signed:0<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    field:unsigned char common_flags<span class="p">;</span>   offset:2<span class="p">;</span>   size:1<span class="p">;</span> signed:0<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    field:unsigned char common_preempt_count<span class="p">;</span>   offset:3<span class="p">;</span>   size:1<span class="p">;</span> signed:0<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    field:int common_pid<span class="p">;</span>   offset:4<span class="p">;</span>   size:4<span class="p">;</span> signed:1<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    field:char parent_comm<span class="o">[</span>16<span class="o">]</span><span class="p">;</span> offset:8<span class="p">;</span>   size:16<span class="p">;</span>    signed:0<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    field:pid_t parent_pid<span class="p">;</span> offset:24<span class="p">;</span>  size:4<span class="p">;</span> signed:1<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    field:char child_comm<span class="o">[</span>16<span class="o">]</span><span class="p">;</span>  offset:28<span class="p">;</span>  size:16<span class="p">;</span>    signed:0<span class="p">;</span>
+</span></span><span class="line"><span class="cl">    field:pid_t child_pid<span class="p">;</span>  offset:44<span class="p">;</span>  size:4<span class="p">;</span> signed:1<span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">print fmt: <span class="s2">&#34;comm=%s pid=%d child_comm=%s child_pid=%d&#34;</span>, REC-&gt;parent_comm, REC-&gt;parent_pid, REC-&gt;child_comm, REC-&gt;child_pid
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>不是的，完全不是这么回事。</p>
+<p>先来看下正确的 tracepoint 参数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./bpfsnoop -t sched_process_fork --show-func-proto
+</span></span><span class="line"><span class="cl">Kernel tracepoints: <span class="o">(</span>total 1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">void sched_process_fork<span class="o">(</span>struct task_struct *parent, struct task_struct *child<span class="o">)</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>看起来，完全两码事。</p>
+<p>先看下 bpf verifier 是怎么获取 tracepoint 参数的：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// kernel/bpf/verifier.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">bpf_check_attach_target</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_verifier_log</span> <span class="o">*</span><span class="n">log</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                            <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                            <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">tgt_prog</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                            <span class="n">u32</span> <span class="n">btf_id</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                            <span class="k">struct</span> <span class="n">bpf_attach_target_info</span> <span class="o">*</span><span class="n">tgt_info</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* The func_proto of &#34;btf_trace_##tname&#34; is generated from typedef without argument
+</span></span></span><span class="line"><span class="cl"><span class="cm">         * names. Thus using bpf_raw_event_map to get argument names.
+</span></span></span><span class="line"><span class="cl"><span class="cm">         */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">btp</span> <span class="o">=</span> <span class="nf">bpf_get_raw_tracepoint</span><span class="p">(</span><span class="n">tname</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">btp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">fname</span> <span class="o">=</span> <span class="nf">kallsyms_lookup</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="n">btp</span><span class="o">-&gt;</span><span class="n">bpf_func</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                <span class="n">trace_symbol</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_put_raw_tracepoint</span><span class="p">(</span><span class="n">btp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">ret</span> <span class="o">=</span> <span class="nf">btf_find_by_name_kind</span><span class="p">(</span><span class="n">btf</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">BTF_KIND_FUNC</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>啊哈，原来是：</p>
+<ol>
+<li>根据 tracepoint 的名字查找到内部信息；</li>
+<li>查找 <code>bpf_func</code> 字段对应的符号信息；</li>
+<li>根据符号信息查找到 BTF 信息。</li>
+</ol>
+<p>以下代码片段就是根据 tracepoint 的名字查找到内部信息的代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// kernel/trace/bpf_trace.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">extern</span> <span class="k">struct</span> <span class="n">bpf_raw_event_map</span> <span class="n">__start__bpf_raw_tp</span><span class="p">[];</span>
+</span></span><span class="line"><span class="cl"><span class="k">extern</span> <span class="k">struct</span> <span class="n">bpf_raw_event_map</span> <span class="n">__stop__bpf_raw_tp</span><span class="p">[];</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">bpf_raw_event_map</span> <span class="o">*</span><span class="nf">bpf_get_raw_tracepoint</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_raw_event_map</span> <span class="o">*</span><span class="n">btp</span> <span class="o">=</span> <span class="n">__start__bpf_raw_tp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(;</span> <span class="n">btp</span> <span class="o">&lt;</span> <span class="n">__stop__bpf_raw_tp</span><span class="p">;</span> <span class="n">btp</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nf">strcmp</span><span class="p">(</span><span class="n">btp</span><span class="o">-&gt;</span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">btp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">bpf_get_raw_tracepoint_module</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在 <code>bpfsnoop</code> 里，如法炮制，使用同样的方式读取到所有 tracepoint 的信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__noinline</span> <span class="kt">void</span>
+</span></span><span class="line"><span class="cl"><span class="nf">probe_tp_info</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_raw_event_map</span> <span class="o">*</span><span class="n">btp</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">tp_info</span> <span class="o">*</span><span class="n">tp</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">tps</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">str</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">str</span> <span class="o">=</span> <span class="nf">BPF_CORE_READ</span><span class="p">(</span><span class="n">btp</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">name</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_probe_read_kernel_str</span><span class="p">(</span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">),</span> <span class="n">str</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">BPF_CORE_READ_INTO</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">func_proto_symbol</span><span class="p">,</span> <span class="n">btp</span><span class="p">,</span> <span class="n">bpf_func</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">BPF_CORE_READ_INTO</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tp</span><span class="o">-&gt;</span><span class="n">num_args</span><span class="p">,</span> <span class="n">btp</span><span class="p">,</span> <span class="n">num_args</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fentry/__x64_sys_nanosleep&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">probe</span><span class="p">(</span><span class="k">struct</span> <span class="n">pt_regs</span> <span class="o">*</span><span class="n">regs</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_raw_event_map</span> <span class="o">*</span><span class="n">btp</span> <span class="o">=</span> <span class="p">(</span><span class="nf">typeof</span><span class="p">(</span><span class="n">btp</span><span class="p">))</span> <span class="n">__start</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">run</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">run</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">TP_MAX</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="n">nr_tps</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="nf">probe_tp_info</span><span class="p">(</span><span class="n">btp</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">btp</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">BPF_OK</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>接着，在 Go 里:</p>
+<ol>
+<li>到 <code>/proc/kallsyms</code> 里查找 <code>func_proto_symbol</code> 对应的符号信息；</li>
+<li>使用符号名称到内核 BTF 里查找到对应的 BTF 信息，即 <code>*btf.Func</code>；</li>
+<li>根据 <code>*btf.Func</code> 里的 <code>*btf.FuncProto</code> 信息打印出参数信息。</li>
+</ol>
+<p>需要使用 <code>tp_btf</code> 的时候，欢迎使用 <code>bpfsnoop -t &lt;tracepoint&gt; --show-func-proto</code> 查看参数信息。</p>
+<h2 id="如何绕过-verifier-校验-tp_btf-prog-的-bug">如何绕过 verifier 校验 <code>tp_btf</code> prog 的 BUG？</h2>
+<p>如果直接使用上述方法找到的参数，可能会遇到如下 BUG：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-gdscript3" data-lang="gdscript3"><span class="line"><span class="cl"> <span class="k">func</span> <span class="s1">&#39;xdp_redirect_err&#39;</span> <span class="n">arg0</span> <span class="n">has</span> <span class="n">btf_id</span> <span class="mi">6973</span> <span class="n">type</span> <span class="n">STRUCT</span> <span class="s1">&#39;net_device&#39;</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">14</span><span class="p">:</span> <span class="n">R0_w</span><span class="o">=</span><span class="n">trusted_ptr_net_device</span><span class="p">()</span> <span class="n">R1</span><span class="o">=</span><span class="n">ctx</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">14</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="n">b</span><span class="p">)</span> <span class="o">*</span><span class="p">(</span><span class="n">u64</span> <span class="o">*</span><span class="p">)(</span><span class="n">r10</span> <span class="o">-</span><span class="mi">96</span><span class="p">)</span> <span class="o">=</span> <span class="n">r0</span>       <span class="p">;</span> <span class="n">R0_w</span><span class="o">=</span><span class="n">trusted_ptr_net_device</span><span class="p">()</span> <span class="n">R10</span><span class="o">=</span><span class="n">fp0</span> <span class="n">fp</span><span class="o">-</span><span class="mi">96</span><span class="n">_w</span><span class="o">=</span><span class="n">trusted_ptr_net_device</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">15</span><span class="p">:</span> <span class="p">(</span><span class="mi">79</span><span class="p">)</span> <span class="n">r0</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">u64</span> <span class="o">*</span><span class="p">)(</span><span class="n">r1</span> <span class="o">+</span><span class="mi">8</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"> <span class="k">func</span> <span class="s1">&#39;xdp_redirect_err&#39;</span> <span class="n">arg1</span> <span class="n">has</span> <span class="n">btf_id</span> <span class="mi">6845</span> <span class="n">type</span> <span class="n">STRUCT</span> <span class="s1">&#39;bpf_prog&#39;</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">16</span><span class="p">:</span> <span class="n">R0_w</span><span class="o">=</span><span class="n">trusted_ptr_bpf_prog</span><span class="p">()</span> <span class="n">R1</span><span class="o">=</span><span class="n">ctx</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">16</span><span class="p">:</span> <span class="p">(</span><span class="mi">7</span><span class="n">b</span><span class="p">)</span> <span class="o">*</span><span class="p">(</span><span class="n">u64</span> <span class="o">*</span><span class="p">)(</span><span class="n">r10</span> <span class="o">-</span><span class="mi">88</span><span class="p">)</span> <span class="o">=</span> <span class="n">r0</span>       <span class="p">;</span> <span class="n">R0_w</span><span class="o">=</span><span class="n">trusted_ptr_bpf_prog</span><span class="p">()</span> <span class="n">R10</span><span class="o">=</span><span class="n">fp0</span> <span class="n">fp</span><span class="o">-</span><span class="mi">88</span><span class="n">_w</span><span class="o">=</span><span class="n">trusted_ptr_bpf_prog</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">17</span><span class="p">:</span> <span class="p">(</span><span class="mi">79</span><span class="p">)</span> <span class="n">r0</span> <span class="o">=</span> <span class="o">*</span><span class="p">(</span><span class="n">u64</span> <span class="o">*</span><span class="p">)(</span><span class="n">r1</span> <span class="o">+</span><span class="mi">16</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"> <span class="k">func</span> <span class="s1">&#39;xdp_redirect_err&#39;</span> <span class="n">arg2</span> <span class="n">type</span> <span class="n">UNKNOWN</span> <span class="n">is</span> <span class="ow">not</span> <span class="n">a</span> <span class="n">struct</span>
+</span></span><span class="line"><span class="cl"> <span class="n">invalid</span> <span class="n">bpf_context</span> <span class="n">access</span> <span class="n">off</span><span class="o">=</span><span class="mi">16</span> <span class="n">size</span><span class="o">=</span><span class="mi">8</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这是在动态追踪 <code>xdp_redirect_err</code> tracepoint 时遇到的问题。</p>
+<p>如下是 <code>xdp_redirect_err</code> tracepoint 的参数信息：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./bpfsnoop -t xdp_redirect_err --show-func-proto
+</span></span><span class="line"><span class="cl">Kernel tracepoints: <span class="o">(</span>total 1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">void xdp_redirect_err<span class="o">(</span>const struct net_device *dev, const struct bpf_prog *xdp, const void *tgt, int err, enum bpf_map_type map_type, u32 map_id, u32 index<span class="o">)</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>第 2 个参数是 <code>const void *tgt</code>，为什么 verifier 报错了呢？看看 verifier 源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// kernel/bpf/btf.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="kt">bool</span> <span class="nf">btf_ctx_access</span><span class="p">(</span><span class="kt">int</span> <span class="n">off</span><span class="p">,</span> <span class="kt">int</span> <span class="n">size</span><span class="p">,</span> <span class="k">enum</span> <span class="n">bpf_access_type</span> <span class="n">type</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">const</span> <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                    <span class="k">struct</span> <span class="n">bpf_insn_access_aux</span> <span class="o">*</span><span class="n">info</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* skip modifiers */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">while</span> <span class="p">(</span><span class="nf">btf_type_is_modifier</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">info</span><span class="o">-&gt;</span><span class="n">btf_id</span> <span class="o">=</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">type</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">t</span> <span class="o">=</span> <span class="nf">btf_type_by_id</span><span class="p">(</span><span class="n">btf</span><span class="p">,</span> <span class="n">t</span><span class="o">-&gt;</span><span class="n">type</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nf">btf_type_is_struct</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_log</span><span class="p">(</span><span class="n">log</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="s">&#34;func &#39;%s&#39; arg%d type %s is not a struct</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">            <span class="n">tname</span><span class="p">,</span> <span class="n">arg</span><span class="p">,</span> <span class="nf">btf_type_str</span><span class="p">(</span><span class="n">t</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>笔者认为这是 verifier 的 BUG，得修。</p>
+<p>但不能因为 verifier 有 BUG 而放弃使用 <code>tp_btf</code>；<code>bpfsnoop</code> 里的解决方案是：</p>
+<ul>
+<li>使用 <code>bpf_probe_read_kernel()</code> helper 读取参数。</li>
+</ul>
+<p>这方式可行吗？如果 tracepoint 有很多参数，比如 12 个参数，这样的方式可行吗？</p>
+<p>好问题，直接看看内核 <code>bpf_trace_run12()</code> 的源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// kernel/trace/bpf_trace.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="n">__always_inline</span>
+</span></span><span class="line"><span class="cl"><span class="kt">void</span> <span class="nf">__bpf_trace_run</span><span class="p">(</span><span class="k">struct</span> <span class="n">bpf_raw_tp_link</span> <span class="o">*</span><span class="n">link</span><span class="p">,</span> <span class="n">u64</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_prog</span> <span class="o">*</span><span class="n">prog</span> <span class="o">=</span> <span class="n">link</span><span class="o">-&gt;</span><span class="n">link</span><span class="p">.</span><span class="n">prog</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_run_ctx</span> <span class="o">*</span><span class="n">old_run_ctx</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">bpf_trace_run_ctx</span> <span class="n">run_ctx</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">cant_sleep</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="nf">this_cpu_inc_return</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">active</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_prog_inc_misses_counter</span><span class="p">(</span><span class="n">prog</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">goto</span> <span class="n">out</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">run_ctx</span><span class="p">.</span><span class="n">bpf_cookie</span> <span class="o">=</span> <span class="n">link</span><span class="o">-&gt;</span><span class="n">cookie</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">old_run_ctx</span> <span class="o">=</span> <span class="nf">bpf_set_run_ctx</span><span class="p">(</span><span class="o">&amp;</span><span class="n">run_ctx</span><span class="p">.</span><span class="n">run_ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">rcu_read_lock</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">    <span class="p">(</span><span class="kt">void</span><span class="p">)</span> <span class="nf">bpf_prog_run</span><span class="p">(</span><span class="n">prog</span><span class="p">,</span> <span class="n">args</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">rcu_read_unlock</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">bpf_reset_run_ctx</span><span class="p">(</span><span class="n">old_run_ctx</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nl">out</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">this_cpu_dec</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">prog</span><span class="o">-&gt;</span><span class="n">active</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define BPF_TRACE_DEFN_x(x)                                 \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    void bpf_trace_run##x(struct bpf_raw_tp_link *link,     \
+</span></span></span><span class="line"><span class="cl"><span class="cp">                  REPEAT(x, SARG, __DL_COM, __SEQ_0_11))    \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    {                                                       \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        u64 args[x];                                        \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        REPEAT(x, COPY, __DL_SEM, __SEQ_0_11);              \
+</span></span></span><span class="line"><span class="cl"><span class="cp">        __bpf_trace_run(link, args);                        \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    }                                                       \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    EXPORT_SYMBOL_GPL(bpf_trace_run##x)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">3</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">5</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">6</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">7</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">8</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">9</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">10</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">11</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_TRACE_DEFN_x</span><span class="p">(</span><span class="mi">12</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这是将所有参数都保存到一个 <code>u64</code> 数组里，然后通过 <code>ctx</code> 传递给 <code>tp_btf</code> prog。</p>
+<p>看源代码是这样，<code>bpfsnoop</code> 跑起来也没问题，所以这是可行的。</p>
+<h2 id="总结">总结</h2>
+<p><code>tp_btf</code> 值得推荐！</p>
+<p>在使用的时候，先用 <code>bpfsnoop -t &lt;tracepoint&gt; --show-func-proto</code> 查看参数信息，然后根据参数信息编写 <code>tp_btf</code> prog。</p>
+<p>如果遇到 verifier 报错，可以使用 <code>bpf_probe_read_kernel()</code> helper 读取参数。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2025-03-23
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/bpfsnoop/">bpfsnoop</a>
+      <a href="/%20tags/btrace/">btrace</a>
+      <a href="/%20tags/tp_btf/">tp_btf</a>
+      <a href="/%20tags/tracepoint/">tracepoint</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/">
+        <span class="next-text nav-default">eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://asphaltt.github.io/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2025<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
