@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Sockdump on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/sockdump/</link>
+    <link>https://blog.leonhw.com/tags/sockdump/</link>
     <description>Recent content in Sockdump on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 26 May 2024 15:40:38 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/sockdump/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/sockdump/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: Unix Socket 抓包工具 sockdump</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-102-introduce-sockdump/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-102-introduce-sockdump/</link>
       <pubDate>Sun, 26 May 2024 15:40:38 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-102-introduce-sockdump/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-102-introduce-sockdump/</guid>
       <description>犹如 2 年前抄狄老师的 skbtracer 一样，当看到 sockdump 时，又抄了一回作业。原 sockdump 也是基于 bcc 的项目，我把它改造成了基于 Go+eBPF CO-RE 的项目，下载二进制文件即可立马用起来。 skbtracer</description>
     </item>
   </channel>

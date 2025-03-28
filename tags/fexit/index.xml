@@ -2,88 +2,88 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Fexit on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/fexit/</link>
+    <link>https://blog.leonhw.com/tags/fexit/</link>
     <description>Recent content in Fexit on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Mon, 17 Mar 2025 00:25:07 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/fexit/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/fexit/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/</link>
       <pubDate>Mon, 17 Mar 2025 00:25:07 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/</guid>
       <description>凑个热闹，静态地对比一下 tracepoint、raw_tp/tp_btf、kprobe 和 fentry/fexit 四种 bpf 动态追踪技术的运行时性能。 eBPF代码性能调</description>
     </item>
     <item>
       <title>eBPF Talk: 使用 Last Branch Record 动态追踪内核函数</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-145-lbr/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-145-lbr/</link>
       <pubDate>Sun, 23 Feb 2025 23:41:14 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-145-lbr/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-145-lbr/</guid>
       <description>Last Branch Record，简称 LBR，是 CPU 提供的一种硬件功能，可以记录程序执行过程中的分支跳转信息；目前，Intel CPU、AMD CPU 均已支持 LBR 功能；</description>
     </item>
     <item>
       <title>eBPF Talk: 使用 tcpw 获取 curl 的五元组信息</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-142-tcpw-introduction/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-142-tcpw-introduction/</link>
       <pubDate>Sun, 22 Dec 2024 21:29:52 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-142-tcpw-introduction/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-142-tcpw-introduction/</guid>
       <description>在使用 curl、telnet 等工具排查问题的时候，如果想要知道当前的连接信息，在现有的工具集里，是没有办法直接获取的。 于是，我写了一个小工具</description>
     </item>
     <item>
       <title>eBPF Talk: 在 bpf 里将 fd 和 sock 关联起来</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-140-fd-socket/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-140-fd-socket/</link>
       <pubDate>Mon, 09 Dec 2024 00:24:48 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-140-fd-socket/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-140-fd-socket/</guid>
       <description>对于 socket 编程，在用户态看到的只能是 fd；而在内核态，大部分时候看到的是 sock。 fd 和 sock 之间的关系，是在内核态的 syscall 里建立的；所以，在 connect 和 accept 等 syscall 里</description>
     </item>
     <item>
       <title>eBPF Talk: tailcall 问题知多少</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-139-tailcall-issues/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-139-tailcall-issues/</link>
       <pubDate>Sun, 01 Dec 2024 23:58:54 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-139-tailcall-issues/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-139-tailcall-issues/</guid>
       <description>tailcall 是 v4.2 内核便已引入的一个特性，它允许一个 BPF 程序调用另一个程序，而无需返回原程序。 bpf: allow bpf programs to tail-call other bpf programs 然而，在 BPF 子系统不断地引入新特性的同时，t</description>
     </item>
     <item>
       <title>eBPF Talk: trace tracepoint 程序</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-85-trace-tracepoint-program/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-85-trace-tracepoint-program/</link>
       <pubDate>Thu, 04 Apr 2024 22:38:55 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-85-trace-tracepoint-program/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-85-trace-tracepoint-program/</guid>
       <description>此处指的是 trace tracepoint bpf 程序，而不是 trace tracepoint 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace tracepoint 程</description>
     </item>
     <item>
       <title>eBPF Talk: trace kprobe 程序</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-84-trace-kprobe-program/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-84-trace-kprobe-program/</link>
       <pubDate>Thu, 04 Apr 2024 22:37:42 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-84-trace-kprobe-program/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-84-trace-kprobe-program/</guid>
       <description>此处指的是 trace kprobe bpf 程序，而不是 trace kprobe 事件。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint 程序 trace kprobe 程</description>
     </item>
     <item>
       <title>eBPF Talk: trace tailcall 程序？NO！</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-83-trace-tailcall-program/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-83-trace-tailcall-program/</link>
       <pubDate>Thu, 04 Apr 2024 22:34:32 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-83-trace-tailcall-program/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-83-trace-tailcall-program/</guid>
       <description>既然可以对 freplace 程序进行 trace，是否可以对 tailcall 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程</description>
     </item>
     <item>
       <title>eBPF Talk: trace freplace 程序</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-82-trace-freplace-program/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-82-trace-freplace-program/</link>
       <pubDate>Thu, 04 Apr 2024 22:30:23 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-82-trace-freplace-program/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-82-trace-freplace-program/</guid>
       <description>既然可以对 bpf2bpf 函数调用进行 trace，是否可以对 freplace 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace</description>
     </item>
     <item>
       <title>eBPF Talk: trace bpf2bpf 函数调用</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-81-trace-bpf2bpf-program/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-81-trace-bpf2bpf-program/</link>
       <pubDate>Thu, 04 Apr 2024 22:28:58 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-81-trace-bpf2bpf-program/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-81-trace-bpf2bpf-program/</guid>
       <description>如 trace XDP/tc-bpf 程序，bpf2bpf 函数调用也是可以被 trace 的。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace</description>
     </item>
     <item>
       <title>eBPF Talk: trace tc-bpf 程序</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-80-trace-tc-bpf-program/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-80-trace-tc-bpf-program/</link>
       <pubDate>Thu, 04 Apr 2024 22:18:37 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-80-trace-tc-bpf-program/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-80-trace-tc-bpf-program/</guid>
       <description>如 eBPF Talk: trace XDP 程序，使用 bpf 也是能够对 tc-bpf 程序进行 trace 的。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint</description>
     </item>
   </channel>

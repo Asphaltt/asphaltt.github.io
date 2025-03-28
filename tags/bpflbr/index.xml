@@ -2,39 +2,39 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Bpflbr on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/bpflbr/</link>
+    <link>https://blog.leonhw.com/tags/bpflbr/</link>
     <description>Recent content in Bpflbr on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 09 Mar 2025 23:10:43 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/bpflbr/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/bpflbr/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: btrace v0.2.0 发布</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-146-btrace-v0.2.0/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-146-btrace-v0.2.0/</link>
       <pubDate>Sun, 09 Mar 2025 23:10:43 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-146-btrace-v0.2.0/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-146-btrace-v0.2.0/</guid>
       <description>btrace 是什么？btrace 是一款 bpf 时代的现代化内核函数动态追踪工具。 btrace 重命名自 bpflbr，参考 eBPF Talk: 使用 Last Branch Record 动态追踪内核函数，在 bpflbr v0.1.0 的基础上，</description>
     </item>
     <item>
       <title>eBPF Talk: 使用 Last Branch Record 动态追踪内核函数</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-145-lbr/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-145-lbr/</link>
       <pubDate>Sun, 23 Feb 2025 23:41:14 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-145-lbr/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-145-lbr/</guid>
       <description>Last Branch Record，简称 LBR，是 CPU 提供的一种硬件功能，可以记录程序执行过程中的分支跳转信息；目前，Intel CPU、AMD CPU 均已支持 LBR 功能；</description>
     </item>
     <item>
       <title>eBPF Talk: 使用 fentry 调试 tailcall BUG</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/</link>
       <pubDate>Sun, 24 Nov 2024 23:13:45 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/</guid>
       <description>最近，在上线 XDP 网关新版本的时候，触发了 v5.15 内核的一个 tailcall BUG，导致了一个很奇怪的问题：在一个 XDP 程序的 subprog 里，调用了 bpf_tail_call()</description>
     </item>
     <item>
       <title>eBPF Talk: 自制查看 bpf prog 反汇编的工具</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-135-check-disas-of-bpf-prog/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-135-check-disas-of-bpf-prog/</link>
       <pubDate>Sun, 27 Oct 2024 23:38:15 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-135-check-disas-of-bpf-prog/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-135-check-disas-of-bpf-prog/</guid>
       <description>目前，我知道的查看 bpf prog 反汇编的办法有： 使用 bpftool prog dump jited； 使用 gdb -q -c /proc/kcore -ex &#39;disas/r 0xffffffffc00a6188,+0x143&#39; -ex &#39;quit&#39;； 使用 drgn contrib/bpf_inspec.p</description>
     </item>
   </channel>

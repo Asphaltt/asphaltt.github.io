@@ -1,2 +1,2 @@
 User-agent: *
-Sitemap: https://asphaltt.github.io/sitemap.xml
+Sitemap: https://blog.leonhw.com/sitemap.xml

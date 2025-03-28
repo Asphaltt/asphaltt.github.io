@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Mad on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/mad/</link>
+    <link>https://blog.leonhw.com/tags/mad/</link>
     <description>Recent content in Mad on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 17 Nov 2024 15:33:46 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/mad/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/mad/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: 谁动了我的 bpf map?</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-137-monitor-map-update-and-deletion/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-137-monitor-map-update-and-deletion/</link>
       <pubDate>Sun, 17 Nov 2024 15:33:46 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-137-monitor-map-update-and-deletion/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-137-monitor-map-update-and-deletion/</guid>
       <description>使用 bpf 跟踪 bpf map 的更新、删除函数，以此确认是谁动了 bpf map。 TL;DR 已实现对 bpf map 的更新、删除函数的跟踪，未实现批量操作 bpf map 函数的跟踪；源代码：git</description>
     </item>
   </channel>

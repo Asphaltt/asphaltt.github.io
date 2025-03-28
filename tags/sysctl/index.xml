@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Sysctl on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/sysctl/</link>
+    <link>https://blog.leonhw.com/tags/sysctl/</link>
     <description>Recent content in Sysctl on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 07 Jul 2024 22:09:29 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/sysctl/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/sysctl/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: 跟踪 ipv4 sysctl 配置变更</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-122-trace-ipv4-sysctl/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-122-trace-ipv4-sysctl/</link>
       <pubDate>Sun, 07 Jul 2024 22:09:29 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-122-trace-ipv4-sysctl/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-122-trace-ipv4-sysctl/</guid>
       <description>eBPF Talk: 跟踪 IRQ 绑核 eBPF Talk: 跟踪 RPS/XPS 配置变更 eBPF Talk: 跟踪 ipv4 sysctl 配置变更 实现了对 IRQ 绑核、RPS/XPS 配置变更后，接着是跟踪网卡的 net.ipv4.conf.*.* sysctl 的配置变更。 ipv4 sysctl 配置变更的</description>
     </item>
   </channel>

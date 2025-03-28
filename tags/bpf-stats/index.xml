@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Bpf Stats on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/bpf-stats/</link>
+    <link>https://blog.leonhw.com/tags/bpf-stats/</link>
     <description>Recent content in Bpf Stats on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Wed, 03 Apr 2024 22:57:57 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/bpf-stats/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/bpf-stats/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: bpf prog stats</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-70-bpf-prog-stats/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-70-bpf-prog-stats/</link>
       <pubDate>Wed, 03 Apr 2024 22:57:57 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-70-bpf-prog-stats/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-70-bpf-prog-stats/</guid>
       <description>根据以下两个 commit，可以看到，自 5.1 内核起，bpf prog 可以统计自己的运行情况了。 bpf: enable program stats 5.1 kernel. bpf: Sharing bpf runtime stats with BPF_ENABLE_STATS 5.8 kernel. bpf: Improve program stats run-time calculation 6.x kernel. stats 例子 以 bpf2bpf demo</description>
     </item>
   </channel>

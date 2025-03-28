@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Libbfd on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/libbfd/</link>
+    <link>https://blog.leonhw.com/tags/libbfd/</link>
     <description>Recent content in Libbfd on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 03 Nov 2024 20:49:54 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/libbfd/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/libbfd/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: 修复了 bpftool 中存在了 7 年的 BUG</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-136-fix-bpftool-disasm-bug/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-136-fix-bpftool-disasm-bug/</link>
       <pubDate>Sun, 03 Nov 2024 20:49:54 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-136-fix-bpftool-disasm-bug/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-136-fix-bpftool-disasm-bug/</guid>
       <description>在 eBPF Talk: 自制查看 bpf prog 反汇编的工具 里提到的 bpftool BUG Wrong callq address displayed，花了两三天时间将它给修了。 TL;DR [PATCH bpf v3] bpf, bpftool: Fix incorrect disasm pc 已合入 bpf 仓库。 BUG 复现 使用 bpftool</description>
     </item>
   </channel>

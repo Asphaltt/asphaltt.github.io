@@ -2,74 +2,74 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Freplace on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/freplace/</link>
+    <link>https://blog.leonhw.com/tags/freplace/</link>
     <description>Recent content in Freplace on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 01 Dec 2024 23:58:54 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/freplace/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/freplace/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: tailcall 问题知多少</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-139-tailcall-issues/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-139-tailcall-issues/</link>
       <pubDate>Sun, 01 Dec 2024 23:58:54 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-139-tailcall-issues/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-139-tailcall-issues/</guid>
       <description>tailcall 是 v4.2 内核便已引入的一个特性，它允许一个 BPF 程序调用另一个程序，而无需返回原程序。 bpf: allow bpf programs to tail-call other bpf programs 然而，在 BPF 子系统不断地引入新特性的同时，t</description>
     </item>
     <item>
       <title>eBPF Talk: 我禁用了 freplace tailcall freplace</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</link>
       <pubDate>Sun, 20 Oct 2024 22:17:45 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</guid>
       <description>在修复一个由 freplace 引起的 tailcall 无限循环的问题时，接纳社区的建议：禁止将 freplace prog 更新到 prog_array map 中。 使用场景 在项目中，freplace prog 当作 tail-callee 的用法如下： 在 dispatcher prog</description>
     </item>
     <item>
       <title>eBPF Talk: 改进 XDP 解析 TCP options</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-131-improve-tcpoptions/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-131-improve-tcpoptions/</link>
       <pubDate>Sun, 08 Sep 2024 16:16:23 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-131-improve-tcpoptions/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-131-improve-tcpoptions/</guid>
       <description>在 eBPF Talk: XDP 解析所有 TCP options 里，已经做到了使用 XDP 解析所有 TCP options 的功能。 不过，其中使用了 percpu map 在 XDP 和 freplace 之间传递 offset；那么，是否有办法将该 percpu map 优化掉</description>
     </item>
     <item>
       <title>eBPF Talk: 又修了一个 tailcall 有关的 BUG</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-130-tailcall-and-freplace/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-130-tailcall-and-freplace/</link>
       <pubDate>Sun, 01 Sep 2024 21:25:01 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-130-tailcall-and-freplace/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-130-tailcall-and-freplace/</guid>
       <description>在 eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug 之后，再下一城，再次修复与 tailcall 有关的一个 BUG： bpf: Fix updating attached freplace prog to prog_array map BUG 危害 这个 BUG 会导致内核 panic： 1 2 3</description>
     </item>
     <item>
       <title>eBPF Talk: XDP 解析所有 TCP options</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-127-xdp-tcp-options/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-127-xdp-tcp-options/</link>
       <pubDate>Sun, 18 Aug 2024 21:23:42 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-127-xdp-tcp-options/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-127-xdp-tcp-options/</guid>
       <description>使用 fentry 能解析到 TOA option，eBPF Talk: BPF 读取 TOA 的 4 种方式。 上难度，如何使用 XDP 解析所有的 TCP options 呢？ 太长不读：使用 freplace 解析 TCP option，使用 XDP 遍</description>
     </item>
     <item>
       <title>eBPF Talk: tailcall in freplace 有 BUG</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-93-tailcall-in-freplace-bug/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-93-tailcall-in-freplace-bug/</link>
       <pubDate>Wed, 15 May 2024 23:27:52 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-93-tailcall-in-freplace-bug/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-93-tailcall-in-freplace-bug/</guid>
       <description>tailcall in freplace 有 BUG？真的？假的！ 最近，偶然发现在 freplace 里使用 tailcall 有 BUG。尽管，我的同事早就发现了有问题，但不确定是不是内核的问题。所以，我就花了点时</description>
     </item>
     <item>
       <title>eBPF Talk: trace freplace 程序</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-82-trace-freplace-program/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-82-trace-freplace-program/</link>
       <pubDate>Thu, 04 Apr 2024 22:30:23 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-82-trace-freplace-program/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-82-trace-freplace-program/</guid>
       <description>既然可以对 bpf2bpf 函数调用进行 trace，是否可以对 freplace 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace</description>
     </item>
     <item>
       <title>eBPF Talk: eBPF 程序模块化与单测构想</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/</link>
       <pubDate>Wed, 03 Apr 2024 22:48:15 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-66-an-idea-about-bpf-prog-modules-and-their-unittests/</guid>
       <description>我们来复习一下以下两篇文章： eBPF Talk: freplace on x86【汇编慎入】 eBPF Talk: 给 XDP 程序写 unittest 一个构想：使用 replace 实现 eBPF 程序的模块化，使用 BPF_PROG_TEST_RUN 对 eBPF 程序模块进行单测。 eBPF 程序</description>
     </item>
     <item>
       <title>eBPF Talk: freplace on x86【汇编慎入】</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-41-freplace-on-x86/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-41-freplace-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:31:24 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-41-freplace-on-x86/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-41-freplace-on-x86/</guid>
       <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
   </channel>

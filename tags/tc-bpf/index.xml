@@ -2,39 +2,39 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tc-Bpf on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/tc-bpf/</link>
+    <link>https://blog.leonhw.com/tags/tc-bpf/</link>
     <description>Recent content in Tc-Bpf on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Thu, 04 Apr 2024 22:18:37 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/tc-bpf/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/tc-bpf/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: trace tc-bpf 程序</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-80-trace-tc-bpf-program/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-80-trace-tc-bpf-program/</link>
       <pubDate>Thu, 04 Apr 2024 22:18:37 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-80-trace-tc-bpf-program/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-80-trace-tc-bpf-program/</guid>
       <description>如 eBPF Talk: trace XDP 程序，使用 bpf 也是能够对 tc-bpf 程序进行 trace 的。 eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程序 eBPF Talk: trace tracepoint</description>
     </item>
     <item>
       <title>eBPF Talk: packet range check</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-69-packet-range-check/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-69-packet-range-check/</link>
       <pubDate>Wed, 03 Apr 2024 22:56:16 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-69-packet-range-check/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-69-packet-range-check/</guid>
       <description>在 XDP 或者 tc-bpf 中，经常要直接访问网络包内容；而在访问网络包内容之前，总是需要先检查访问的内容是否在 data_end 之内。 So，学习一下 packet range check 相关 commit 的历史；以史</description>
     </item>
     <item>
       <title>eBPF Talk: tc-bpf 转发网络包</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-67-redirect-pkt-with-tc-bpf/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-67-redirect-pkt-with-tc-bpf/</link>
       <pubDate>Wed, 03 Apr 2024 22:50:26 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-67-redirect-pkt-with-tc-bpf/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-67-redirect-pkt-with-tc-bpf/</guid>
       <description>在 tc-bpf 里转发网络包，跟 XDP 里转发网络包有什么不同呢？ eBPF Talk: XDP 转发失败了 eBPF Talk: 揭秘 XDP 转发网络包 eBPF Talk: 揭秘 XDP 转发网络包【续】 呃，其实还是那个奇葩的需求，不</description>
     </item>
     <item>
       <title>eBPF Talk: XDP metadata 实战指南</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-27-xdp-metadata-in-action/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-27-xdp-metadata-in-action/</link>
       <pubDate>Sun, 21 May 2023 16:34:35 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-27-xdp-metadata-in-action/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-27-xdp-metadata-in-action/</guid>
       <description>最近需要在两个 XDP 程序之间传递一个最简单的信息，原本想着使用使用一个 bpf map 来传递。经过同事提醒，有 XDP metadata 可以用来传递简单信息，我便解锁了 XDP metadata 技术。</description>
     </item>
   </channel>

@@ -2,25 +2,25 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Socketrace on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/socketrace/</link>
+    <link>https://blog.leonhw.com/tags/socketrace/</link>
     <description>Recent content in Socketrace on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 09 Mar 2025 23:10:43 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/socketrace/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/socketrace/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: btrace v0.2.0 发布</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-146-btrace-v0.2.0/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-146-btrace-v0.2.0/</link>
       <pubDate>Sun, 09 Mar 2025 23:10:43 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-146-btrace-v0.2.0/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-146-btrace-v0.2.0/</guid>
       <description>btrace 是什么？btrace 是一款 bpf 时代的现代化内核函数动态追踪工具。 btrace 重命名自 bpflbr，参考 eBPF Talk: 使用 Last Branch Record 动态追踪内核函数，在 bpflbr v0.1.0 的基础上，</description>
     </item>
     <item>
       <title>eBPF Talk: 打造自己的 socket 跟踪工具 socketrace</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-107-introduce-socketrace/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-107-introduce-socketrace/</link>
       <pubDate>Sun, 26 May 2024 15:53:12 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-107-introduce-socketrace/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-107-introduce-socketrace/</guid>
       <description>忽而蹦出个想法：何不参考 pwru 那样，跟踪所有带有 struct sock *sk 参数的函数？ 既然脱胎于 pwru，那么就直接复用 pwru 的代码，快速实现一个 socketrace 工具。 1 2 3 4 5 6 7</description>
     </item>
   </channel>

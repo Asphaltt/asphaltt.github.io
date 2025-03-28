@@ -2,130 +2,130 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Tailcall on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/tailcall/</link>
+    <link>https://blog.leonhw.com/tags/tailcall/</link>
     <description>Recent content in Tailcall on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 01 Dec 2024 23:58:54 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/tailcall/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/tailcall/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: tailcall 问题知多少</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-139-tailcall-issues/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-139-tailcall-issues/</link>
       <pubDate>Sun, 01 Dec 2024 23:58:54 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-139-tailcall-issues/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-139-tailcall-issues/</guid>
       <description>tailcall 是 v4.2 内核便已引入的一个特性，它允许一个 BPF 程序调用另一个程序，而无需返回原程序。 bpf: allow bpf programs to tail-call other bpf programs 然而，在 BPF 子系统不断地引入新特性的同时，t</description>
     </item>
     <item>
       <title>eBPF Talk: 使用 fentry 调试 tailcall BUG</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/</link>
       <pubDate>Sun, 24 Nov 2024 23:13:45 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-138-debug-tailcall-bug-with-fentry/</guid>
       <description>最近，在上线 XDP 网关新版本的时候，触发了 v5.15 内核的一个 tailcall BUG，导致了一个很奇怪的问题：在一个 XDP 程序的 subprog 里，调用了 bpf_tail_call()</description>
     </item>
     <item>
       <title>eBPF Talk: 我禁用了 freplace tailcall freplace</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</link>
       <pubDate>Sun, 20 Oct 2024 22:17:45 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-134-i-disable-freplace-tailcall-freplace/</guid>
       <description>在修复一个由 freplace 引起的 tailcall 无限循环的问题时，接纳社区的建议：禁止将 freplace prog 更新到 prog_array map 中。 使用场景 在项目中，freplace prog 当作 tail-callee 的用法如下： 在 dispatcher prog</description>
     </item>
     <item>
       <title>eBPF Talk: 又修了一个 tailcall 有关的 BUG</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-130-tailcall-and-freplace/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-130-tailcall-and-freplace/</link>
       <pubDate>Sun, 01 Sep 2024 21:25:01 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-130-tailcall-and-freplace/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-130-tailcall-and-freplace/</guid>
       <description>在 eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug 之后，再下一城，再次修复与 tailcall 有关的一个 BUG： bpf: Fix updating attached freplace prog to prog_array map BUG 危害 这个 BUG 会导致内核 panic： 1 2 3</description>
     </item>
     <item>
       <title>eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-124-tailcall-hierarchy/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-124-tailcall-hierarchy/</link>
       <pubDate>Sun, 21 Jul 2024 22:14:11 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-124-tailcall-hierarchy/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-124-tailcall-hierarchy/</guid>
       <description>在 7 月 20 日早上醒来的时候，发现个好消息：修复 tailcall hierarchy 问题的 PATCH 被合并啦。 并得到 BPF 社区大佬 Alexei 的肯定： Thank you for sticking to it. Applied to bpf-next. It took almost a year, but the final fix is imo much better than all</description>
     </item>
     <item>
       <title>eBPF Talk: `tailcall` in `bpf2bpf` 踩坑一则</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-104-tailcall-in-bpf2bpf/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-104-tailcall-in-bpf2bpf/</link>
       <pubDate>Sun, 26 May 2024 15:47:06 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-104-tailcall-in-bpf2bpf/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-104-tailcall-in-bpf2bpf/</guid>
       <description>在 bpf2bpf 里使用 tailcall 时，可以达到意想不到的效果： tailcall 目标 bpf prog 复用当前 subprog 的栈空间，而不是 subprog caller 的栈空间。 subprog caller 能获取到 tailcall 目标 bpf prog 的返回值。 tailcall in bpf2bpf 支持情况 从 5.10</description>
     </item>
     <item>
       <title>eBPF Talk: 内核 bpf 子系统贡献之修复 tailcall 无限循环</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-95-kernel-bpf-contribution/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-95-kernel-bpf-contribution/</link>
       <pubDate>Wed, 15 May 2024 23:31:03 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-95-kernel-bpf-contribution/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-95-kernel-bpf-contribution/</guid>
       <description>梅开二度，再次向内核 bpf 子系统贡献 patch。 bpf, x64: Fix tailcall infinite loop 此次修复的是 x64 平台的一个 bug，该 bug 会导致 tailcall 陷入无限循环，最终导致宕机。 tailcall 无限循环 如</description>
     </item>
     <item>
       <title>eBPF Talk: tailcall in freplace 有 BUG</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-93-tailcall-in-freplace-bug/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-93-tailcall-in-freplace-bug/</link>
       <pubDate>Wed, 15 May 2024 23:27:52 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-93-tailcall-in-freplace-bug/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-93-tailcall-in-freplace-bug/</guid>
       <description>tailcall in freplace 有 BUG？真的？假的！ 最近，偶然发现在 freplace 里使用 tailcall 有 BUG。尽管，我的同事早就发现了有问题，但不确定是不是内核的问题。所以，我就花了点时</description>
     </item>
     <item>
       <title>eBPF Talk: 尝试 trace tailcall 程序？！</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-92-try-trace-tailcall/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-92-try-trace-tailcall/</link>
       <pubDate>Wed, 15 May 2024 23:22:40 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-92-try-trace-tailcall/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-92-try-trace-tailcall/</guid>
       <description>在 eBPF Talk: trace tailcall 程序？NO！ 里，我们知道 tailcall 程序是不能直接使用 fentry/fexit 进行 trace 的。 如果通过内核模块，使用比较 hack 的方式，能否 trace tailcall 程序呢？ TL;DR 能对静态 tailcall 进行 tra</description>
     </item>
     <item>
       <title>eBPF Talk: trace tailcall 程序？NO！</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-83-trace-tailcall-program/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-83-trace-tailcall-program/</link>
       <pubDate>Thu, 04 Apr 2024 22:34:32 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-83-trace-tailcall-program/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-83-trace-tailcall-program/</guid>
       <description>既然可以对 freplace 程序进行 trace，是否可以对 tailcall 程序进行 trace 呢？ eBPF Talk: trace XDP 程序 eBPF Talk: trace tc-bpf 程序 eBPF Talk: trace bpf2bpf 函数调用 eBPF Talk: trace freplace 程序 eBPF Talk: trace tailcall 程序？NO！ eBPF Talk: trace kprobe 程</description>
     </item>
     <item>
       <title>eBPF Talk: 共享的 tailcall PROG_ARRAY bpf map</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-88-tailcall-shared-bpf-map/</link>
       <pubDate>Tue, 22 Aug 2023 22:27:28 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-88-tailcall-shared-bpf-map/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-88-tailcall-shared-bpf-map/</guid>
       <description>在研究 eBPF Talk: trace tailcall 程序？NO！ 时，产生了疑惑： 静态 tailcall 使用的 PROG_ARRAY bpf map 能在多个进程之间共享吗？ TL;DR 能。且在更新 PROG_ARRAY bpf map 时，会更新静态 tailcall 的所有 bpf prog。 eBPF</description>
     </item>
     <item>
       <title>eBPF Talk: 更新 tailcall PROG_ARRAY bpf map</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-91-update-tailcall-bpf-map/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-91-update-tailcall-bpf-map/</link>
       <pubDate>Tue, 22 Aug 2023 22:27:23 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-91-update-tailcall-bpf-map/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-91-update-tailcall-bpf-map/</guid>
       <description>在上一集 eBPF Talk: 动态或静态 tailcall 中，我们知道了 tailcall 有动态和静态之分。 对于动态 tailcall 而言，更新 PROG_ARRAY bpf map 时就比较简单，只需要更新一下 array-&amp;gt;ptrs 数组即可。 但对于静态 tailcall 而言</description>
     </item>
     <item>
       <title>eBPF Talk: 动态或静态 tailcall</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-90-dynamic-or-static-tailcall/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-90-dynamic-or-static-tailcall/</link>
       <pubDate>Tue, 22 Aug 2023 22:27:18 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-90-dynamic-or-static-tailcall/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-90-dynamic-or-static-tailcall/</guid>
       <description>动态 tailcall？静态 tailcall？为什么 tailcall 会有动静之分呢？ 其实，就是看在使用 bpf_taill_call() 时，传入的 index 参数是常量还是变量。 动态 tailcall 在使用 bpf_tail_call() 时，传</description>
     </item>
     <item>
       <title>eBPF Talk: bpf2bpf &amp; tailcall 报错分析</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</link>
       <pubDate>Tue, 23 May 2023 22:06:44 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-35-bpf2bpf-and-tailcall-error/</guid>
       <description>终于要将 bpf2bpf &amp;amp; tailcall 的组合落地到项目中了。 不过，当头一棒的是：tail_calls are not allowed when call stack of previous frames is 256 bytes. Too large。 幸好学习过 eBPF Talk: tailcall on x86，</description>
     </item>
     <item>
       <title>eBPF Talk: tailcall on x86【汇编慎入】【译】</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-33-tailcall-on-x86/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-33-tailcall-on-x86/</link>
       <pubDate>Tue, 23 May 2023 21:48:41 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-33-tailcall-on-x86/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-33-tailcall-on-x86/</guid>
       <description>本文翻译自 Assembly within! BPF tail calls on x86 and ARM，翻译了其中 tailcall 与 x86 部分，略过 arm 部分。 eBPF Talk: tailcall 与 bpf2bpf【译】 以下为译文。 最初我们学习编程的时候，我们就学</description>
     </item>
     <item>
       <title>eBPF Talk: tailcall 与 bpf2bpf【译】</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-32-tailcall-and-bpf2bpf/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-32-tailcall-and-bpf2bpf/</link>
       <pubDate>Tue, 23 May 2023 21:44:17 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-32-tailcall-and-bpf2bpf/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-32-tailcall-and-bpf2bpf/</guid>
       <description>本文翻译自 Cilium 出品的 BPF and XDP Reference Guide，翻译了其中的 tailcall 和 bpf2bpf 部分。 tailcall：尾调用。 bpf2bpf：BPF 到 BPF 函数调用。 tailcall tailcall 可以看作允许</description>
     </item>
     <item>
       <title>eBPF Talk: eBPF 尾调用简介</title>
-      <link>https://asphaltt.github.io/post/ebpf-tailcall-intro/</link>
+      <link>https://blog.leonhw.com/post/ebpf-tailcall-intro/</link>
       <pubDate>Thu, 24 Nov 2022 22:11:05 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-tailcall-intro/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-tailcall-intro/</guid>
       <description>在 bpf2bpf 特性简介 中提及到 bpf_tail_call()，我们就认真学习一下它吧。 bpf_tail_call 从 4.2 内核版本开始，eBPF 支持了尾调用特性。 该特性的主要特点是</description>
     </item>
   </channel>

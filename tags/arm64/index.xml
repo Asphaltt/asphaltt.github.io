@@ -2,18 +2,18 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Arm64 on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/arm64/</link>
+    <link>https://blog.leonhw.com/tags/arm64/</link>
     <description>Recent content in Arm64 on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Mon, 16 Dec 2024 00:13:36 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/arm64/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/arm64/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: 在 arm64 fentry 里手动做 backtrace</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-141-backtrace-on-arm64/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-141-backtrace-on-arm64/</link>
       <pubDate>Mon, 16 Dec 2024 00:13:36 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-141-backtrace-on-arm64/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-141-backtrace-on-arm64/</guid>
       <description>对于 fentry 程序而言，在 arm64 上做 backtrace 不像 x86 上那么简单；第一步找到可用的 frame pointer 就很费劲了。 毕竟，找到 frame pointer 之后，就可以通过 frame pointer 逐级回溯，找到调用者的 IP 和 FP</description>
     </item>
   </channel>

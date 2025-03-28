@@ -2,25 +2,25 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Ethtool on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/ethtool/</link>
+    <link>https://blog.leonhw.com/tags/ethtool/</link>
     <description>Recent content in Ethtool on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Sun, 26 May 2024 15:51:23 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/ethtool/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/ethtool/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: ethtool 跟踪工具 ethtoolsnoop</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-106-introduce-ethtoolsnoop/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-106-introduce-ethtoolsnoop/</link>
       <pubDate>Sun, 26 May 2024 15:51:23 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-106-introduce-ethtoolsnoop/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-106-introduce-ethtoolsnoop/</guid>
       <description>在 eBPF Talk: 记录一次网络抖动排障 中，遇到了 ethtool -m XXX 导致的网络抖动问题。因为没有趁手的工具直接排查出问题的原因，所以，我写了一个 ethtool 跟踪工具 ethtoo</description>
     </item>
     <item>
       <title>eBPF Talk: 记录一次网络抖动排障</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-105-network-jitter/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-105-network-jitter/</link>
       <pubDate>Sun, 26 May 2024 15:49:47 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-105-network-jitter/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-105-network-jitter/</guid>
       <description>最近做了一次网络抖动排障，庆幸定位到了原因，记录一下。 网络抖动的表现 业务方是 DB 团队，他们对慢查询有监控，发现了一些慢查询；而且，确认是接入虚</description>
     </item>
   </channel>

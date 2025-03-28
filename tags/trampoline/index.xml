@@ -2,46 +2,46 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Trampoline on LeonHwang&#39;s Blogs</title>
-    <link>https://asphaltt.github.io/tags/trampoline/</link>
+    <link>https://blog.leonhw.com/tags/trampoline/</link>
     <description>Recent content in Trampoline on LeonHwang&#39;s Blogs</description>
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
     <lastBuildDate>Fri, 29 Mar 2024 23:51:43 +0800</lastBuildDate>
-    <atom:link href="https://asphaltt.github.io/tags/trampoline/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://blog.leonhw.com/tags/trampoline/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>eBPF Talk: kprobe, frace 与 trampoline</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/</link>
       <pubDate>Fri, 29 Mar 2024 23:51:43 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-46-kprobe-ftrace-and-trampoline/</guid>
       <description>听闻 ftrace 也是基于 trampoline 实现的。而且，最近打算使用 kprobe 开发个工具，所以就将快速翻看了一下 ftrace 和 kprobe 的底层源代码。 P.S. 不介绍 ftrace 的使用，使用文档请看 ftrace - Function Tra</description>
     </item>
     <item>
       <title>eBPF Talk: trampoline stack on x86【汇编慎入】</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-44-trampoline-stack-on-x86/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-44-trampoline-stack-on-x86/</link>
       <pubDate>Tue, 23 May 2023 23:02:47 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-44-trampoline-stack-on-x86/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-44-trampoline-stack-on-x86/</guid>
       <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
     <item>
       <title>eBPF Talk: trampoline on x86【续】【汇编慎入】</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-43-trampoline-on-x86/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-43-trampoline-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:55:23 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-43-trampoline-on-x86/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-43-trampoline-on-x86/</guid>
       <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
     <item>
       <title>eBPF Talk: trampoline on x86【汇编慎入】</title>
-      <link>https://asphaltt.github.io/post/ebpf-talk-42-trampoline-on-x86/</link>
+      <link>https://blog.leonhw.com/post/ebpf-talk-42-trampoline-on-x86/</link>
       <pubDate>Tue, 23 May 2023 22:45:15 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-talk-42-trampoline-on-x86/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-42-trampoline-on-x86/</guid>
       <description>本系列是 x86 架构平台上 trampoline 的实现，从原理和实现上进行了详细的介绍。 eBPF Talk: poke on x86【汇编慎入】 eBPF Talk: perilogue on x86【汇编慎入】 eBPF Talk: freplace on x86【汇编慎入】</description>
     </item>
     <item>
       <title>eBPF Talk: 比 kprobe 更好的 trampoline</title>
-      <link>https://asphaltt.github.io/post/ebpf-trampoline-better-than-kprobe/</link>
+      <link>https://blog.leonhw.com/post/ebpf-trampoline-better-than-kprobe/</link>
       <pubDate>Tue, 01 Nov 2022 23:31:04 +0800</pubDate>
-      <guid>https://asphaltt.github.io/post/ebpf-trampoline-better-than-kprobe/</guid>
+      <guid>https://blog.leonhw.com/post/ebpf-trampoline-better-than-kprobe/</guid>
       <description>eBPF trampoline（trampoline：蹦床，翻译后并不好理解，所以不作翻译）是内核函数和 eBPF 程序之间的桥梁，基于 register_ftrace_direct() 实现。它实现了 kprobe/kretprobe 的功</description>
     </item>
   </channel>
