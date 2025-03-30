@@ -52,7 +52,7 @@
   <meta itemprop="description" content="需求来了：需要在 XDP 里拦截已经建立的 tcp 连接，不是 DROP，而是要回 rst 包。 快速搜索一下，居然没有使用 XDP 来 reset tcp 连接的例子，只好亲自解决了。 解决办法">
   <meta itemprop="datePublished" content="2025-03-30T23:26:12+08:00">
   <meta itemprop="dateModified" content="2025-03-30T23:26:12+08:00">
-  <meta itemprop="wordCount" content="1081">
+  <meta itemprop="wordCount" content="1108">
   <meta itemprop="keywords" content="EBPF,XDP"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 在 XDP 里 reset tcp connection"/>
 <meta name="twitter:description" content="需求来了：需要在 XDP 里拦截已经建立的 tcp 连接，不是 DROP，而是要回 rst 包。 快速搜索一下，居然没有使用 XDP 来 reset tcp 连接的例子，只好亲自解决了。 解决办法"/>
 
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 1081 字 </span>
+      <span class="more-meta"> 约 1108 字 </span>
       <span class="more-meta"> 预计阅读 3 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -274,6 +274,12 @@
 </span><span class="lnt">72
 </span><span class="lnt">73
 </span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span><span class="lnt">78
+</span><span class="lnt">79
+</span><span class="lnt">80
 </span></code></pre></td>
 <td class="lntd">
 <pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">volatile</span> <span class="k">const</span> <span class="n">__be16</span> <span class="n">DPORT</span> <span class="o">=</span> <span class="nf">bpf_htons</span><span class="p">(</span><span class="mi">65535</span><span class="p">);</span>
@@ -295,6 +301,7 @@
 </span></span><span class="line"><span class="cl">    <span class="n">__u8</span> <span class="n">buff</span><span class="p">[</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">pseudo_header</span><span class="p">)];</span>
 </span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">pseudo_header</span> <span class="o">*</span><span class="n">psh</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">__be32</span> <span class="n">saddr</span><span class="p">,</span> <span class="n">daddr</span><span class="p">,</span> <span class="n">seq</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">total_len</span><span class="p">,</span> <span class="n">delta</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">__u16</span> <span class="n">sport</span><span class="p">,</span> <span class="n">dport</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">__u8</span> <span class="o">*</span><span class="n">tcp_flags</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">
@@ -317,6 +324,7 @@
 </span></span><span class="line"><span class="cl">    <span class="n">daddr</span> <span class="o">=</span> <span class="n">iph</span><span class="o">-&gt;</span><span class="n">daddr</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">iph</span><span class="o">-&gt;</span><span class="n">saddr</span> <span class="o">=</span> <span class="n">daddr</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">iph</span><span class="o">-&gt;</span><span class="n">daddr</span> <span class="o">=</span> <span class="n">saddr</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">total_len</span> <span class="o">=</span> <span class="nf">bpf_ntohs</span><span class="p">(</span><span class="n">iph</span><span class="o">-&gt;</span><span class="n">tot_len</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">    <span class="n">iph</span><span class="o">-&gt;</span><span class="n">tot_len</span> <span class="o">=</span> <span class="nf">bpf_htons</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">iphdr</span><span class="p">)</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">));</span>
 </span></span><span class="line"><span class="cl">    <span class="n">iph</span><span class="o">-&gt;</span><span class="n">frag_off</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">iph</span><span class="o">-&gt;</span><span class="n">ttl</span> <span class="o">=</span> <span class="mi">64</span><span class="p">;</span>
@@ -347,6 +355,10 @@
 </span></span><span class="line"><span class="cl">    <span class="n">tcph</span><span class="o">-&gt;</span><span class="n">check</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl">    <span class="n">tcph</span><span class="o">-&gt;</span><span class="n">check</span> <span class="o">=</span> <span class="nf">ipv4_csum</span><span class="p">(</span><span class="n">psh</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">pseudo_header</span><span class="p">)</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">));</span>
 </span></span><span class="line"><span class="cl">    <span class="nf">__builtin_memcpy</span><span class="p">(</span><span class="n">psh</span><span class="p">,</span> <span class="n">buff</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">pseudo_header</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">delta</span> <span class="o">=</span> <span class="n">total_len</span> <span class="o">-</span> <span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">iphdr</span><span class="p">)</span> <span class="o">+</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">tcphdr</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">delta</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_xdp_adjust_tail</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">-</span><span class="n">delta</span><span class="p">);</span>
 </span></span><span class="line"><span class="cl">
 </span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">XDP_TX</span><span class="p">;</span>
 </span></span><span class="line"><span class="cl"><span class="p">}</span>
