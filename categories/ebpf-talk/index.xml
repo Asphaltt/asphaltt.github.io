@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 23 Mar 2025 22:54:19 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 30 Mar 2025 23:26:12 +0800</lastBuildDate>
     <atom:link href="https://blog.leonhw.com/categories/ebpf-talk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 在 XDP 里 reset tcp connection</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-149-reset-tcp-connection-in-xdp/</link>
+      <pubDate>Sun, 30 Mar 2025 23:26:12 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-149-reset-tcp-connection-in-xdp/</guid>
+      <description>需求来了：需要在 XDP 里拦截已经建立的 tcp 连接，不是 DROP，而是要回 rst 包。 快速搜索一下，居然没有使用 XDP 来 reset tcp 连接的例子，只好亲自解决了。 解决办法</description>
+    </item>
     <item>
       <title>eBPF Talk: tp_btf 经验分享</title>
       <link>https://blog.leonhw.com/post/ebpf-talk-148-tp_btf/</link>
