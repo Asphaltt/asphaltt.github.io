@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-03-30T23:26:12+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-04-06T21:19:09+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-140-fd-socket/">eBPF Talk: 在 bpf 里将 fd 和 sock 关联起来</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-12-09 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1509 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      对于 socket 编程，在用户态看到的只能是 fd；而在内核态，大部分时候看到的是 sock。 fd 和 sock 之间的关系，是在内核态的 syscall 里建立的；所以，在 connect 和 accept 等 syscall 里
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-140-fd-socket/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-139-tailcall-issues/">eBPF Talk: tailcall 问题知多少</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-130-tailcall-and-freplace/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-129-ringbuf/">eBPF Talk: ringbuf 经验分享</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-08-25 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1114 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近在使用 ringbuf 的 bpf_ringbuf_reserve() 时踩了一个坑，记录一下。 ringbuf 简介 ringbuf 是 BPF 中能够取代 PERF_EVENT_ARRAY 的特殊 map 类型，提供了类似的 helpers: bpf_ringbuf_output(): 将数据写入 ringbuf。 bpf_ringbuf_reserve(): 为数据预留空间。 bpf_ringbuf_submit():
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-129-ringbuf/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
