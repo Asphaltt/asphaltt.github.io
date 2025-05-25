@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 06 Apr 2025 21:19:09 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 26 May 2025 00:55:14 +0800</lastBuildDate>
     <atom:link href="https://blog.leonhw.com/categories/ebpf-talk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: bpfsnoop v0.4.0 发布</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-151-bpfsnoop-v0.4.0/</link>
+      <pubDate>Mon, 26 May 2025 00:55:14 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-151-bpfsnoop-v0.4.0/</guid>
+      <description>bpfsnoop 是一款 bpf 时代的现代化内核函数、内核跟踪点和 bpf 程序的动态追踪工具。 v0.1.0 v0.2.0 v0.3.0 bpfsnoop 发布 v0.4.0 版本，主要更新如下： 使用 kprobe 动态追踪内核函数的所有指令。 实现了</description>
+    </item>
     <item>
       <title>eBPF Talk: bpfsnoop v0.3.0 发布</title>
       <link>https://blog.leonhw.com/post/ebpf-talk-150-bpfsnoop-v0.3.0/</link>
