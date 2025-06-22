@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-05-26T00:55:14+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-06-23T00:17:37+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/">eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2025-06-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1978 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      遇到个 i40e 驱动丢包问题：在挂载 native 模式的 XDP 程序的情况下，如果网卡发生 toggle，XDP 程序 XDP_TX 的包就无法发出去，同时 tx_busy 计数不断增大。 经过一番排查
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-151-bpfsnoop-v0.4.0/">eBPF Talk: bpfsnoop v0.4.0 发布</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-143-capture-packets-on-netdev-layer/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-142-tcpw-introduction/">eBPF Talk: 使用 tcpw 获取 curl 的五元组信息</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-12-22 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1043 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在使用 curl、telnet 等工具排查问题的时候，如果想要知道当前的连接信息，在现有的工具集里，是没有办法直接获取的。 于是，我写了一个小工具
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-142-tcpw-introduction/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

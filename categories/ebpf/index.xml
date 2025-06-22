@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Mon, 26 May 2025 00:55:14 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 23 Jun 2025 00:17:37 +0800</lastBuildDate>
     <atom:link href="https://blog.leonhw.com/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/</link>
+      <pubDate>Mon, 23 Jun 2025 00:17:37 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/</guid>
+      <description>遇到个 i40e 驱动丢包问题：在挂载 native 模式的 XDP 程序的情况下，如果网卡发生 toggle，XDP 程序 XDP_TX 的包就无法发出去，同时 tx_busy 计数不断增大。 经过一番排查</description>
+    </item>
     <item>
       <title>eBPF Talk: bpfsnoop v0.4.0 发布</title>
       <link>https://blog.leonhw.com/post/ebpf-talk-151-bpfsnoop-v0.4.0/</link>

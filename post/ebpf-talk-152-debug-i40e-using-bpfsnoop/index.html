@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="遇到个 i40e 驱动丢包问题：在挂载 native 模式的 XDP 程序的情况下，如果网卡发生 toggle，XDP 程序 XDP_TX 的包就无法发出去，同时 tx_busy 计数不断增大。 经过一番排查" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://blog.leonhw.com/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题" />
+<meta property="og:description" content="遇到个 i40e 驱动丢包问题：在挂载 native 模式的 XDP 程序的情况下，如果网卡发生 toggle，XDP 程序 XDP_TX 的包就无法发出去，同时 tx_busy 计数不断增大。 经过一番排查" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.leonhw.com/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2025-06-23T00:17:37+08:00" />
+<meta property="article:modified_time" content="2025-06-23T00:17:37+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题">
+  <meta itemprop="description" content="遇到个 i40e 驱动丢包问题：在挂载 native 模式的 XDP 程序的情况下，如果网卡发生 toggle，XDP 程序 XDP_TX 的包就无法发出去，同时 tx_busy 计数不断增大。 经过一番排查">
+  <meta itemprop="datePublished" content="2025-06-23T00:17:37+08:00">
+  <meta itemprop="dateModified" content="2025-06-23T00:17:37+08:00">
+  <meta itemprop="wordCount" content="1978">
+  <meta itemprop="keywords" content="EBPF,Bpfsnoop,I40e,XDP"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题"/>
+<meta name="twitter:description" content="遇到个 i40e 驱动丢包问题：在挂载 native 模式的 XDP 程序的情况下，如果网卡发生 toggle，XDP 程序 XDP_TX 的包就无法发出去，同时 tx_busy 计数不断增大。 经过一番排查"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2025-06-23 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1978 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#i40e-工作原理简介">i40e 工作原理简介</a></li>
+        <li><a href="#问题确认">问题确认</a></li>
+        <li><a href="#问题排查">问题排查</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>遇到个 i40e 驱动丢包问题：在挂载 native 模式的 XDP 程序的情况下，如果网卡发生 toggle，XDP 程序 <strong>XDP_TX</strong> 的包就无法发出去，同时 <strong>tx_busy</strong> 计数不断增大。</p>
+<p>经过一番排查，推断是网卡固件问题，现象是没更新 DMA 内存区域里的 <code>head</code> 字段。</p>
+<p>在排查过程中，<code>bpfsnoop</code> 起了不可忽视的作用，特别是其 <code>--filter-arg</code> 和 <code>--output-arg</code> 的能力。</p>
+<h2 id="i40e-工作原理简介">i40e 工作原理简介</h2>
+<p>关注与 XDP 程序有关的收发包主流程：</p>
+<p><img src="/eBPF_Talk_152_i40e_txrx.png" alt="i40e txrx"></p>
+<p>如上图，每个 queue 都会设置一个 NAPI task 用来收发包。</p>
+<p>在 NAPI task 里，调用 <code>i40e_napi_poll()</code> 函数来收发包：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// drivers/net/ethernet/intel/i40e/i40e_txrx.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/**
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * i40e_napi_poll - NAPI polling Rx/Tx cleanup routine
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @napi: napi struct with our devices info in it
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @budget: amount of work driver is allowed to do this pass, in packets
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * This function will clean all queues associated with a q_vector.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * Returns the amount of work done
+</span></span></span><span class="line"><span class="cl"><span class="cm"> **/</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">i40e_napi_poll</span><span class="p">(</span><span class="k">struct</span> <span class="n">napi_struct</span> <span class="o">*</span><span class="n">napi</span><span class="p">,</span> <span class="kt">int</span> <span class="n">budget</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Since the actual Tx work is minimal, we can give the Tx a larger
+</span></span></span><span class="line"><span class="cl"><span class="cm">     * budget and be more aggressive about cleaning up the Tx descriptors.
+</span></span></span><span class="line"><span class="cl"><span class="cm">     */</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">i40e_for_each_ring</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">q_vector</span><span class="o">-&gt;</span><span class="n">tx</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">bool</span> <span class="n">wd</span> <span class="o">=</span> <span class="n">ring</span><span class="o">-&gt;</span><span class="n">xsk_pool</span> <span class="o">?</span>
+</span></span><span class="line"><span class="cl">              <span class="nf">i40e_clean_xdp_tx_irq</span><span class="p">(</span><span class="n">vsi</span><span class="p">,</span> <span class="n">ring</span><span class="p">)</span> <span class="o">:</span>
+</span></span><span class="line"><span class="cl">              <span class="nf">i40e_clean_tx_irq</span><span class="p">(</span><span class="n">vsi</span><span class="p">,</span> <span class="n">ring</span><span class="p">,</span> <span class="n">budget</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">wd</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">clean_complete</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="n">arm_wb</span> <span class="o">|=</span> <span class="n">ring</span><span class="o">-&gt;</span><span class="n">arm_wb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ring</span><span class="o">-&gt;</span><span class="n">arm_wb</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="nf">i40e_for_each_ring</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">q_vector</span><span class="o">-&gt;</span><span class="n">rx</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="kt">int</span> <span class="n">cleaned</span> <span class="o">=</span> <span class="n">ring</span><span class="o">-&gt;</span><span class="n">xsk_pool</span> <span class="o">?</span>
+</span></span><span class="line"><span class="cl">                  <span class="nf">i40e_clean_rx_irq_zc</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">budget_per_ring</span><span class="p">)</span> <span class="o">:</span>
+</span></span><span class="line"><span class="cl">                  <span class="nf">i40e_clean_rx_irq</span><span class="p">(</span><span class="n">ring</span><span class="p">,</span> <span class="n">budget_per_ring</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="n">work_done</span> <span class="o">+=</span> <span class="n">cleaned</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* if we clean as many as budgeted, we must not be done */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">cleaned</span> <span class="o">&gt;=</span> <span class="n">budget_per_ring</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="n">clean_complete</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中：</p>
+<ol>
+<li><code>i40e_for_each_ring(ring, q_vector-&gt;tx)</code> 会遍历 <code>xdp_rings</code> 和 <code>tx_rings</code>。</li>
+<li><code>i40e_clean_tx_irq()</code> 处理 <code>xdp_rings</code> 和 <code>tx_rings</code> 的发包后半段逻辑。</li>
+<li><code>i40e_for_each_ring(ring, q_vector-&gt;rx)</code> 会遍历 <code>rx_rings</code>。</li>
+<li><code>i40e_clean_rx_irq()</code> 处理 <code>rx_rings</code> 收包逻辑。</li>
+</ol>
+<p><code>{xdp,tx,rx}_rings</code> 在收发包时都通过一下字段来管理 descriptors：</p>
+<ol>
+<li><code>ring-&gt;next_to_clean</code>: 下一次清理 desc 的索引，在 <code>i40e_clean_tx_irq()</code> 里更新该字段。</li>
+<li><code>ring-&gt;next_to_use</code>: 下一个可用的 desc 的索引，在 <code>i40e_clean_rx_irq()</code> 里更新该字段。</li>
+<li><code>DMA [descriptors|head]</code>: 网卡固件会更新 <code>head</code> 字段，然后在 <code>i40e_clean_tx_irq()</code> 时读取该字段。</li>
+</ol>
+<p>对于 <code>xdp_rings</code>：</p>
+<ol>
+<li>复用 <code>i40e_clean_tx_irq()</code> 来处理发包后半段逻辑。</li>
+<li>在 <code>i40e_clean_rx_irq()</code> 里运行 native 模式的 XDP 程序。</li>
+</ol>
+<p>当 XDP 程序返回 <strong>XDP_TX</strong> 时，调 <code>i40e_xmit_xdp_ring()</code>：</p>
+<ol>
+<li>检查是否还有可用的 desc: <code>I40E_DESC_UNUSED(xdp_ring)</code>；如果没有，则 <code>xdp_ring-&gt;tx_stats.tx_busy++</code>。</li>
+<li>将包塞到设备的 DMA 缓冲区里。</li>
+<li>更新 <code>xdp_ring-&gt;next_to_use</code>。</li>
+</ol>
+<h2 id="问题确认">问题确认</h2>
+<p>看下 <code>i40e_xmit_xdp_ring()</code> 源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// drivers/net/ethernet/intel/i40e/i40e_type.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cp">#define I40E_DESC_UNUSED(R) \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    ((((R)-&gt;next_to_clean &gt; (R)-&gt;next_to_use) ? 0 : (R)-&gt;count) + \
+</span></span></span><span class="line"><span class="cl"><span class="cp">    (R)-&gt;next_to_clean - (R)-&gt;next_to_use - 1)
+</span></span></span><span class="line"><span class="cl"><span class="cp"></span>
+</span></span><span class="line"><span class="cl"><span class="c1">// drivers/net/ethernet/intel/i40e/i40e_txrx.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/**
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * i40e_xmit_xdp_ring - transmits an XDP buffer to an XDP Tx ring
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @xdpf: data to transmit
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @xdp_ring: XDP Tx ring
+</span></span></span><span class="line"><span class="cl"><span class="cm"> **/</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">i40e_xmit_xdp_ring</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_frame</span> <span class="o">*</span><span class="n">xdpf</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                              <span class="k">struct</span> <span class="n">i40e_ring</span> <span class="o">*</span><span class="n">xdp_ring</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nf">unlikely</span><span class="p">(</span><span class="nf">I40E_DESC_UNUSED</span><span class="p">(</span><span class="n">xdp_ring</span><span class="p">)))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">xdp_ring</span><span class="o">-&gt;</span><span class="n">tx_stats</span><span class="p">.</span><span class="n">tx_busy</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">I40E_XDP_CONSUMED</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="n">dma</span> <span class="o">=</span> <span class="nf">dma_map_single</span><span class="p">(</span><span class="n">xdp_ring</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">DMA_TO_DEVICE</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">dma_mapping_error</span><span class="p">(</span><span class="n">xdp_ring</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">,</span> <span class="n">dma</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">I40E_XDP_CONSUMED</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">tx_bi</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">xdp_ring</span><span class="o">-&gt;</span><span class="n">tx_bi</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="n">tx_desc</span> <span class="o">=</span> <span class="nf">I40E_TX_DESC</span><span class="p">(</span><span class="n">xdp_ring</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="n">xdp_ring</span><span class="o">-&gt;</span><span class="n">xdp_tx_active</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="n">xdp_ring</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">tx_bi</span><span class="o">-&gt;</span><span class="n">next_to_watch</span> <span class="o">=</span> <span class="n">tx_desc</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">xdp_ring</span><span class="o">-&gt;</span><span class="n">next_to_use</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">I40E_XDP_TX</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>使用 <code>bpfsnoop</code> 动态追踪 <code>i40e_xmit_xdp_ring()</code> 函数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./bpfsnoop -k i40e_xmit_xdp_ring <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --filter-arg <span class="s1">&#39;(*(unsigned short *)(xdpf-&gt;data + 14 + 4 + 20 + 50 + 2)) == 0xfcff&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;xdp_ring-&gt;next_to_clean&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;xdp_ring-&gt;next_to_use&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;xdp_ring-&gt;count&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">i40e_xmit_xdp_ring <span class="nv">args</span><span class="o">=((</span>struct xdp_frame *<span class="o">)</span><span class="nv">xdpf</span><span class="o">=</span>0xffff975041bb5800, <span class="o">(</span>struct i40e_ring *<span class="o">)</span><span class="nv">xdp_ring</span><span class="o">=</span>0xffff975efec1f980<span class="o">)</span> <span class="nv">retval</span><span class="o">=(</span>int<span class="o">)</span><span class="m">1</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">0</span> <span class="nv">process</span><span class="o">=(</span>0:swapper/0<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Arg attrs: <span class="o">(</span>u16<span class="o">)</span><span class="s1">&#39;xdp_ring-&gt;next_to_clean&#39;</span><span class="o">=</span>0x0/0, <span class="o">(</span>u16<span class="o">)</span><span class="s1">&#39;xdp_ring-&gt;next_to_use&#39;</span><span class="o">=</span>0xfff/4095, <span class="o">(</span>u16<span class="o">)</span><span class="s1">&#39;xdp_ring-&gt;count&#39;</span><span class="o">=</span>0x1000/4096
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ol>
+<li>过滤特定网络包。</li>
+<li>输出 <code>next_to_clean</code>、<code>next_to_use</code> 和 <code>count</code>。</li>
+</ol>
+<p>结合返回值 <strong>1</strong> （<code>#define I40E_XDP_CONSUMED   BIT(0)</code>）和 <code>ethtool -S ens1f0 | grep tx_busy</code>，确认确实没有可用的 desc 了。</p>
+<p>问题特征：</p>
+<ol>
+<li><code>xdp_ring-&gt;next_to_clean</code> 一直是 <strong>0</strong>。</li>
+<li><code>xdp_ring-&gt;next_to_use</code> 增长到 <strong>4095</strong> 就没有重新从 <strong>0</strong> 开始计算。</li>
+</ol>
+<h2 id="问题排查">问题排查</h2>
+<p>看下 <code>i40e_clean_tx_irq()</code> 源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span><span class="lnt">75
+</span><span class="lnt">76
+</span><span class="lnt">77
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// drivers/net/ethernet/intel/i40e/i40e_txrx.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/**
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * i40e_clean_tx_irq - Reclaim resources after transmit completes
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @vsi: the VSI we care about
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @tx_ring: Tx ring to clean
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @napi_budget: Used to determine if we are in netpoll
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * Returns true if there&#39;s any budget left (e.g. the clean is finished)
+</span></span></span><span class="line"><span class="cl"><span class="cm"> **/</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">bool</span> <span class="nf">i40e_clean_tx_irq</span><span class="p">(</span><span class="k">struct</span> <span class="n">i40e_vsi</span> <span class="o">*</span><span class="n">vsi</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                              <span class="k">struct</span> <span class="n">i40e_ring</span> <span class="o">*</span><span class="n">tx_ring</span><span class="p">,</span> <span class="kt">int</span> <span class="n">napi_budget</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">    <span class="n">tx_buf</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">tx_ring</span><span class="o">-&gt;</span><span class="n">tx_bi</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+</span></span><span class="line"><span class="cl">    <span class="n">tx_desc</span> <span class="o">=</span> <span class="nf">I40E_TX_DESC</span><span class="p">(</span><span class="n">tx_ring</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">i</span> <span class="o">-=</span> <span class="n">tx_ring</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">tx_head</span> <span class="o">=</span> <span class="nf">I40E_TX_DESC</span><span class="p">(</span><span class="n">tx_ring</span><span class="p">,</span> <span class="nf">i40e_get_head</span><span class="p">(</span><span class="n">tx_ring</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">do</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">i40e_tx_desc</span> <span class="o">*</span><span class="n">eop_desc</span> <span class="o">=</span> <span class="n">tx_buf</span><span class="o">-&gt;</span><span class="n">next_to_watch</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* if next_to_watch is not set then there is no work pending */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">eop_desc</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* prevent any other reads prior to eop_desc */</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">smp_rmb</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="nf">i40e_trace</span><span class="p">(</span><span class="n">clean_tx_irq</span><span class="p">,</span> <span class="n">tx_ring</span><span class="p">,</span> <span class="n">tx_desc</span><span class="p">,</span> <span class="n">tx_buf</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* we have caught up to head, no work left to do */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">tx_head</span> <span class="o">==</span> <span class="n">tx_desc</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* clear next_to_watch to prevent false hangs */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">tx_buf</span><span class="o">-&gt;</span><span class="n">next_to_watch</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* update the statistics for this packet */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">total_bytes</span> <span class="o">+=</span> <span class="n">tx_buf</span><span class="o">-&gt;</span><span class="n">bytecount</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">total_packets</span> <span class="o">+=</span> <span class="n">tx_buf</span><span class="o">-&gt;</span><span class="n">gso_segs</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* free the skb/XDP data */</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">ring_is_xdp</span><span class="p">(</span><span class="n">tx_ring</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">xdp_return_frame</span><span class="p">(</span><span class="n">tx_buf</span><span class="o">-&gt;</span><span class="n">xdpf</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">else</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">napi_consume_skb</span><span class="p">(</span><span class="n">tx_buf</span><span class="o">-&gt;</span><span class="n">skb</span><span class="p">,</span> <span class="n">napi_budget</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl">        <span class="cm">/* move us one more past the eop_desc for start of next pkt */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">tx_buf</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">tx_desc</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="o">!</span><span class="n">i</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">i</span> <span class="o">-=</span> <span class="n">tx_ring</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">tx_buf</span> <span class="o">=</span> <span class="n">tx_ring</span><span class="o">-&gt;</span><span class="n">tx_bi</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="n">tx_desc</span> <span class="o">=</span> <span class="nf">I40E_TX_DESC</span><span class="p">(</span><span class="n">tx_ring</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="nf">prefetch</span><span class="p">(</span><span class="n">tx_desc</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="cm">/* update budget accounting */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">budget</span><span class="o">--</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="nf">likely</span><span class="p">(</span><span class="n">budget</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">i</span> <span class="o">+=</span> <span class="n">tx_ring</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">tx_ring</span><span class="o">-&gt;</span><span class="n">next_to_clean</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">i40e_update_tx_stats</span><span class="p">(</span><span class="n">tx_ring</span><span class="p">,</span> <span class="n">total_packets</span><span class="p">,</span> <span class="n">total_bytes</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">i40e_arm_wb</span><span class="p">(</span><span class="n">tx_ring</span><span class="p">,</span> <span class="n">vsi</span><span class="p">,</span> <span class="n">budget</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">ring_is_xdp</span><span class="p">(</span><span class="n">tx_ring</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">!!</span><span class="n">budget</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>根据前面确认的问题现象，意味着 <code>i40e_clean_tx_irq()</code> 处理 <code>xdp_rings</code> 时并没有更新 <code>next_to_clean</code>。</p>
+<p>从上方代码片段可以判断 <code>do {} while();</code> 循环被 <code>break</code> 了；但，是哪个 <code>break</code> 呢？</p>
+<p>留意到 2 个 <code>break</code> 之间有 <code>i40e_trace(clean_tx_irq, tx_ring, tx_desc, tx_buf);</code>。</p>
+<p>用 <code>bpfsnoop</code> 确认一下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./bpfsnoop -t i40e_clean_tx_irq --show-func-proto
+</span></span><span class="line"><span class="cl">Kernel tracepoints: <span class="o">(</span>total 1<span class="o">)</span>
+</span></span><span class="line"><span class="cl">void i40e_clean_tx_irq<span class="o">(</span>struct i40e_ring *ring, struct i40e_tx_desc *desc, struct i40e_tx_buffer *buf<span class="o">)</span><span class="p">;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这是一个 tracepoint。</p>
+<p>因此，在发一个包时：如果该 tracepoint 被触发，就不是 <code>!eop_desc</code> 导致的，而是 <code>tx_head == tx_desc</code> 导致的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./bpfsnoop -t <span class="s1">&#39;i40e_clean_tx_irq&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --filter-arg <span class="s1">&#39;(ring-&gt;flags&amp;0x4) != 0 &amp;&amp; buf-&gt;xdpf != NULL &amp;&amp; (*(unsigned short *)(buf-&gt;xdpf-&gt;data + 14 + 4 + 20 + 50 + 2)) == 0xfcff&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;ring-&gt;next_to_clean&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;ring-&gt;next_to_use&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;ring-&gt;count&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;buf-&gt;xdpf&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">i40e_clean_tx_irq<span class="o">[</span>tp<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>struct i40e_ring *<span class="o">)</span><span class="nv">ring</span><span class="o">=</span>0xffff975efec1f980, <span class="o">(</span>struct i40e_tx_desc *<span class="o">)</span><span class="nv">desc</span><span class="o">=</span>0xffff974f5f900000, <span class="o">(</span>struct i40e_tx_buffer *<span class="o">)</span><span class="nv">buf</span><span class="o">=</span>0xffff974f71cc0000<span class="o">)</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">0</span> <span class="nv">process</span><span class="o">=(</span>0:swapper/0<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Arg attrs: <span class="o">(</span>u16<span class="o">)</span><span class="s1">&#39;ring-&gt;next_to_clean&#39;</span><span class="o">=</span>0x0/0, <span class="o">(</span>u16<span class="o">)</span><span class="s1">&#39;ring-&gt;next_to_use&#39;</span><span class="o">=</span>0xfff/4095, <span class="o">(</span>u16<span class="o">)</span><span class="s1">&#39;ring-&gt;count&#39;</span><span class="o">=</span>0x1000/4096, <span class="o">(</span>struct xdp_frame *<span class="o">)</span><span class="s1">&#39;buf-&gt;xdpf&#39;</span><span class="o">=</span>0xffff974fd8336000
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因此，确认是 <code>tx_head == tx_desc</code> 导致的。</p>
+<p>看下 <code>tx_head</code> 是怎么获取的：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="n">tx_head</span> <span class="o">=</span> <span class="nf">I40E_TX_DESC</span><span class="p">(</span><span class="n">tx_ring</span><span class="p">,</span> <span class="nf">i40e_get_head</span><span class="p">(</span><span class="n">tx_ring</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// drivers/net/ethernet/intel/i40e/i40e_txrx.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/**
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * i40e_get_head - Retrieve head from head writeback
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * @tx_ring:  tx ring to fetch head of
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * Returns value of Tx ring head based on value stored
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * in head write-back location
+</span></span></span><span class="line"><span class="cl"><span class="cm"> **/</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span> <span class="n">u32</span> <span class="nf">i40e_get_head</span><span class="p">(</span><span class="k">struct</span> <span class="n">i40e_ring</span> <span class="o">*</span><span class="n">tx_ring</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">void</span> <span class="o">*</span><span class="n">head</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">i40e_tx_desc</span> <span class="o">*</span><span class="p">)</span><span class="n">tx_ring</span><span class="o">-&gt;</span><span class="n">desc</span> <span class="o">+</span> <span class="n">tx_ring</span><span class="o">-&gt;</span><span class="n">count</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nf">le32_to_cpu</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="k">volatile</span> <span class="n">__le32</span> <span class="o">*</span><span class="p">)</span><span class="n">head</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>按照 <code>i40e_get_head()</code> 的方式读取一下 <code>head</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./bpfsnoop -t <span class="s1">&#39;i40e_clean_tx_irq&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --filter-arg <span class="s1">&#39;(ring-&gt;flags&amp;0x4) != 0 &amp;&amp; buf-&gt;xdpf != NULL &amp;&amp; (*(unsigned short *)(buf-&gt;xdpf-&gt;data + 14 + 4 + 20 + 50 + 2)) == 0xfcff&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;ring-&gt;next_to_clean&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;ring-&gt;next_to_use&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;ring-&gt;count&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;buf-&gt;xdpf&#39;</span> <span class="se">\
+</span></span></span><span class="line"><span class="cl"><span class="se"></span>    --output-arg <span class="s1">&#39;le32(ring-&gt;desc + 65536)&#39;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">i40e_clean_tx_irq<span class="o">[</span>tp<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>struct i40e_ring *<span class="o">)</span><span class="nv">ring</span><span class="o">=</span>0xffff975efec1f980, <span class="o">(</span>struct i40e_tx_desc *<span class="o">)</span><span class="nv">desc</span><span class="o">=</span>0xffff974f5f900000, <span class="o">(</span>struct i40e_tx_buffer *<span class="o">)</span><span class="nv">buf</span><span class="o">=</span>0xffff974f71cc0000<span class="o">)</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">0</span> <span class="nv">process</span><span class="o">=(</span>0:swapper/0<span class="o">)</span>
+</span></span><span class="line"><span class="cl">Arg attrs: <span class="o">(</span>u16<span class="o">)</span><span class="s1">&#39;ring-&gt;next_to_clean&#39;</span><span class="o">=</span>0x0/0, <span class="o">(</span>u16<span class="o">)</span><span class="s1">&#39;ring-&gt;next_to_use&#39;</span><span class="o">=</span>0xfff/4095, <span class="o">(</span>u16<span class="o">)</span><span class="s1">&#39;ring-&gt;count&#39;</span><span class="o">=</span>0x1000/4096, <span class="o">(</span>struct xdp_frame *<span class="o">)</span><span class="s1">&#39;buf-&gt;xdpf&#39;</span><span class="o">=</span>0xffff974fd8336000, <span class="o">(</span>void *<span class="o">)</span><span class="s1">&#39;le32(ring-&gt;desc + 65536, 4)&#39;</span><span class="o">=</span>0x0/0
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中，<strong>65536</strong> 是 <strong>16</strong> （<code>sizeof desc</code>）乘以 <strong>4096</strong> （<code>ring-&gt;count</code>）。</p>
+<p>啊哈，读取出来的 <code>head</code> 一直是 <strong>0</strong>。</p>
+<p>这就是问题所在了。</p>
+<p>如果要进一步调试，就需要调试网卡固件了；无能为力，就这样吧。</p>
+<h2 id="总结">总结</h2>
+<p><code>bpfsnoop</code> 在支持复杂的 C 表达式来过滤和输出函数参数后，便能用来排查更加复杂的内核问题了，即使是驱动问题。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2025-06-23
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/bpfsnoop/">bpfsnoop</a>
+      <a href="/%20tags/i40e/">i40e</a>
+      <a href="/%20tags/xdp/">XDP</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-151-bpfsnoop-v0.4.0/">
+        <span class="next-text nav-default">eBPF Talk: bpfsnoop v0.4.0 发布</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.leonhw.com/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2025<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>
