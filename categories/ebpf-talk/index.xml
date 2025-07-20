@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Mon, 23 Jun 2025 00:17:37 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 21 Jul 2025 00:10:57 +0800</lastBuildDate>
     <atom:link href="https://blog.leonhw.com/categories/ebpf-talk/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: bpfsnoop v0.5.0 发布：实现 bpf 版本的 funcgraph 功能</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-153-bpfsnoop-v0.5.0/</link>
+      <pubDate>Mon, 21 Jul 2025 00:10:57 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-153-bpfsnoop-v0.5.0/</guid>
+      <description>bpfsnoop 是一款 bpf 时代的现代化内核函数、内核跟踪点和 bpf 程序的动态追踪工具。 v0.1.0 v0.2.0 v0.3.0 v0.4.0 bpfsnoop 发布 v0.5.0 版本，主要更新如下： 使用 fentry 和 fexit 实现 bpf 版本的 funcgraph 功能。 给 --output-arg 新增</description>
+    </item>
     <item>
       <title>eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题</title>
       <link>https://blog.leonhw.com/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/</link>

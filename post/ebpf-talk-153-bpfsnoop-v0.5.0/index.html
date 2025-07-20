@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: bpfsnoop v0.5.0 发布：实现 bpf 版本的 funcgraph 功能 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="bpfsnoop 是一款 bpf 时代的现代化内核函数、内核跟踪点和 bpf 程序的动态追踪工具。 v0.1.0 v0.2.0 v0.3.0 v0.4.0 bpfsnoop 发布 v0.5.0 版本，主要更新如下： 使用 fentry 和 fexit 实现 bpf 版本的 funcgraph 功能。 给 --output-arg 新增" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://blog.leonhw.com/post/ebpf-talk-153-bpfsnoop-v0.5.0/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: bpfsnoop v0.5.0 发布：实现 bpf 版本的 funcgraph 功能" />
+<meta property="og:description" content="bpfsnoop 是一款 bpf 时代的现代化内核函数、内核跟踪点和 bpf 程序的动态追踪工具。 v0.1.0 v0.2.0 v0.3.0 v0.4.0 bpfsnoop 发布 v0.5.0 版本，主要更新如下： 使用 fentry 和 fexit 实现 bpf 版本的 funcgraph 功能。 给 --output-arg 新增" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.leonhw.com/post/ebpf-talk-153-bpfsnoop-v0.5.0/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2025-07-21T00:10:57+08:00" />
+<meta property="article:modified_time" content="2025-07-21T00:10:57+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: bpfsnoop v0.5.0 发布：实现 bpf 版本的 funcgraph 功能">
+  <meta itemprop="description" content="bpfsnoop 是一款 bpf 时代的现代化内核函数、内核跟踪点和 bpf 程序的动态追踪工具。 v0.1.0 v0.2.0 v0.3.0 v0.4.0 bpfsnoop 发布 v0.5.0 版本，主要更新如下： 使用 fentry 和 fexit 实现 bpf 版本的 funcgraph 功能。 给 --output-arg 新增">
+  <meta itemprop="datePublished" content="2025-07-21T00:10:57+08:00">
+  <meta itemprop="dateModified" content="2025-07-21T00:10:57+08:00">
+  <meta itemprop="wordCount" content="1934">
+  <meta itemprop="keywords" content="EBPF"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: bpfsnoop v0.5.0 发布：实现 bpf 版本的 funcgraph 功能"/>
+<meta name="twitter:description" content="bpfsnoop 是一款 bpf 时代的现代化内核函数、内核跟踪点和 bpf 程序的动态追踪工具。 v0.1.0 v0.2.0 v0.3.0 v0.4.0 bpfsnoop 发布 v0.5.0 版本，主要更新如下： 使用 fentry 和 fexit 实现 bpf 版本的 funcgraph 功能。 给 --output-arg 新增"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: bpfsnoop v0.5.0 发布：实现 bpf 版本的 funcgraph 功能</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2025-07-21 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1934 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#1-使用-fentry-和-fexit-实现-bpf-版本的-funcgraph-功能">1. 使用 <code>fentry</code> 和 <code>fexit</code> 实现 bpf 版本的 funcgraph 功能</a></li>
+        <li><a href="#2-给---output-arg-新增大量的内置函数">2. 给 <code>--output-arg</code> 新增大量的内置函数</a></li>
+        <li><a href="#3---filter-pkt-和---output-pkt-支持-xdp_frame-参数">3. <code>--filter-pkt</code> 和 <code>--output-pkt</code> 支持 <code>xdp_frame</code> 参数</a></li>
+        <li><a href="#4-为每个-tracee-引入-insnfgraphstacklbrbothpkt-等模式各不干扰">4. 为每个 tracee 引入 insn/fgraph/stack/lbr/both/pkt 等模式，各不干扰</a></li>
+        <li><a href="#总结">总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p><code>bpfsnoop</code> 是一款 bpf 时代的现代化内核函数、内核跟踪点和 bpf 程序的动态追踪工具。</p>
+<ul>
+<li><a href="/post/ebpf-talk-145-lbr/">v0.1.0</a></li>
+<li><a href="/post/ebpf-talk-146-btrace-v0.2.0/">v0.2.0</a></li>
+<li><a href="/post/ebpf-talk-150-bpfsnoop-v0.3.0/">v0.3.0</a></li>
+<li><a href="/post/ebpf-talk-151-bpfsnoop-v0.4.0/">v0.4.0</a></li>
+</ul>
+<p><code>bpfsnoop</code> 发布 v0.5.0 版本，主要更新如下：</p>
+<ol>
+<li>使用 <code>fentry</code> 和 <code>fexit</code> 实现 bpf 版本的 funcgraph 功能。</li>
+<li>给 <code>--output-arg</code> 新增大量的内置函数。</li>
+<li><code>--filter-pkt</code> 和 <code>--output-pkt</code> 支持 <code>xdp_frame</code> 参数。</li>
+<li>为每个 tracee 引入 insn/fgraph/stack/lbr/both/pkt 等模式，各不干扰。</li>
+</ol>
+<p><code>bpfsnoop</code> 官网 <a href="https://bpfsnoop.com">bpfsnoop.com</a></p>
+<h2 id="1-使用-fentry-和-fexit-实现-bpf-版本的-funcgraph-功能">1. 使用 <code>fentry</code> 和 <code>fexit</code> 实现 bpf 版本的 funcgraph 功能</h2>
+<p>先看效果，比如内核协议栈发包时的部分函数调用路径：</p>
+<p><img src="/eBPF_Talk_153_funcgraph.png" alt="bpfsnoop funcgraph"></p>
+<p>P.S. 这是在 v5.15 内核上运行命令 <code>./bpfsnoop -k '(g)tcp_connect' --fgraph-max-depth 20 --fgraph-include '*:skb'</code> 的结果；在不同版本的内核上运行该命令会有不同的结果。</p>
+<p>为 funcgraph 功能新增如下命令行选项：</p>
+<ol>
+<li><code>--output-fgraph</code>：启用 funcgraph 功能。</li>
+<li><code>--fgraph-max-depth</code>：设置 funcgraph 的最大深度，默认为 5。</li>
+<li><code>--fgraph-exclude</code>：设置 funcgraph 的路径排除规则，查找时会忽略匹配的函数。</li>
+<li><code>--fgraph-include</code>：设置 funcgraph 的路径包含规则，在排除规则之外，查找时只包含匹配的函数。</li>
+<li><code>--fgraph-extra</code>：设置 funcgraph 的额外匹配规则，同时会应用以上的包含和排除规则。</li>
+<li><code>--fgraph-proto</code>: 类似 <code>--show-func-proto</code>，输出 funcgraph 的函数调用路径。</li>
+</ol>
+<p>因为 funcgraph 功能无法跟踪间接调用的函数，所以在使用时需要注意：</p>
+<ol>
+<li>该功能有可能导致内核崩溃。</li>
+<li>没有间接调用的函数的输出结果。</li>
+</ol>
+<p>因此，可以使用 <code>--fgraph-extra</code> 选项来添加额外的匹配规则，来跟踪可能被间接调用的函数。</p>
+<p><strong>特别</strong>:</p>
+<ol>
+<li><code>--fgraph-max-depth</code> 选项的最大值为 <strong>500</strong>，足以覆盖内核的最大函数调用深度。</li>
+<li>巧妙地规避 funcgraph 带来的观察者效应。</li>
+<li>尽力降低 funcgraph 功能导致内核崩溃的可能性。</li>
+</ol>
+<p><strong>推荐</strong>：在虚拟机里用来研究内核。</p>
+<p><strong>警告</strong>：因内核缺陷，使用该功能可能会导致内核挂起/崩溃。</p>
+<h2 id="2-给---output-arg-新增大量的内置函数">2. 给 <code>--output-arg</code> 新增大量的内置函数</h2>
+<p>新增以下内置函数，供 <code>--output-arg</code> 选项使用：</p>
+<ol>
+<li><code>pkt</code>: 将一段内核内存使用 <code>gopacket</code> 解析成网络包。</li>
+<li><code>eth</code>/<code>ip4</code>/<code>ip6</code>: 将一段内核内存解析成一个以太网/IPv4/IPv6 地址。</li>
+<li><code>eth2</code>/<code>ip42</code>/<code>ip62</code>: 将一段内核内存解析成两个连续的以太网/IPv4/IPv6 地址。</li>
+<li><code>port</code>: 将一段内核内存解析成一个端口号。</li>
+<li><code>port2</code>: 将一段内核内存解析成两个连续的端口号。</li>
+<li><code>slice</code>: 将一段内核内存解析成一个 BTF 类型切片。</li>
+<li><code>hex</code>: 将一段内核内存解析成一个十六进制字符串。</li>
+<li><code>u8</code>/<code>u16</code>/<code>u32</code>/<code>u64</code>: 将一段内核内存解析成一个无符号整数。</li>
+<li><code>s8</code>/<code>s16</code>/<code>s32</code>/<code>s64</code>: 将一段内核内存解析成一个有符号整数。</li>
+<li><code>le16</code>/<code>le32</code>/<code>le64</code>: 将一段内核内存解析成一个小端无符号整数。</li>
+<li><code>be16</code>/<code>be32</code>/<code>be64</code>: 将一段内核内存解析成一个大端无符号整数。</li>
+</ol>
+<p>新增这些内置函数后，<code>--output-arg</code> 选项的使用更加灵活和强大。</p>
+<p>使用范例：<a href="/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/">eBPF Talk: 使用 bpfsnoop 调试 i40e 驱动丢包问题</a></p>
+<h2 id="3---filter-pkt-和---output-pkt-支持-xdp_frame-参数">3. <code>--filter-pkt</code> 和 <code>--output-pkt</code> 支持 <code>xdp_frame</code> 参数</h2>
+<p>对于网卡驱动，在运行 driver 模式的 XDP 程序之后，可能会将 <code>xdp_buff</code> 转换成 <code>xdp_frame</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// include/linux/xdp.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">xdp_update_frame_from_buff</span><span class="p">(</span><span class="k">const</span> <span class="k">struct</span> <span class="n">xdp_buff</span> <span class="o">*</span><span class="n">xdp</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                               <span class="k">struct</span> <span class="n">xdp_frame</span> <span class="o">*</span><span class="n">xdp_frame</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">metasize</span><span class="p">,</span> <span class="n">headroom</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Assure headroom is available for storing info */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">headroom</span> <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">-</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data_hard_start</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">metasize</span> <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">-</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data_meta</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">metasize</span> <span class="o">=</span> <span class="n">metasize</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="nl">metasize</span> <span class="p">:</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">((</span><span class="n">headroom</span> <span class="o">-</span> <span class="n">metasize</span><span class="p">)</span> <span class="o">&lt;</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">xdp_frame</span><span class="p">)))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="n">ENOSPC</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Catch if driver didn&#39;t reserve tailroom for skb_shared_info */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data_end</span> <span class="o">&gt;</span> <span class="nf">xdp_data_hard_end</span><span class="p">(</span><span class="n">xdp</span><span class="p">)))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">XDP_WARN</span><span class="p">(</span><span class="s">&#34;Driver BUG: missing reserved tailroom&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="n">ENOSPC</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">xdp_frame</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">xdp_frame</span><span class="o">-&gt;</span><span class="n">len</span>  <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data_end</span> <span class="o">-</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">xdp_frame</span><span class="o">-&gt;</span><span class="n">headroom</span> <span class="o">=</span> <span class="n">headroom</span> <span class="o">-</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">xdp_frame</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">xdp_frame</span><span class="o">-&gt;</span><span class="n">metasize</span> <span class="o">=</span> <span class="n">metasize</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">xdp_frame</span><span class="o">-&gt;</span><span class="n">frame_sz</span> <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">frame_sz</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="n">xdp_frame</span><span class="o">-&gt;</span><span class="n">flags</span> <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cm">/* Convert xdp_buff to xdp_frame */</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kr">inline</span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">xdp_frame</span> <span class="o">*</span><span class="nf">xdp_convert_buff_to_frame</span><span class="p">(</span><span class="k">struct</span> <span class="n">xdp_buff</span> <span class="o">*</span><span class="n">xdp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">xdp_frame</span> <span class="o">*</span><span class="n">xdp_frame</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">xdp</span><span class="o">-&gt;</span><span class="n">rxq</span><span class="o">-&gt;</span><span class="n">mem</span><span class="p">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MEM_TYPE_XSK_BUFF_POOL</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">xdp_convert_zc_to_xdp_frame</span><span class="p">(</span><span class="n">xdp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Store info in top of packet */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">xdp_frame</span> <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">data_hard_start</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="nf">xdp_update_frame_from_buff</span><span class="p">(</span><span class="n">xdp</span><span class="p">,</span> <span class="n">xdp_frame</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* rxq only valid until napi_schedule ends, convert to xdp_mem_type */</span>
+</span></span><span class="line"><span class="cl">    <span class="n">xdp_frame</span><span class="o">-&gt;</span><span class="n">mem_type</span> <span class="o">=</span> <span class="n">xdp</span><span class="o">-&gt;</span><span class="n">rxq</span><span class="o">-&gt;</span><span class="n">mem</span><span class="p">.</span><span class="n">type</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">xdp_frame</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>因此，在对网络驱动进行调试时，可以使用 <code>xdp_frame</code> 作为 <code>--filter-pkt</code> 和 <code>--output-pkt</code> 的对象。</p>
+<h2 id="4-为每个-tracee-引入-insnfgraphstacklbrbothpkt-等模式各不干扰">4. 为每个 tracee 引入 insn/fgraph/stack/lbr/both/pkt 等模式，各不干扰</h2>
+<p><code>-k</code> 选项支持：</p>
+<ol>
+<li><code>(i)</code>: insn 模式，动态追踪内核函数的所有指令。</li>
+<li><code>(g)</code>: fgraph 模式，动态追踪内核函数的函数调用路径。</li>
+<li><code>(s)</code>: stack 模式，动态追踪内核函数的调用栈。</li>
+<li><code>(l)</code>: lbr 模式，动态追踪内核函数的 LBR 记录。</li>
+<li><code>(b)</code>: both 模式，同时使用 <code>fentry</code> 和 <code>fexit</code> 动态追踪内核函数。</li>
+<li><code>(p)</code>: pkt 模式，即 <code>--output-pkt</code> 选项，输出网络包的五元组信息。</li>
+</ol>
+<p><code>-p</code> 选项支持：</p>
+<ol>
+<li><code>(g)</code>: fgraph 模式，动态追踪 bpf 程序的函数调用路径。</li>
+<li><code>(s)</code>: stack 模式，动态追踪 bpf 程序的调用栈。</li>
+<li><code>(l)</code>: lbr 模式，动态追踪 bpf 程序的 LBR 记录。</li>
+<li><code>(b)</code>: both 模式，同时使用 <code>fentry</code> 和 <code>fexit</code> 动态追踪 bpf 程序。</li>
+<li><code>(p)</code>: pkt 模式，即 <code>--output-pkt</code> 选项，输出 bpf 程序处理的网络包信息。</li>
+</ol>
+<p><code>-t</code> 选项支持：</p>
+<ol>
+<li><code>(s)</code>: stack 模式，动态追踪内核跟踪点的调用栈。</li>
+<li><code>(l)</code>: lbr 模式，动态追踪内核跟踪点的 LBR 记录。</li>
+<li><code>(p)</code>: pkt 模式，即 <code>--output-pkt</code> 选项，输出内核跟踪点处理的网络包信息。</li>
+</ol>
+<p>当 bpfsnoop 用来调试比较复杂的内核问题时，就需要针对不同的 tracee 使用不同的模式。</p>
+<h2 id="总结">总结</h2>
+<p><code>bpfsnoop</code> v0.5.0 版本实现了 bpf 版本的 funcgraph 功能，并新增了大量的内置函数供 <code>--output-arg</code> 使用。</p>
+<p><code>bpfsnoop</code> 是一款 bpf 时代的现代化内核函数、内核跟踪点和 bpf 程序的动态追踪工具:</p>
+<ol>
+<li>支持输出 LBR 记录。</li>
+<li>支持反汇编内核函数和 bpf prog。</li>
+<li>支持输出函数调用栈。</li>
+<li>支持输出带类型信息的参数和带类型的返回值。</li>
+<li>支持使用复杂的 C 表达式来过滤函数参数的属性。</li>
+<li>支持根据函数参数来过滤需要动态追踪的内核函数列表。</li>
+<li>支持使用 <strong>pcap-filter(7)</strong> 语法来过滤网络包。</li>
+<li>支持 <code>--output-pkt</code> 输出网络包里的五元组信息。</li>
+<li>支持动态追踪多达 12 个参数的内核函数。</li>
+<li>支持 <code>--output-arg</code> 来输出函数参数的属性，类似于 <code>--filter-arg</code>。</li>
+<li>支持 <code>--output-flamegraph</code> 来输出火焰图的折叠后的数据。</li>
+<li>支持 <code>-t</code> 来动态追踪内核跟踪点。</li>
+<li>在 <code>-k</code> 里支持 &lsquo;(i)&rsquo; 前缀来动态追踪内核函数的所有指令。</li>
+<li>支持 <code>--output-arg</code> 使用大量内置函数来解析内核内存。</li>
+<li>支持 <code>--output-fgraph</code> 来动态追踪内核函数的调用路径。</li>
+</ol>
+<p>未来将支持更多高级功能，敬请期待！</p>
+<p><code>bpfsnoop</code> 项目地址：<a href="https://github.com/bpfsnoop/bpfsnoop">bpfsnoop</a>。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2025-07-21
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <input type="checkbox" name="telegram" id="reward" hidden />
+    <label class="reward-button" for="reward">Telegram</label>
+    <div class="qr-code">
+        <a href="https://t.me/+3lPhRkGCSuJmYzNl" target="_blank" class="telegram-close" title="Telegram Channel"> 点击 订阅
+            Telegram Channel </a> <br />
+        
+        <label class="qr-code-image" for="telegram">
+            <img class="image" src="/TelegramChannel.jpg">
+            
+        </label>
+    </div>
+</div><div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/">
+        <span class="next-text nav-default">eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.leonhw.com/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2025<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

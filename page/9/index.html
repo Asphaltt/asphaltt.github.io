@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-06-23T00:17:37+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-07-21T00:10:57+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-71-binary-search/">eBPF Talk: binary search</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1244 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      其实，bpf 子系统里并没有一个叫 bpf_binary_search() 的 helper 函数。 但并不是说，在 eBPF 里就实现不了二分查找了。 小需求 怎么判断一个 IP 地址是否在某几个 CIDR 里？ 已知方法有二：
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-71-binary-search/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-70-bpf-prog-stats/">eBPF Talk: bpf prog stats</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-62-verifier-core-in-3.18-kernel/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-61-cfg-check-in-3.18-kernel/">eBPF Talk: 3.18 kernel 里的 CFG 检查</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-04-01 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1666 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      为了克服对 bpf verifier 的恐惧，打算从 verifier.c 最初的 commit 开始学习 verifier；这是因为最初版本的 verifier 并不复杂。相对而言，理解起来会容易一些。 bpf: verifier (add branch/goto checks) 在该 commit
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-61-cfg-check-in-3.18-kernel/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

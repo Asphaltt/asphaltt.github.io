@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-06-23T00:17:37+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-07-21T00:10:57+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-153-bpfsnoop-v0.5.0/">eBPF Talk: bpfsnoop v0.5.0 发布：实现 bpf 版本的 funcgraph 功能</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2025-07-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1934 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      bpfsnoop 是一款 bpf 时代的现代化内核函数、内核跟踪点和 bpf 程序的动态追踪工具。 v0.1.0 v0.2.0 v0.3.0 v0.4.0 bpfsnoop 发布 v0.5.0 版本，主要更新如下： 使用 fentry 和 fexit 实现 bpf 版本的 funcgraph 功能。 给 --output-arg 新增
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-153-bpfsnoop-v0.5.0/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/">eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-144-dynamic-filter-func-arg/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-143-capture-packets-on-netdev-layer/">eBPF Talk: 设备层抓包的那些事</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2025-01-19 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1777 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      设备层抓包？不就是 tcpdump 嘛。缺点是，-i any 时无法抓到各个 netns 内的网络包。 netif_receive_skb 和 net_dev_queue 这 2 个 tracepoint 呢？好，能抓到所有 netns 内的网络包了。但， tracepoint bpf prog 不支持 bpf_skb_output help
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-143-capture-packets-on-netdev-layer/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
