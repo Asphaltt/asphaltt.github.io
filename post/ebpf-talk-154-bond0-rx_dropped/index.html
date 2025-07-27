@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 排查 bond 设备丢包问题 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="遇到个奇怪的丢包统计问题： 1 2 3 4 5 6 # netstat -i Kernel Interface table Iface MTU RX-OK RX-ERR RX-DRP RX-OVR TX-OK TX-ERR TX-DRP TX-OVR Flg bond0 1500 4714238062 0 9955805 0 4206040873 0 2 0 BMmRU ens1f0 1500 2145684247 0 3 0 1917444695 0 0 0 BMsRU ens1f1 1500 2568553815 0 0 0 2288596177 0 0 0 BMsRU 如" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://blog.leonhw.com/post/ebpf-talk-154-bond0-rx_dropped/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 排查 bond 设备丢包问题" />
+<meta property="og:description" content="遇到个奇怪的丢包统计问题： 1 2 3 4 5 6 # netstat -i Kernel Interface table Iface MTU RX-OK RX-ERR RX-DRP RX-OVR TX-OK TX-ERR TX-DRP TX-OVR Flg bond0 1500 4714238062 0 9955805 0 4206040873 0 2 0 BMmRU ens1f0 1500 2145684247 0 3 0 1917444695 0 0 0 BMsRU ens1f1 1500 2568553815 0 0 0 2288596177 0 0 0 BMsRU 如" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.leonhw.com/post/ebpf-talk-154-bond0-rx_dropped/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2025-07-27T22:13:05+08:00" />
+<meta property="article:modified_time" content="2025-07-27T22:13:05+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 排查 bond 设备丢包问题">
+  <meta itemprop="description" content="遇到个奇怪的丢包统计问题： 1 2 3 4 5 6 # netstat -i Kernel Interface table Iface MTU RX-OK RX-ERR RX-DRP RX-OVR TX-OK TX-ERR TX-DRP TX-OVR Flg bond0 1500 4714238062 0 9955805 0 4206040873 0 2 0 BMmRU ens1f0 1500 2145684247 0 3 0 1917444695 0 0 0 BMsRU ens1f1 1500 2568553815 0 0 0 2288596177 0 0 0 BMsRU 如">
+  <meta itemprop="datePublished" content="2025-07-27T22:13:05+08:00">
+  <meta itemprop="dateModified" content="2025-07-27T22:13:05+08:00">
+  <meta itemprop="wordCount" content="2511">
+  <meta itemprop="keywords" content="EBPF,Bpfsnoop,Drgn"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 排查 bond 设备丢包问题"/>
+<meta name="twitter:description" content="遇到个奇怪的丢包统计问题： 1 2 3 4 5 6 # netstat -i Kernel Interface table Iface MTU RX-OK RX-ERR RX-DRP RX-OVR TX-OK TX-ERR TX-DRP TX-OVR Flg bond0 1500 4714238062 0 9955805 0 4206040873 0 2 0 BMmRU ens1f0 1500 2145684247 0 3 0 1917444695 0 0 0 BMsRU ens1f1 1500 2568553815 0 0 0 2288596177 0 0 0 BMsRU 如"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 排查 bond 设备丢包问题</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2025-07-27 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        <a href="/%20categories/linux-%E7%BD%91%E7%BB%9C/"> Linux 网络 </a>
+        </div>
+      <span class="more-meta"> 约 2511 字 </span>
+      <span class="more-meta"> 预计阅读 6 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#1-查看-bond0-的-rx-drp-从何而来">1. 查看 <code>bond0</code> 的 RX-DRP 从何而来</a></li>
+        <li><a href="#2-rx_dropped-的来源">2. <code>rx_dropped</code> 的来源</a></li>
+        <li><a href="#3-bond-设备收包过程">3. bond 设备收包过程</a></li>
+        <li><a href="#4-不支持的协议包">4. 不支持的协议包</a></li>
+        <li><a href="#5-丢包根因">5. 丢包根因</a></li>
+        <li><a href="#6-总结">6. 总结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>遇到个奇怪的丢包统计问题：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># netstat -i</span>
+</span></span><span class="line"><span class="cl">Kernel Interface table
+</span></span><span class="line"><span class="cl">Iface             MTU    RX-OK RX-ERR RX-DRP RX-OVR    TX-OK TX-ERR TX-DRP TX-OVR Flg
+</span></span><span class="line"><span class="cl">bond0            <span class="m">1500</span> <span class="m">4714238062</span>      <span class="m">0</span> <span class="m">9955805</span> <span class="m">0</span>      <span class="m">4206040873</span>      <span class="m">0</span>      <span class="m">2</span>      <span class="m">0</span> BMmRU
+</span></span><span class="line"><span class="cl">ens1f0           <span class="m">1500</span> <span class="m">2145684247</span>      <span class="m">0</span>      <span class="m">3</span> <span class="m">0</span>      <span class="m">1917444695</span>      <span class="m">0</span>      <span class="m">0</span>      <span class="m">0</span> BMsRU
+</span></span><span class="line"><span class="cl">ens1f1           <span class="m">1500</span> <span class="m">2568553815</span>      <span class="m">0</span>      <span class="m">0</span> <span class="m">0</span>      <span class="m">2288596177</span>      <span class="m">0</span>      <span class="m">0</span>      <span class="m">0</span> BMsRU
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>如上，<strong>RX-DRP</strong> 只发生在 <code>bond0</code>，而它的 2 个从设备 <code>ens1f0</code> 和 <code>ens1f1</code> 的 <strong>RX-DRP</strong> 几乎为 <strong>0</strong>。</p>
+<p>很多时候，<code>bond0</code> 的 <strong>RX-DRP</strong> 是其从设备的 <strong>RX-DRP</strong> 之和。所以，当看到如上 <code>netstat -i</code> 统计数据时，就觉得很奇怪；一气之下，开始排查起来。</p>
+<h2 id="1-查看-bond0-的-rx-drp-从何而来">1. 查看 <code>bond0</code> 的 RX-DRP 从何而来</h2>
+<p>快速推理一下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># strace netstat -i</span>
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">openat<span class="o">(</span>AT_FDCWD, <span class="s2">&#34;/proc/net/dev&#34;</span>, O_RDONLY<span class="o">)</span> <span class="o">=</span> <span class="m">6</span>
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># cat /proc/net/dev</span>
+</span></span><span class="line"><span class="cl">Inter-<span class="p">|</span>   Receive                                                <span class="p">|</span>  Transmit
+</span></span><span class="line"><span class="cl"> face <span class="p">|</span>bytes    packets errs drop fifo frame compressed multicast<span class="p">|</span>bytes    packets errs drop fifo colls carrier compressed
+</span></span><span class="line"><span class="cl">ens1f0: <span class="m">1195670686250</span> <span class="m">2150075191</span>    <span class="m">0</span>    <span class="m">3</span>    <span class="m">0</span>     <span class="m">0</span>          <span class="m">0</span>  <span class="m">15367468</span> <span class="m">357767232222</span> <span class="m">1920053622</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>     <span class="m">0</span>       <span class="m">0</span>          <span class="m">0</span>
+</span></span><span class="line"><span class="cl">ens1f1: <span class="m">933651146360</span> <span class="m">2571565810</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>     <span class="m">0</span>          <span class="m">0</span>  <span class="m">15376597</span> <span class="m">444981899232</span> <span class="m">2291732525</span>    <span class="m">0</span>    <span class="m">0</span>    <span class="m">0</span>     <span class="m">0</span>       <span class="m">0</span>          <span class="m">0</span>
+</span></span><span class="line"><span class="cl"> bond0: <span class="m">2129321832610</span> <span class="m">4721641001</span>    <span class="m">0</span> <span class="m">10018411</span>    <span class="m">0</span>     <span class="m">0</span>          <span class="m">0</span>  <span class="m">30744065</span> <span class="m">802749131454</span> <span class="m">4211786147</span>    <span class="m">0</span>    <span class="m">2</span>    <span class="m">0</span>     <span class="m">0</span>       <span class="m">0</span>          <span class="m">0</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>cat /proc/net/dev</code> 对应的源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// net/core/net-procfs.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">void</span> <span class="nf">dev_seq_printf_stats</span><span class="p">(</span><span class="k">struct</span> <span class="n">seq_file</span> <span class="o">*</span><span class="n">seq</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">rtnl_link_stats64</span> <span class="n">temp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">const</span> <span class="k">struct</span> <span class="n">rtnl_link_stats64</span> <span class="o">*</span><span class="n">stats</span> <span class="o">=</span> <span class="nf">dev_get_stats</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">temp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">seq_printf</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="s">&#34;%6s: %7llu %7llu %4llu %4llu %4llu %5llu %10llu %9llu &#34;</span>
+</span></span><span class="line"><span class="cl">               <span class="s">&#34;%8llu %7llu %4llu %4llu %4llu %5llu %7llu %10llu</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">               <span class="n">dev</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">,</span> <span class="n">stats</span><span class="o">-&gt;</span><span class="n">rx_bytes</span><span class="p">,</span> <span class="n">stats</span><span class="o">-&gt;</span><span class="n">rx_packets</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">               <span class="n">stats</span><span class="o">-&gt;</span><span class="n">rx_errors</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">               <span class="n">stats</span><span class="o">-&gt;</span><span class="n">rx_dropped</span> <span class="o">+</span> <span class="n">stats</span><span class="o">-&gt;</span><span class="n">rx_missed_errors</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">               <span class="n">stats</span><span class="o">-&gt;</span><span class="n">rx_fifo_errors</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">               <span class="p">...</span>
+</span></span><span class="line"><span class="cl">               <span class="n">stats</span><span class="o">-&gt;</span><span class="n">tx_compressed</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  Called from the PROCfs module. This now uses the new arbitrary sized
+</span></span></span><span class="line"><span class="cl"><span class="cm"> *  /proc/net interface to create /proc/net/dev
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">dev_seq_show</span><span class="p">(</span><span class="k">struct</span> <span class="n">seq_file</span> <span class="o">*</span><span class="n">seq</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">v</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">v</span> <span class="o">==</span> <span class="n">SEQ_START_TOKEN</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">seq_puts</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="s">&#34;Inter-|   Receive                            &#34;</span>
+</span></span><span class="line"><span class="cl">                 <span class="s">&#34;                    |  Transmit</span><span class="se">\n</span><span class="s">&#34;</span>
+</span></span><span class="line"><span class="cl">                 <span class="s">&#34; face |bytes    packets errs drop fifo frame &#34;</span>
+</span></span><span class="line"><span class="cl">                 <span class="s">&#34;compressed multicast|bytes    packets errs &#34;</span>
+</span></span><span class="line"><span class="cl">                 <span class="s">&#34;drop fifo colls carrier compressed</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">else</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">dev_seq_printf_stats</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">v</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1">// net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">struct</span> <span class="n">rtnl_link_stats64</span> <span class="o">*</span><span class="nf">dev_get_stats</span><span class="p">(</span><span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">dev</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                        <span class="k">struct</span> <span class="n">rtnl_link_stats64</span> <span class="o">*</span><span class="n">storage</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">storage</span><span class="o">-&gt;</span><span class="n">rx_dropped</span> <span class="o">+=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="nf">atomic_long_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">rx_dropped</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">storage</span><span class="o">-&gt;</span><span class="n">tx_dropped</span> <span class="o">+=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="nf">atomic_long_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">tx_dropped</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">storage</span><span class="o">-&gt;</span><span class="n">rx_nohandler</span> <span class="o">+=</span> <span class="p">(</span><span class="kt">unsigned</span> <span class="kt">long</span><span class="p">)</span><span class="nf">atomic_long_read</span><span class="p">(</span><span class="o">&amp;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">rx_nohandler</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">storage</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nf">EXPORT_SYMBOL</span><span class="p">(</span><span class="n">dev_get_stats</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>基本可以确认，<code>bond0</code> 的 <strong>RX-DRP</strong> 就是 <code>dev-&gt;rx_dropped</code> 的值。</p>
+<p>使用 <code>drgn</code> 工具查看 <code>bond0</code> 的 <code>rx_dropped</code>：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># drgn</span>
+</span></span><span class="line"><span class="cl">&gt;&gt;&gt; <span class="nv">bond0</span> <span class="o">=</span> netdev_get_by_name<span class="o">(</span><span class="s1">&#39;bond0&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">&gt;&gt;&gt; bond0.rx_dropped
+</span></span><span class="line"><span class="cl"><span class="o">(</span>atomic_long_t<span class="o">){</span>
+</span></span><span class="line"><span class="cl">    .counter <span class="o">=</span> <span class="o">(</span>s64<span class="o">)</span>10018860,
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>确实如此。</p>
+<h2 id="2-rx_dropped-的来源">2. <code>rx_dropped</code> 的来源</h2>
+<p>直接搜索 <code>net/core/dev.c</code> 中 <code>rx_dropped</code> 的使用：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * enqueue_to_backlog is called to queue an skb to a per CPU backlog
+</span></span></span><span class="line"><span class="cl"><span class="cm"> * queue (may be a remote CPU queue).
+</span></span></span><span class="line"><span class="cl"><span class="cm"> */</span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">enqueue_to_backlog</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">*</span><span class="n">skb</span><span class="p">,</span> <span class="kt">int</span> <span class="n">cpu</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                              <span class="kt">unsigned</span> <span class="kt">int</span> <span class="o">*</span><span class="n">qtail</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sd</span> <span class="o">=</span> <span class="o">&amp;</span><span class="nf">per_cpu</span><span class="p">(</span><span class="n">softnet_data</span><span class="p">,</span> <span class="n">cpu</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">local_irq_save</span><span class="p">(</span><span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">rps_lock</span><span class="p">(</span><span class="n">sd</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nf">netif_running</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="k">goto</span> <span class="n">drop</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nl">drop</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">sd</span><span class="o">-&gt;</span><span class="n">dropped</span><span class="o">++</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">rps_unlock</span><span class="p">(</span><span class="n">sd</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">local_irq_restore</span><span class="p">(</span><span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">atomic_long_inc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">rx_dropped</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">kfree_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">NET_RX_DROP</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">__netif_receive_skb_core</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">**</span><span class="n">pskb</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">pfmemalloc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                    <span class="k">struct</span> <span class="n">packet_type</span> <span class="o">**</span><span class="n">ppt_prev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">pt_prev</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="nf">skb_orphan_frags_rx</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">GFP_ATOMIC</span><span class="p">)))</span>
+</span></span><span class="line"><span class="cl">            <span class="k">goto</span> <span class="n">drop</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">*</span><span class="n">ppt_prev</span> <span class="o">=</span> <span class="n">pt_prev</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="nl">drop</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">deliver_exact</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">atomic_long_inc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">rx_dropped</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">else</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">atomic_long_inc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">rx_nohandler</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">kfree_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ret</span> <span class="o">=</span> <span class="n">NET_RX_DROP</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl"><span class="nl">out</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>共有 2 个地方会增加 <code>rx_dropped</code>；究竟是哪个地方导致了 <code>bond0</code> 的 <strong>RX-DRP</strong> 增加呢？</p>
+<p>留意到 <code>enqueue_to_backlog</code> 函数中有 <code>sd-&gt;dropped++</code>，如果所有 CPU 核的 <code>sd-&gt;dropped</code> 之和等于 <code>bond0</code> 的 <code>rx_dropped</code>，那么就可以确定是这个地方导致的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># cat /proc/net/softnet_stat</span>
+</span></span><span class="line"><span class="cl">04f93eff <span class="m">00000000</span> <span class="m">00000000</span> <span class="m">00000000</span> <span class="m">00000000</span> <span class="m">00000000</span> <span class="m">00000000</span> <span class="m">00000000</span> <span class="m">00000000</span> <span class="m">00000000</span> <span class="m">00000000</span> <span class="m">00000000</span> <span class="m">00000000</span>
+</span></span><span class="line"><span class="cl">...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>对应内核源代码：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// net/core/net-procfs.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">softnet_seq_show</span><span class="p">(</span><span class="k">struct</span> <span class="n">seq_file</span> <span class="o">*</span><span class="n">seq</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">v</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">seq_printf</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">               <span class="s">&#34;%08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x %08x</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">               <span class="n">sd</span><span class="o">-&gt;</span><span class="n">processed</span><span class="p">,</span> <span class="n">sd</span><span class="o">-&gt;</span><span class="n">dropped</span><span class="p">,</span> <span class="n">sd</span><span class="o">-&gt;</span><span class="n">time_squeeze</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">               <span class="p">...</span>
+</span></span><span class="line"><span class="cl">               <span class="nf">softnet_backlog_len</span><span class="p">(</span><span class="n">sd</span><span class="p">),</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">seq</span><span class="o">-&gt;</span><span class="n">index</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>也就是，<code>/proc/net/softnet_stat</code> 中的第二个字段就是 <code>sd-&gt;dropped</code> 的值。</p>
+<p>但，<code>/proc/net/softnet_stat</code> 中的 <code>sd-&gt;dropped</code> 之和是 <strong>0</strong>；所以，<code>bond0</code> 的 <code>rx_dropped</code> 不是由 <code>enqueue_to_backlog</code> 函数导致的。</p>
+<p>为什么 <code>__netif_receive_skb_core</code> 函数会导致 <code>bond0</code> 的 <code>rx_dropped</code> 增加呢？</p>
+<h2 id="3-bond-设备收包过程">3. bond 设备收包过程</h2>
+<p>再确认一下 server 上的网络配置：</p>
+<ol>
+<li><code>bond0</code> 是一个 <code>802.3ad</code> 模式的 bond 设备；</li>
+<li><code>ens1f0</code> 和 <code>ens1f1</code> 是 <code>bond0</code> 的从设备；</li>
+<li><code>bond0</code> 没有配置 VLAN。</li>
+</ol>
+<p>再次看下 <code>__netif_receive_skb_core</code> 函数：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span><span class="lnt">61
+</span><span class="lnt">62
+</span><span class="lnt">63
+</span><span class="lnt">64
+</span><span class="lnt">65
+</span><span class="lnt">66
+</span><span class="lnt">67
+</span><span class="lnt">68
+</span><span class="lnt">69
+</span><span class="lnt">70
+</span><span class="lnt">71
+</span><span class="lnt">72
+</span><span class="lnt">73
+</span><span class="lnt">74
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// net/core/dev.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">__netif_receive_skb_core</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">**</span><span class="n">pskb</span><span class="p">,</span> <span class="kt">bool</span> <span class="n">pfmemalloc</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                    <span class="k">struct</span> <span class="n">packet_type</span> <span class="o">**</span><span class="n">ppt_prev</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">trace_netif_receive_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">orig_dev</span> <span class="o">=</span> <span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">pt_prev</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nl">another_round</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="n">skb</span><span class="o">-&gt;</span><span class="n">skb_iif</span> <span class="o">=</span> <span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">ifindex</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">__this_cpu_inc</span><span class="p">(</span><span class="n">softnet_data</span><span class="p">.</span><span class="n">processed</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">rx_handler</span> <span class="o">=</span> <span class="nf">rcu_dereference</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">rx_handler</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">rx_handler</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">pt_prev</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">ret</span> <span class="o">=</span> <span class="nf">deliver_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">pt_prev</span><span class="p">,</span> <span class="n">orig_dev</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="n">pt_prev</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="k">switch</span> <span class="p">(</span><span class="nf">rx_handler</span><span class="p">(</span><span class="o">&amp;</span><span class="n">skb</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="nl">RX_HANDLER_CONSUMED</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="n">ret</span> <span class="o">=</span> <span class="n">NET_RX_SUCCESS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">goto</span> <span class="n">out</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="nl">RX_HANDLER_ANOTHER</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="k">goto</span> <span class="n">another_round</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="nl">RX_HANDLER_EXACT</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="n">deliver_exact</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">            <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="nl">RX_HANDLER_PASS</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">            <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">default</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">BUG</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">type</span> <span class="o">=</span> <span class="n">skb</span><span class="o">-&gt;</span><span class="n">protocol</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* deliver only exact match when indicated */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">likely</span><span class="p">(</span><span class="o">!</span><span class="n">deliver_exact</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">deliver_ptype_list_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pt_prev</span><span class="p">,</span> <span class="n">orig_dev</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                               <span class="o">&amp;</span><span class="n">ptype_base</span><span class="p">[</span><span class="nf">ntohs</span><span class="p">(</span><span class="n">type</span><span class="p">)</span> <span class="o">&amp;</span>
+</span></span><span class="line"><span class="cl">                                           <span class="n">PTYPE_HASH_MASK</span><span class="p">]);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">deliver_ptype_list_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pt_prev</span><span class="p">,</span> <span class="n">orig_dev</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                           <span class="o">&amp;</span><span class="n">orig_dev</span><span class="o">-&gt;</span><span class="n">ptype_specific</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span> <span class="o">!=</span> <span class="n">orig_dev</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">deliver_ptype_list_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">pt_prev</span><span class="p">,</span> <span class="n">orig_dev</span><span class="p">,</span> <span class="n">type</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                               <span class="o">&amp;</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">ptype_specific</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">pt_prev</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="nf">skb_orphan_frags_rx</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">GFP_ATOMIC</span><span class="p">)))</span>
+</span></span><span class="line"><span class="cl">            <span class="k">goto</span> <span class="n">drop</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="o">*</span><span class="n">ppt_prev</span> <span class="o">=</span> <span class="n">pt_prev</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"><span class="nl">drop</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">deliver_exact</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">atomic_long_inc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">rx_dropped</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">else</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">atomic_long_inc</span><span class="p">(</span><span class="o">&amp;</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="o">-&gt;</span><span class="n">rx_nohandler</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">kfree_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ret</span> <span class="o">=</span> <span class="n">NET_RX_DROP</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nl">out</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">    <span class="o">*</span><span class="n">pskb</span> <span class="o">=</span> <span class="n">skb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>bond 设备收包的核心逻辑：</p>
+<p>第一轮从设备收包：</p>
+<ol>
+<li><code>skb-&gt;dev</code> 是从设备；</li>
+<li><code>skb-&gt;dev-&gt;rx_handler</code> 是 <code>bond0</code> 的接收处理函数；</li>
+<li><code>bond0</code> 的接收处理函数会优先处理 LACP 协议包；</li>
+<li>如果不是 LACP 协议包，则 <code>skb-&gt;dev-&gt;rx_handler</code> 返回 <code>RX_HANDLER_ANOTHER</code>，表示需要下一轮处理。</li>
+</ol>
+<p>第二轮 bond 设备收包：</p>
+<ol>
+<li><code>skb-&gt;dev</code> 是 <code>bond0</code>；</li>
+<li><code>skb-&gt;dev-&gt;rx_handler</code> 是 <code>NULL</code>，表示没有接收处理函数；</li>
+<li>直接进行协议类型匹配；</li>
+<li>如果没有匹配到协议类型，则 <code>pt_prev</code> 为空，进入 <code>drop</code> 分支；</li>
+<li>没有精确匹配，<code>develiver_exact</code> 为 <code>false</code>，所以会增加 <code>bond0</code> 的 <code>rx_dropped</code>。</li>
+</ol>
+<p>bond 从设备的 <code>rx_handler</code> 处理函数是 <code>bond_handle_frame</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// drivers/net/bonding/bond_main.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="cm">/* enslave device &lt;slave&gt; to bond device &lt;master&gt; */</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">bond_enslave</span><span class="p">(</span><span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">bond_dev</span><span class="p">,</span> <span class="k">struct</span> <span class="n">net_device</span> <span class="o">*</span><span class="n">slave_dev</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                 <span class="k">struct</span> <span class="n">netlink_ext_ack</span> <span class="o">*</span><span class="n">extack</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="n">res</span> <span class="o">=</span> <span class="nf">netdev_rx_handler_register</span><span class="p">(</span><span class="n">slave_dev</span><span class="p">,</span> <span class="n">bond_handle_frame</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                     <span class="n">new_slave</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>使用 <code>bpfsnoop</code> 可以确认：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ./bpfsnoop -t netif_receive_skb --filter-arg &#39;skb-&gt;dev-&gt;ifindex == 3&#39; --output-arg &#39;skb-&gt;dev-&gt;rx_handler&#39;</span>
+</span></span><span class="line"><span class="cl">- netif_receive_skb<span class="o">[</span>tp<span class="o">]</span> <span class="nv">args</span><span class="o">=((</span>struct sk_buff *<span class="o">)</span><span class="nv">skb</span><span class="o">=</span>0xffff9f527cf2ea00<span class="o">)</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">5</span> <span class="nv">process</span><span class="o">=(</span>0:swapper/5<span class="o">)</span> <span class="nv">timestamp</span><span class="o">=</span>10:55:39.608250045
+</span></span><span class="line"><span class="cl">Arg attrs: <span class="o">(</span>rx_handler_func_t *<span class="o">)</span><span class="s1">&#39;skb-&gt;dev-&gt;rx_handler&#39;</span><span class="o">=</span>0xffffffffc0f08490<span class="o">(</span>bond_handle_frame<span class="o">)</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>bond 设备的接收处理函数 <code>bond_handle_frame</code> 的代码如下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// drivers/net/bonding/bond_main.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">rx_handler_result_t</span> <span class="nf">bond_handle_frame</span><span class="p">(</span><span class="k">struct</span> <span class="n">sk_buff</span> <span class="o">**</span><span class="n">pskb</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">RX_HANDLER_ANOTHER</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="o">*</span><span class="n">pskb</span> <span class="o">=</span> <span class="n">skb</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">slave</span> <span class="o">=</span> <span class="nf">bond_slave_get_rcu</span><span class="p">(</span><span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="n">bond</span> <span class="o">=</span> <span class="n">slave</span><span class="o">-&gt;</span><span class="n">bond</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">recv_probe</span> <span class="o">=</span> <span class="nf">READ_ONCE</span><span class="p">(</span><span class="n">bond</span><span class="o">-&gt;</span><span class="n">recv_probe</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">recv_probe</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">ret</span> <span class="o">=</span> <span class="nf">recv_probe</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">bond</span><span class="p">,</span> <span class="n">slave</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">==</span> <span class="n">RX_HANDLER_CONSUMED</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="nf">consume_skb</span><span class="p">(</span><span class="n">skb</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">bond_should_deliver_exact_match</span><span class="p">(</span><span class="n">skb</span><span class="p">,</span> <span class="n">slave</span><span class="p">,</span> <span class="n">bond</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">is_link_local_ether_addr</span><span class="p">(</span><span class="nf">eth_hdr</span><span class="p">(</span><span class="n">skb</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">h_dest</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">RX_HANDLER_PASS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="n">RX_HANDLER_EXACT</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">skb</span><span class="o">-&gt;</span><span class="n">dev</span> <span class="o">=</span> <span class="n">bond</span><span class="o">-&gt;</span><span class="n">dev</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>从上面的 <code>__netif_receive_skb_core</code> 函数可以看到，<code>bond_handle_frame</code> 函数要么返回了 <code>RX_HANDLER_ANOTHER</code>，要么返回了 <code>RX_HANDLER_PASS</code>。</p>
+<p>使用 <code>bpfsnoop</code> 确认：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ./bpfsnoop -k &#39;(b)bond_handle_frame&#39; --output-arg &#39;(*pskb)-&gt;dev-&gt;name&#39; --kfunc-kmods bonding -o bond.bpfsnoop.log</span>
+</span></span><span class="line"><span class="cl"><span class="c1"># less bond.bpfsnoop.log</span>
+</span></span><span class="line"><span class="cl">→ bond_handle_frame <span class="nv">args</span><span class="o">=((</span>struct sk_buff **<span class="o">)</span><span class="nv">pskb</span><span class="o">=</span>0xffffbc780c85ccc8<span class="o">)</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">5</span> <span class="nv">process</span><span class="o">=(</span>0:swapper/5<span class="o">)</span> <span class="nv">timestamp</span><span class="o">=</span>11:03:00.645740007
+</span></span><span class="line"><span class="cl">Arg attrs: <span class="o">(</span>array<span class="o">(</span>char<span class="o">[</span>16<span class="o">]))</span><span class="s1">&#39;(*pskb)-&gt;dev-&gt;name&#39;</span><span class="o">=</span><span class="s2">&#34;ens1f0&#34;</span>
+</span></span><span class="line"><span class="cl">← bond_handle_frame <span class="nv">args</span><span class="o">=((</span>struct sk_buff **<span class="o">)</span><span class="nv">pskb</span><span class="o">=</span>0xffffbc780c85ccc8<span class="o">)</span> <span class="nv">retval</span><span class="o">=(</span>enum rx_handler_result<span class="o">)</span>RX_HANDLER_ANOTHER <span class="nv">cpu</span><span class="o">=</span><span class="m">5</span> <span class="nv">process</span><span class="o">=(</span>0:swapper/5<span class="o">)</span> <span class="nv">duration</span><span class="o">=</span>5.795µs <span class="nv">timestamp</span><span class="o">=</span>11:03:00.645808268
+</span></span><span class="line"><span class="cl">Arg attrs: <span class="o">(</span>array<span class="o">(</span>char<span class="o">[</span>16<span class="o">]))</span><span class="s1">&#39;(*pskb)-&gt;dev-&gt;name&#39;</span><span class="o">=</span><span class="s2">&#34;bond0&#34;</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在 <code>bond.bpfsnoop.log</code> 里没有看到 <code>RX_HANDLER_PASS</code> 的返回值。</p>
+<p>而且，<code>bond_handle_frame</code> 函数将 <code>skb-&gt;dev</code> 设置为 <code>bond-&gt;dev</code>，也就是 <code>bond0</code> 设备。</p>
+<p>直至这里，可以推断出丢包的原因：收到了 bond 设备及其从设备都不支持的协议包，导致丢包了，并且统计到了 <code>bond0</code> 的 <code>rx_dropped</code>。</p>
+<h2 id="4-不支持的协议包">4. 不支持的协议包</h2>
+<p>使用 <code>bpfsnoop</code> 进一步确认 <code>skb-&gt;protocol</code> 的值：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ./bpfsnoop -k &#39;(b)bond_handle_frame&#39; --output-arg &#39;(*pskb)-&gt;dev-&gt;name&#39; --output-arg &#39;(*pskb)-&gt;protocol&#39; --kfunc-kmods bonding -o bond.bpfsnoop.log</span>
+</span></span><span class="line"><span class="cl">→ bond_handle_frame <span class="nv">args</span><span class="o">=((</span>struct sk_buff **<span class="o">)</span><span class="nv">pskb</span><span class="o">=</span>0xffffbc780d390cc8<span class="o">)</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">60</span> <span class="nv">process</span><span class="o">=(</span>0:swapper/60<span class="o">)</span> <span class="nb">times</span>
+</span></span><span class="line"><span class="cl"><span class="nv">tamp</span><span class="o">=</span>11:10:43.435883189
+</span></span><span class="line"><span class="cl">Arg attrs: <span class="o">(</span>array<span class="o">(</span>char<span class="o">[</span>16<span class="o">]))</span><span class="s1">&#39;(*pskb)-&gt;dev-&gt;name&#39;</span><span class="o">=</span><span class="s2">&#34;ens1f1&#34;</span>, <span class="o">(</span>__be16<span class="o">)</span><span class="s1">&#39;(*pskb)-&gt;protocol&#39;</span><span class="o">=</span>0x400/1024
+</span></span><span class="line"><span class="cl">← bond_handle_frame <span class="nv">args</span><span class="o">=((</span>struct sk_buff **<span class="o">)</span><span class="nv">pskb</span><span class="o">=</span>0xffffbc780d390cc8<span class="o">)</span> <span class="nv">retval</span><span class="o">=(</span>enum rx_handler_result<span class="o">)</span>RX_HANDLER_ANOTHER <span class="nv">cpu</span><span class="o">=</span><span class="m">60</span> <span class="nv">process</span><span class="o">=(</span>0:swapper/60<span class="o">)</span> <span class="nv">duration</span><span class="o">=</span>4.629µs <span class="nv">timestamp</span><span class="o">=</span>11:10:43.435915497
+</span></span><span class="line"><span class="cl">Arg attrs: <span class="o">(</span>array<span class="o">(</span>char<span class="o">[</span>16<span class="o">]))</span><span class="s1">&#39;(*pskb)-&gt;dev-&gt;name&#39;</span><span class="o">=</span><span class="s2">&#34;bond0&#34;</span>, <span class="o">(</span>__be16<span class="o">)</span><span class="s1">&#39;(*pskb)-&gt;protocol&#39;</span><span class="o">=</span>0x400/1024
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>过滤掉正常的协议包，留意到有 <code>0x400</code> 的协议包：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// include/uapi/linux/if_ether.h
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="cp">#define ETH_P_802_2 0x0004      </span><span class="cm">/* 802.2 frames         */</span><span class="cp">
+</span></span></span></code></pre></td></tr></table>
+</div>
+</div><p>这是什么包？</p>
+<p>不清楚也没关系，直接用 <code>tcpdump</code> 抓包看看：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span><span class="lnt">7
+</span><span class="lnt">8
+</span><span class="lnt">9
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># tcpdump -i any -nnnev ether proto 0x0004</span>
+</span></span><span class="line"><span class="cl">tcpdump: data link <span class="nb">type</span> LINUX_SLL2
+</span></span><span class="line"><span class="cl">tcpdump: listening on any, link-type LINUX_SLL2 <span class="o">(</span>Linux cooked v2<span class="o">)</span>, snapshot length <span class="m">262144</span> bytes
+</span></span><span class="line"><span class="cl">11:14:07.922458 ens1f0 M   ifindex <span class="m">3</span> 48:2c:d0:1e:f0:b1 802.2, length 66: LLC, dsap STP <span class="o">(</span>0x42<span class="o">)</span> Individual, ssap STP <span class="o">(</span>0x42<span class="o">)</span> Command, ctrl 0x03: STP 802.1w, Rapid STP, Flags <span class="o">[</span>Learn, Forward, Agreement<span class="o">]</span>, bridge-id 8000.48:2c:d0:1e:f0:b1.8001, length <span class="m">43</span>
+</span></span><span class="line"><span class="cl">    message-age 0.00s, max-age 20.00s, hello-time 2.00s, forwarding-delay 15.00s
+</span></span><span class="line"><span class="cl">    root-id 8000.48:2c:d0:1e:f0:b1, root-pathcost 0, port-role Designated
+</span></span><span class="line"><span class="cl">11:14:07.922458 bond0 M   ifindex <span class="m">8</span> 48:2c:d0:1e:f0:b1 802.2, length 66: LLC, dsap STP <span class="o">(</span>0x42<span class="o">)</span> Individual, ssap STP <span class="o">(</span>0x42<span class="o">)</span> Command, ctrl 0x03: STP 802.1w, Rapid STP, Flags <span class="o">[</span>Learn, Forward, Agreement<span class="o">]</span>, bridge-id 8000.48:2c:d0:1e:f0:b1.8001, length <span class="m">43</span>
+</span></span><span class="line"><span class="cl">    message-age 0.00s, max-age 20.00s, hello-time 2.00s, forwarding-delay 15.00s
+</span></span><span class="line"><span class="cl">    root-id 8000.48:2c:d0:1e:f0:b1, root-pathcost 0, port-role Designated
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>啊哈，这是 STP 协议包。</p>
+<p>bond 设备及其从设备支持 STP 协议包吗？</p>
+<p>使用 <code>drgn</code> 确认一下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># drgn</span>
+</span></span><span class="line"><span class="cl">&gt;&gt;&gt; <span class="nv">ens</span> <span class="o">=</span> netdev_get_by_name<span class="o">(</span><span class="s1">&#39;ens1f0&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">&gt;&gt;&gt; ens.ptype_specific
+</span></span><span class="line"><span class="cl"><span class="o">(</span>struct list_head<span class="o">){</span>
+</span></span><span class="line"><span class="cl">    .next <span class="o">=</span> <span class="o">(</span>struct list_head *<span class="o">)</span>0xffff9f5284af25b8,
+</span></span><span class="line"><span class="cl">    .prev <span class="o">=</span> <span class="o">(</span>struct list_head *<span class="o">)</span>0xffff9f5284af25b8,
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">&gt;&gt;&gt; <span class="nv">bond0</span> <span class="o">=</span> netdev_get_by_name<span class="o">(</span><span class="s1">&#39;bond0&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">&gt;&gt;&gt; bond0.ptype_specific
+</span></span><span class="line"><span class="cl"><span class="o">(</span>struct list_head<span class="o">){</span>
+</span></span><span class="line"><span class="cl">    .next <span class="o">=</span> <span class="o">(</span>struct list_head *<span class="o">)</span>0xffff9f5248c8b090,
+</span></span><span class="line"><span class="cl">    .prev <span class="o">=</span> <span class="o">(</span>struct list_head *<span class="o">)</span>0xffff9f5248c8b090,
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span><span class="line"><span class="cl">&gt;&gt;&gt; <span class="nv">ptype_base</span> <span class="o">=</span> prog.variable<span class="o">(</span><span class="s1">&#39;ptype_base&#39;</span><span class="o">)</span>
+</span></span><span class="line"><span class="cl">&gt;&gt;&gt; ptype_base<span class="o">[</span>4<span class="o">]</span>
+</span></span><span class="line"><span class="cl"><span class="o">(</span>struct list_head<span class="o">){</span>
+</span></span><span class="line"><span class="cl">    .next <span class="o">=</span> <span class="o">(</span>struct list_head *<span class="o">)</span>ptype_base+0x40 <span class="o">=</span> 0xffffffff86e37000,
+</span></span><span class="line"><span class="cl">    .prev <span class="o">=</span> <span class="o">(</span>struct list_head *<span class="o">)</span>ptype_base+0x40 <span class="o">=</span> 0xffffffff86e37000,
+</span></span><span class="line"><span class="cl"><span class="o">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>确认：协议栈和设备都不支持 STP 协议包。</p>
+<h2 id="5-丢包根因">5. 丢包根因</h2>
+<p>通过 <code>ip link</code> 和 <code>bridge</code> 等命令确认：server 侧没有配置 bridge 设备。</p>
+<p>但为什么会收到 STP 协议包呢？</p>
+<p>直接咨询物理网络的同事，确认是交换机侧开启了 <code>stp edged-port enable</code> 配置，导致交换机定时向所有端口发送 STP 协议包。</p>
+<h2 id="6-总结">6. 总结</h2>
+<ol>
+<li><code>bond0</code> 的 <strong>RX-DRP</strong> 是由于收到了 bond 设备及其从设备都不支持的协议包，导致丢包了，并且统计到了 <code>bond0</code> 的 <code>rx_dropped</code>。</li>
+<li>通过 <code>bpfsnoop</code> 动态追踪 <code>bond_handle_frame</code> 函数，确认了 <code>bond0</code> 的收包处理逻辑。</li>
+<li>使用 <code>tcpdump</code> 抓包确认了收到的协议包是 STP 协议包。</li>
+</ol>
+<p><strong>Linux 网络经验++!</strong></p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2025-07-27
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/bpfsnoop/">bpfsnoop</a>
+      <a href="/%20tags/drgn/">drgn</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-153-bpfsnoop-v0.5.0/">
+        <span class="next-text nav-default">eBPF Talk: bpfsnoop v0.5.0 发布：实现 bpf 版本的 funcgraph 功能</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.leonhw.com/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2025<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

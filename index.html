@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-07-21T00:10:57+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-07-27T22:13:05+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,31 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-154-bond0-rx_dropped/">eBPF Talk: 排查 bond 设备丢包问题</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2025-07-27 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          <a href="/categories/linux-%E7%BD%91%E7%BB%9C/"> Linux 网络 </a>
+          </div>
+        <span class="more-meta"> 约 2511 字 </span>
+        <span class="more-meta"> 预计阅读 6 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      遇到个奇怪的丢包统计问题： 1 2 3 4 5 6 # netstat -i Kernel Interface table Iface MTU RX-OK RX-ERR RX-DRP RX-OVR TX-OK TX-ERR TX-DRP TX-OVR Flg bond0 1500 4714238062 0 9955805 0 4206040873 0 2 0 BMmRU ens1f0 1500 2145684247 0 3 0 1917444695 0 0 0 BMsRU ens1f1 1500 2568553815 0 0 0 2288596177 0 0 0 BMsRU 如
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-154-bond0-rx_dropped/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-153-bpfsnoop-v0.5.0/">eBPF Talk: bpfsnoop v0.5.0 发布：实现 bpf 版本的 funcgraph 功能</a></h1>
@@ -353,30 +378,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-145-lbr/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-144-dynamic-filter-func-arg/">eBPF Talk: 动态过滤函数参数</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2025-02-09 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 2995 字 </span>
-        <span class="more-meta"> 预计阅读 6 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在使用 bpf 追踪内核函数的时候，通常需要对函数参数进行过滤。 如果使用 bpftrace，可以很方便地在脚本里指定过滤条件；但 bpftrace 依赖 LLVM，很多时
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-144-dynamic-filter-func-arg/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
