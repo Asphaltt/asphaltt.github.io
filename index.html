@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-07-27T22:13:05+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-08-31T21:40:58+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,31 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-155-bpfsnoop-python-repl/">eBPF Talk: 使用 bpfsnoop 协助排查 Python REPL 异常</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2025-08-31 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          <a href="/categories/bpfsnoop/"> bpfsnoop </a>
+          </div>
+        <span class="more-meta"> 约 1446 字 </span>
+        <span class="more-meta"> 预计阅读 3 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      python/cpython: Running python REPL under another program + Ctrl-C results in an exception traceback Gray 大佬已排查到关键之处： As I mentioned, kernel forbids background processes to call tcsetattr(TCSADRAIN), so the following syscall for sure failed: 1 20:18:26 ioctl(3, TCGETS, ...}) = -1 EIO (Input/output error) &lt;0.000007&gt; 但但但是，我确实不知道内核会有如
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-155-bpfsnoop-python-repl/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-154-bond0-rx_dropped/">eBPF Talk: 排查 bond 设备丢包问题</a></h1>
@@ -354,30 +379,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-146-btrace-v0.2.0/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-145-lbr/">eBPF Talk: 使用 Last Branch Record 动态追踪内核函数</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2025-02-23 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1147 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      Last Branch Record，简称 LBR，是 CPU 提供的一种硬件功能，可以记录程序执行过程中的分支跳转信息；目前，Intel CPU、AMD CPU 均已支持 LBR 功能；
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-145-lbr/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

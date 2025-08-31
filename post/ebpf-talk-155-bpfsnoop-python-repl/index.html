@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 使用 bpfsnoop 协助排查 Python REPL 异常 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="python/cpython: Running python REPL under another program &#43; Ctrl-C results in an exception traceback Gray 大佬已排查到关键之处： As I mentioned, kernel forbids background processes to call tcsetattr(TCSADRAIN), so the following syscall for sure failed: 1 20:18:26 ioctl(3, TCGETS, ...}) = -1 EIO (Input/output error) &amp;lt;0.000007&amp;gt; 但但但是，我确实不知道内核会有如" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://blog.leonhw.com/post/ebpf-talk-155-bpfsnoop-python-repl/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 使用 bpfsnoop 协助排查 Python REPL 异常" />
+<meta property="og:description" content="python/cpython: Running python REPL under another program &#43; Ctrl-C results in an exception traceback Gray 大佬已排查到关键之处： As I mentioned, kernel forbids background processes to call tcsetattr(TCSADRAIN), so the following syscall for sure failed: 1 20:18:26 ioctl(3, TCGETS, ...}) = -1 EIO (Input/output error) &lt;0.000007&gt; 但但但是，我确实不知道内核会有如" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.leonhw.com/post/ebpf-talk-155-bpfsnoop-python-repl/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2025-08-31T21:40:58+08:00" />
+<meta property="article:modified_time" content="2025-08-31T21:40:58+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 使用 bpfsnoop 协助排查 Python REPL 异常">
+  <meta itemprop="description" content="python/cpython: Running python REPL under another program &#43; Ctrl-C results in an exception traceback Gray 大佬已排查到关键之处： As I mentioned, kernel forbids background processes to call tcsetattr(TCSADRAIN), so the following syscall for sure failed: 1 20:18:26 ioctl(3, TCGETS, ...}) = -1 EIO (Input/output error) &lt;0.000007&gt; 但但但是，我确实不知道内核会有如">
+  <meta itemprop="datePublished" content="2025-08-31T21:40:58+08:00">
+  <meta itemprop="dateModified" content="2025-08-31T21:40:58+08:00">
+  <meta itemprop="wordCount" content="1446">
+  <meta itemprop="keywords" content="EBPF,Bpfsnoop,Python"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 使用 bpfsnoop 协助排查 Python REPL 异常"/>
+<meta name="twitter:description" content="python/cpython: Running python REPL under another program &#43; Ctrl-C results in an exception traceback Gray 大佬已排查到关键之处： As I mentioned, kernel forbids background processes to call tcsetattr(TCSADRAIN), so the following syscall for sure failed: 1 20:18:26 ioctl(3, TCGETS, ...}) = -1 EIO (Input/output error) &lt;0.000007&gt; 但但但是，我确实不知道内核会有如"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 使用 bpfsnoop 协助排查 Python REPL 异常</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2025-08-31 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        <a href="/%20categories/bpfsnoop/"> bpfsnoop </a>
+        </div>
+      <span class="more-meta"> 约 1446 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#0-实验环境信息">0. 实验环境信息</a></li>
+        <li><a href="#1-确认系统调用结果">1. 确认系统调用结果</a></li>
+        <li><a href="#2-获取-__x64_sys_ioctl-的-funcgraph">2. 获取 <code>__x64_sys_ioctl</code> 的 funcgraph</a></li>
+        <li><a href="#3-获取-__x64_sys_ioctl-的-lbr">3. 获取 <code>__x64_sys_ioctl</code> 的 LBR</a></li>
+        <li><a href="#4-获取-tty_ioctl-的-funcgraph">4. 获取 <code>tty_ioctl</code> 的 funcgraph</a></li>
+        <li><a href="#5-获取-tty_check_change-的-funcgraph-和-lbr">5. 获取 <code>tty_check_change</code> 的 funcgraph 和 LBR</a></li>
+        <li><a href="#6-is_current_pgrp_orphaned">6. <code>is_current_pgrp_orphaned</code></a></li>
+        <li><a href="#7-结论">7. 结论</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <ul>
+<li><a href="https://github.com/python/cpython/issues/135329">python/cpython: Running python REPL under another program + Ctrl-C results in an exception traceback</a></li>
+</ul>
+<p>Gray 大佬已排查到关键之处：</p>
+<blockquote>
+<p>As I mentioned, kernel forbids background processes to call <code>tcsetattr(TCSADRAIN)</code>, so the following syscall for sure failed:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">20:18:26 ioctl<span class="o">(</span>3, TCGETS, ...<span class="o">})</span> <span class="o">=</span> -1 EIO <span class="o">(</span>Input/output error<span class="o">)</span> &lt;0.000007&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div></blockquote>
+<p>但但但是，我确实不知道内核会有如此行为，也不知道内核为什么要这样做。</p>
+<p>那么，问题就变成：<code>ioctl</code> 系统调用为什么返回了 <code>-EIO</code> 呢？</p>
+<p>将问题泛化一下，就是 Gray 大佬困惑多年的难题：如何排查系统调用返回错误的原因？</p>
+<p>以这次 <code>ioctl</code> 系统调用返回 <code>-EIO</code> 为例，使用 <a href="https://github.com/bpfsnoop/bpfsnoop">bpfsnoop</a> 排查其原因。</p>
+<p>English version: <a href="https://github.com/python/cpython/issues/135329#issuecomment-3235826338">python/cpython#ssues/135329#issuecomment-3235826338</a>.</p>
+<h2 id="0-实验环境信息">0. 实验环境信息</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ lsb_release -a
+</span></span><span class="line"><span class="cl">Distributor ID: Ubuntu
+</span></span><span class="line"><span class="cl">Description:    Ubuntu 24.04.1 LTS
+</span></span><span class="line"><span class="cl">Release:    24.04
+</span></span><span class="line"><span class="cl">Codename:   noble
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ uname -a
+</span></span><span class="line"><span class="cl">Linux HOSTNAME 6.6.0-47.XXX <span class="c1">#47~24.04 SMP Fri Dec 20 16:05:43 +08 2024 x86_64 x86_64 x86_64 GNU/Linux</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ dmesg <span class="p">|</span> grep -i lbr
+</span></span><span class="line"><span class="cl"><span class="o">[</span>   13.116840<span class="o">]</span> Performance Events: PEBS fmt3+, Skylake events, 32-deep LBR, full-width counters, Intel PMU driver.
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">$ apt info linux-image-<span class="k">$(</span>uname -r<span class="k">)</span>-dbgsym
+</span></span><span class="line"><span class="cl">Package: linux-image-6.6.0-47.XXX-dbgsym
+</span></span><span class="line"><span class="cl">Version: 6.6.0-47.XXX~24.04
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中：</p>
+<ol>
+<li><strong>LBR:</strong> Intel CPU 提供的 Last Branch Record 功能，用于记录最近的分支信息。</li>
+<li><strong>dbgsym:</strong> 内核调试符号包，用于 <code>bpfsnoop</code> 获取内核函数的源码行号信息。</li>
+<li><strong>内核版本：</strong> <strong>v5.17+</strong> 才能支持 <code>bpf_get_branch_snapshot()</code> helper。</li>
+</ol>
+<h2 id="1-确认系统调用结果">1. 确认系统调用结果</h2>
+<blockquote>
+<p>已知有问题的 Python 进程 PID 为 <strong>289473</strong>。</p>
+</blockquote>
+<p>确认内核态 <code>ioctl</code> 系统调用的返回值：</p>
+<p><img src="/eBPF_Talk_155___x64_sys_ioctl_return_-5.png" alt="ioctl return -5"></p>
+<p><code>-5</code> 就是 <code>-EIO</code>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ errno -l
+</span></span><span class="line"><span class="cl">EIO <span class="m">5</span> Input/output error
+</span></span></code></pre></td></tr></table>
+</div>
+</div><h2 id="2-获取-__x64_sys_ioctl-的-funcgraph">2. 获取 <code>__x64_sys_ioctl</code> 的 funcgraph</h2>
+<p>并不清楚 <code>__x64_sys_ioctl</code> 会调用哪些函数。</p>
+<p>而 ftrace 的 <a href="https://docs.kernel.org/trace/ftrace.html">function_graph tracer</a> 可以帮助我们获取函数调用的图谱信息。</p>
+<p>然而，更偏爱 <code>bpfsnoop</code> 的 funcgraph 功能：</p>
+<p><img src="/eBPF_Talk_155__sys_ioctl_funcgraph.png" alt="__x64_sys_ioctl funcgraph"></p>
+<p>非常不幸，得到的 funcgraph 信息并没什么用处。这是因为 <code>bpfsnoop</code> funcgraph 功能无法跟踪间接调用的函数。</p>
+<p>该如何突破这个限制呢？</p>
+<h2 id="3-获取-__x64_sys_ioctl-的-lbr">3. 获取 <code>__x64_sys_ioctl</code> 的 LBR</h2>
+<p>Intel CPU 的 LBR 功能正是为此而存在：</p>
+<p><img src="/eBPF_Talk_155_sys_ioctl_lbr.png" alt="__x64_sys_ioctl LBR"></p>
+<p>完美！</p>
+<p>从中可以看出：<code>tty_ioctl</code> 正是藏在 <code>__x64_sys_ioctl</code> 背后的函数。</p>
+<h2 id="4-获取-tty_ioctl-的-funcgraph">4. 获取 <code>tty_ioctl</code> 的 funcgraph</h2>
+<p>那么，具体是哪个函数返回了 <code>-5</code> 呢？</p>
+<p><img src="/eBPF_Talk_155_tty_ioctl_funcgraph.png" alt="tty_ioctl funcgraph"></p>
+<p>关注每个函数的返回值，找到返回 <code>-5</code> 的那个：正是 <code>tty_check_change</code>。</p>
+<h2 id="5-获取-tty_check_change-的-funcgraph-和-lbr">5. 获取 <code>tty_check_change</code> 的 funcgraph 和 LBR</h2>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">$ sudo ./bpfsnoop -k <span class="s1">&#39;tty_check_change&#39;</span> --output-fgraph --filter-pid <span class="m">289473</span> --limit-events <span class="m">10</span>
+</span></span><span class="line"><span class="cl">→ tty_check_change <span class="nv">args</span><span class="o">=((</span>struct tty_struct *<span class="o">)</span><span class="nv">tty</span><span class="o">=</span>0xffff888a9ea77000<span class="o">)</span> <span class="nv">cpu</span><span class="o">=</span><span class="m">20</span> <span class="nv">process</span><span class="o">=(</span>289473:python<span class="o">)</span> <span class="nv">timestamp</span><span class="o">=</span>12:10:00.98960753
+</span></span><span class="line"><span class="cl">← tty_check_change <span class="nv">args</span><span class="o">=((</span>struct tty_struct *<span class="o">)</span><span class="nv">tty</span><span class="o">=</span>0xffff888a9ea77000<span class="o">)</span> <span class="nv">retval</span><span class="o">=(</span>int<span class="o">)</span>-5 <span class="nv">cpu</span><span class="o">=</span><span class="m">20</span> <span class="nv">process</span><span class="o">=(</span>289473:python<span class="o">)</span> <span class="nv">duration</span><span class="o">=</span>3.294µs <span class="nv">timestamp</span><span class="o">=</span>12:10:00.989620588
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><img src="/eBPF_Talk_155_tty_check_change_lbr.png" alt="tty_check_change funcgraph&amp;LBR"></p>
+<p>关注圈出来的那几条记录。</p>
+<p>先看下 <code>tty_check_change</code> 的源代码 <a href="https://github.com/gregkh/linux/blob/4c1a2d4cd9a5b6c55739a80c5b9efbca322adad7/drivers/tty/tty_jobctrl.c#L72">tty_jobctrl.c</a>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl">  <span class="mi">33</span>   <span class="err">│</span> <span class="kt">int</span> <span class="nf">__tty_check_change</span><span class="p">(</span><span class="k">struct</span> <span class="n">tty_struct</span> <span class="o">*</span><span class="n">tty</span><span class="p">,</span> <span class="kt">int</span> <span class="n">sig</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">34</span>   <span class="err">│</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">35</span>   <span class="err">│</span>         <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">flags</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">36</span>   <span class="err">│</span>         <span class="k">struct</span> <span class="n">pid</span> <span class="o">*</span><span class="n">pgrp</span><span class="p">,</span> <span class="o">*</span><span class="n">tty_pgrp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">37</span>   <span class="err">│</span>         <span class="kt">int</span> <span class="n">ret</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">38</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">39</span>   <span class="err">│</span>         <span class="k">if</span> <span class="p">(</span><span class="n">current</span><span class="o">-&gt;</span><span class="n">signal</span><span class="o">-&gt;</span><span class="n">tty</span> <span class="o">!=</span> <span class="n">tty</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">40</span>   <span class="err">│</span>                 <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">41</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">42</span>   <span class="err">│</span>         <span class="nf">rcu_read_lock</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">43</span>   <span class="err">│</span>         <span class="n">pgrp</span> <span class="o">=</span> <span class="nf">task_pgrp</span><span class="p">(</span><span class="n">current</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">44</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">45</span>   <span class="err">│</span>         <span class="nf">spin_lock_irqsave</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tty</span><span class="o">-&gt;</span><span class="n">ctrl</span><span class="p">.</span><span class="n">lock</span><span class="p">,</span> <span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">46</span>   <span class="err">│</span>         <span class="n">tty_pgrp</span> <span class="o">=</span> <span class="n">tty</span><span class="o">-&gt;</span><span class="n">ctrl</span><span class="p">.</span><span class="n">pgrp</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">47</span>   <span class="err">│</span>         <span class="nf">spin_unlock_irqrestore</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tty</span><span class="o">-&gt;</span><span class="n">ctrl</span><span class="p">.</span><span class="n">lock</span><span class="p">,</span> <span class="n">flags</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">48</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">49</span>   <span class="err">│</span>         <span class="k">if</span> <span class="p">(</span><span class="n">tty_pgrp</span> <span class="o">&amp;&amp;</span> <span class="n">pgrp</span> <span class="o">!=</span> <span class="n">tty_pgrp</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">50</span>   <span class="err">│</span>                 <span class="k">if</span> <span class="p">(</span><span class="nf">is_ignored</span><span class="p">(</span><span class="n">sig</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">51</span>   <span class="err">│</span>                         <span class="k">if</span> <span class="p">(</span><span class="n">sig</span> <span class="o">==</span> <span class="n">SIGTTIN</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">52</span>   <span class="err">│</span>                                 <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="n">EIO</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">53</span>   <span class="err">│</span>                 <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nf">is_current_pgrp_orphaned</span><span class="p">())</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">54</span>   <span class="err">│</span>                         <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="n">EIO</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">55</span>   <span class="err">│</span>                 <span class="k">else</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">56</span>   <span class="err">│</span>                         <span class="nf">kill_pgrp</span><span class="p">(</span><span class="n">pgrp</span><span class="p">,</span> <span class="n">sig</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">57</span>   <span class="err">│</span>                         <span class="nf">set_thread_flag</span><span class="p">(</span><span class="n">TIF_SIGPENDING</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">58</span>   <span class="err">│</span>                         <span class="n">ret</span> <span class="o">=</span> <span class="o">-</span><span class="n">ERESTARTSYS</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">59</span>   <span class="err">│</span>                 <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">60</span>   <span class="err">│</span>         <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">61</span>   <span class="err">│</span>         <span class="nf">rcu_read_unlock</span><span class="p">();</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">62</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">63</span>   <span class="err">│</span>         <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">tty_pgrp</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">64</span>   <span class="err">│</span>                 <span class="nf">tty_warn</span><span class="p">(</span><span class="n">tty</span><span class="p">,</span> <span class="s">&#34;sig=%d, tty-&gt;pgrp == NULL!</span><span class="se">\n</span><span class="s">&#34;</span><span class="p">,</span> <span class="n">sig</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">65</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">66</span>   <span class="err">│</span>         <span class="k">return</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">67</span>   <span class="err">│</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">68</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">69</span>   <span class="err">│</span> <span class="kt">int</span> <span class="nf">tty_check_change</span><span class="p">(</span><span class="k">struct</span> <span class="n">tty_struct</span> <span class="o">*</span><span class="n">tty</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">70</span>   <span class="err">│</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">71</span>   <span class="err">│</span>         <span class="k">return</span> <span class="nf">__tty_check_change</span><span class="p">(</span><span class="n">tty</span><span class="p">,</span> <span class="n">SIGTTOU</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">  <span class="mi">72</span>   <span class="err">│</span> <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>LBR 记录直接明了地告知了 <code>-EIO</code> 的出处。</p>
+<h2 id="6-is_current_pgrp_orphaned">6. <code>is_current_pgrp_orphaned</code></h2>
+<p>看下 <code>is_current_pgrp_orphaned</code> 的源代码 <a href="https://github.com/gregkh/linux/blob/4c1a2d4cd9a5b6c55739a80c5b9efbca322adad7/kernel/exit.c#L345">exit.c</a>:</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-C" data-lang="C"><span class="line"><span class="cl"> <span class="mi">318</span>   <span class="err">│</span> <span class="cm">/*
+</span></span></span><span class="line"><span class="cl"><span class="cm"> 319   │  * Determine if a process group is &#34;orphaned&#34;, according to the POSIX
+</span></span></span><span class="line"><span class="cl"><span class="cm"> 320   │  * definition in 2.2.2.52.  Orphaned process groups are not to be affected
+</span></span></span><span class="line"><span class="cl"><span class="cm"> 321   │  * by terminal-generated stop signals.  Newly orphaned process groups are
+</span></span></span><span class="line"><span class="cl"><span class="cm"> 322   │  * to receive a SIGHUP and a SIGCONT.
+</span></span></span><span class="line"><span class="cl"><span class="cm"> 323   │  *
+</span></span></span><span class="line"><span class="cl"><span class="cm"> 324   │  * &#34;I ask you, have you ever known what it is to be an orphan?&#34;
+</span></span></span><span class="line"><span class="cl"><span class="cm"> 325   │  */</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">326</span>   <span class="err">│</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">will_become_orphaned_pgrp</span><span class="p">(</span><span class="k">struct</span> <span class="n">pid</span> <span class="o">*</span><span class="n">pgrp</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">327</span>   <span class="err">│</span>                                      <span class="k">struct</span> <span class="n">task_struct</span> <span class="o">*</span><span class="n">ignored_task</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">328</span>   <span class="err">│</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">329</span>   <span class="err">│</span>         <span class="k">struct</span> <span class="n">task_struct</span> <span class="o">*</span><span class="n">p</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">330</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">331</span>   <span class="err">│</span>         <span class="nf">do_each_pid_task</span><span class="p">(</span><span class="n">pgrp</span><span class="p">,</span> <span class="n">PIDTYPE_PGID</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">332</span>   <span class="err">│</span>                 <span class="k">if</span> <span class="p">((</span><span class="n">p</span> <span class="o">==</span> <span class="n">ignored_task</span><span class="p">)</span> <span class="o">||</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">333</span>   <span class="err">│</span>                     <span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">exit_state</span> <span class="o">&amp;&amp;</span> <span class="nf">thread_group_empty</span><span class="p">(</span><span class="n">p</span><span class="p">))</span> <span class="o">||</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">334</span>   <span class="err">│</span>                     <span class="nf">is_global_init</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">real_parent</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">335</span>   <span class="err">│</span>                         <span class="k">continue</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">336</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">337</span>   <span class="err">│</span>                 <span class="k">if</span> <span class="p">(</span><span class="nf">task_pgrp</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">real_parent</span><span class="p">)</span> <span class="o">!=</span> <span class="n">pgrp</span> <span class="o">&amp;&amp;</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">338</span>   <span class="err">│</span>                     <span class="nf">task_session</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">real_parent</span><span class="p">)</span> <span class="o">==</span> <span class="nf">task_session</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">339</span>   <span class="err">│</span>                         <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">340</span>   <span class="err">│</span>         <span class="p">}</span> <span class="nf">while_each_pid_task</span><span class="p">(</span><span class="n">pgrp</span><span class="p">,</span> <span class="n">PIDTYPE_PGID</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">341</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">342</span>   <span class="err">│</span>         <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">343</span>   <span class="err">│</span> <span class="p">}</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">344</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">345</span>   <span class="err">│</span> <span class="kt">int</span> <span class="nf">is_current_pgrp_orphaned</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">346</span>   <span class="err">│</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">347</span>   <span class="err">│</span>         <span class="kt">int</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">348</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">349</span>   <span class="err">│</span>         <span class="nf">read_lock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tasklist_lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">350</span>   <span class="err">│</span>         <span class="n">retval</span> <span class="o">=</span> <span class="nf">will_become_orphaned_pgrp</span><span class="p">(</span><span class="nf">task_pgrp</span><span class="p">(</span><span class="n">current</span><span class="p">),</span> <span class="nb">NULL</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">351</span>   <span class="err">│</span>         <span class="nf">read_unlock</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tasklist_lock</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">352</span>   <span class="err">│</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">353</span>   <span class="err">│</span>         <span class="k">return</span> <span class="n">retval</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"> <span class="mi">354</span>   <span class="err">│</span> <span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>惊喜发现：<code>will_become_orphaned_pgrp</code> 的注释解释了内核对待孤儿进程组的策略。</p>
+<h2 id="7-结论">7. 结论</h2>
+<p><code>ioctl</code> 系统调用返回 <code>-EIO</code> 的原因是：当前进程的父进程组是孤儿进程组。</p>
+<h2 id="小结">小结</h2>
+<p>对系统调用返回错误的情况，可以使用 <code>bpfsnoop</code> 进行排查：</p>
+<ol>
+<li><strong>funcgraph 功能 (<code>--output-fgraph</code>)：</strong> 可以便捷地了解到目标函数会调用哪些函数。</li>
+<li><strong>LBR 功能 (<code>--output-lbr</code>)：</strong> 借助于 CPU 提供的 LBR 能力，突破 funcgraph 功能缺陷，能够追踪到代码逻辑分支记录。</li>
+<li><strong>funcstack 功能 (<code>--output-stack</code>)：</strong> 可以获取到目标函数的函数调用栈记录，帮助分析函数调用关系。</li>
+<li><strong>funcinsn 功能 (<code>--output-insns</code>)：</strong> 可以获取到目标函数的指令级别的执行记录，帮助分析目标函数具体的执行过程。</li>
+</ol>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2025-08-31
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <h1 align="left">知识星球</h1>
+    <h5 align="left">星球里的专栏：</h5>
+    <h5 align="left">《XDP 进阶手册》</h5>
+    <img align="center" src="/zhishixingqiu.png" alt="
+    知识星球" style="height: 200px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/bpfsnoop/">bpfsnoop</a>
+      <a href="/%20tags/python/">Python</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-154-bond0-rx_dropped/">
+        <span class="next-text nav-default">eBPF Talk: 排查 bond 设备丢包问题</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.leonhw.com/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2025<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

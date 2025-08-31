@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Bpfsnoop on LeonHwang&#39;s Blogs</title>
+    <link>https://blog.leonhw.com/categories/bpfsnoop/</link>
+    <description>Recent content in Bpfsnoop on LeonHwang&#39;s Blogs</description>
+    <generator>Hugo 0.125.0-DEV</generator>
+    <language>zh</language>
+    <copyright>Leon Hwang</copyright>
+    <lastBuildDate>Sun, 31 Aug 2025 21:40:58 +0800</lastBuildDate>
+    <atom:link href="https://blog.leonhw.com/categories/bpfsnoop/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 使用 bpfsnoop 协助排查 Python REPL 异常</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-155-bpfsnoop-python-repl/</link>
+      <pubDate>Sun, 31 Aug 2025 21:40:58 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-155-bpfsnoop-python-repl/</guid>
+      <description>python/cpython: Running python REPL under another program + Ctrl-C results in an exception traceback Gray 大佬已排查到关键之处： As I mentioned, kernel forbids background processes to call tcsetattr(TCSADRAIN), so the following syscall for sure failed: 1 20:18:26 ioctl(3, TCGETS, ...}) = -1 EIO (Input/output error) &amp;lt;0.000007&amp;gt; 但但但是，我确实不知道内核会有如</description>
+    </item>
+  </channel>
+</rss>

@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-07-27T22:13:05+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2025-08-31T21:40:58+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-73-verifier-finite-loop/">eBPF Talk: verifier 支持有限循环</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 215 字 </span>
+        <span class="more-meta"> 预计阅读 1 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      verifier 支持有限循环后，我们不再需要 #pragma unroll 将 for 循环展开了，留给 clang 编译器决定即可。 bpf: introduce bounded loops since 5.3 kernel. 也就是，eBPF Talk: binary search 里的 __should_delay_sip() 函数里不再需要 #pragma clang loop unroll(full) 了。
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-73-verifier-finite-loop/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-72-challenge-verifier/">eBPF Talk: challenge verifier</a></h1>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-64-metadata-from-xdp-to-af_xdp/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-63-helpers-for-bpf-map/">eBPF Talk: helpers for bpf map</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-04-03 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1018 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      通过学习 eBPF Talk: eBPF helpers 的另一面，我们知道 eBPF helpers 是通过 bpf_func_proto 结构体来实现的，不同的 helpers 函数对应不同的 bpf_func_proto；甚至，对于同一个 helpers 函数，不
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-63-helpers-for-bpf-map/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
