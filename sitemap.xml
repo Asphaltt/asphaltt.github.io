@@ -30,7 +30,14 @@
   </url>
   
   <url>
-    <loc>https://blog.leonhw.com/categories/linux/</loc>
+    <loc>https://blog.leonhw.com/tags/linux-%E7%BD%91%E7%BB%9C/</loc>
+    <lastmod>2025-11-23T23:32:18+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/categories/linux-%E7%BD%91%E7%BB%9C/</loc>
     <lastmod>2025-11-23T23:32:18+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -122,13 +129,6 @@
   
   <url>
     <loc>https://blog.leonhw.com/post/ebpf-talk-154-bond0-rx_dropped/</loc>
-    <lastmod>2025-07-27T22:13:05+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://blog.leonhw.com/categories/linux-%E7%BD%91%E7%BB%9C/</loc>
     <lastmod>2025-07-27T22:13:05+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -1159,6 +1159,13 @@
   <url>
     <loc>https://blog.leonhw.com/post/ebpf-talk-74-introduce-bpf_iter/</loc>
     <lastmod>2024-04-03T23:14:50+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/categories/linux/</loc>
+    <lastmod>2024-04-03T23:13:16+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
