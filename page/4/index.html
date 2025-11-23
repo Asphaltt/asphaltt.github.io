@@ -143,6 +143,30 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-125-xdp-crc/">eBPF Talk: 手撕 verifier log 一例</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-07-28 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1704 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      Ziv Chow 在微信群里问了个 verifier 的问题，一眼看上去肯定是 bpf 代码写得有问题，但是问题具体在哪里呢？ 数组访问 如上图，crc16tab[key] 访问 crc16tab 数组时
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-125-xdp-crc/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-124-tailcall-hierarchy/">eBPF Talk: 耗时 10 个月，修复了又一个 tailcall 的 bug</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2024-07-21 </span>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-116-upgrade-xdp-costlessly/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-115-introduce-vista/">eBPF Talk: pwru 继承者 vista</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-05-26 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1616 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      花了点时间，将 pwru、skbtracer-iptables、 socketrace 和几个 TCP bpftrace 脚本缝合了起来，形成了一个新的工具，叫做 vista。 GitHub: vista vista 简介 1 2
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-115-introduce-vista/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

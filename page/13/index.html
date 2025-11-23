@@ -143,6 +143,30 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-37-loop/">eBPF Talk: 实战经验之 loop</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2023-05-23 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1821 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      最近刚好打算使用 for 遍历 CIDR 数组的方式替换性能较差的 LPM trie bpf map，就顺便总结一下 loop 相关经验。 在 eBPF 中，出于性能、安全考虑，并不支持无限循环。这并不
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-37-loop/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-36-xdp-redirect-to-af_xdp/">eBPF Talk: XDP redirect to AF_XDP</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2023-05-23 </span>
@@ -353,30 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-28-xdp-on-veth/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-27-xdp-metadata-in-action/">eBPF Talk: XDP metadata 实战指南</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2023-05-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1290 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      最近需要在两个 XDP 程序之间传递一个最简单的信息，原本想着使用使用一个 bpf map 来传递。经过同事提醒，有 XDP metadata 可以用来传递简单信息，我便解锁了 XDP metadata 技术。
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-27-xdp-metadata-in-action/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

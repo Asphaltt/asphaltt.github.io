@@ -143,6 +143,29 @@
           <section id="posts" class="posts">
     <article class="post">
   <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/linux-networking-6-inflight-page/">Linux 网络：让 page 飞</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2025-11-23 </span>
+      <div class="post-category">
+          <a href="/categories/linux/"> Linux </a>
+          </div>
+        <span class="more-meta"> 约 6953 字 </span>
+        <span class="more-meta"> 预计阅读 14 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      在努力排查一个网络设备相关的问题；终不负期望，排查出根因了。 现象是 dmesg 里不停地打印以下日志： 1 page_pool_release_retry() stalled pool shutdown 1 inflight 2899 sec 根因：Kafka Go library IBM/sarama 存在 tcp 连接
+    </div>
+    <div class="read-more">
+      <a href="/post/linux-networking-6-inflight-page/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
+    <article class="post">
+  <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-155-bpfsnoop-python-repl/">eBPF Talk: 使用 bpfsnoop 协助排查 Python REPL 异常</a></h1>
     <div class="post-meta">
       <span class="post-time"> 2025-08-31 </span>
@@ -355,30 +378,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-146-btrace-v0.2.0/">eBPF Talk: btrace v0.2.0 发布</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2025-03-09 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1269 字 </span>
-        <span class="more-meta"> 预计阅读 3 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      btrace 是什么？btrace 是一款 bpf 时代的现代化内核函数动态追踪工具。 btrace 重命名自 bpflbr，参考 eBPF Talk: 使用 Last Branch Record 动态追踪内核函数，在 bpflbr v0.1.0 的基础上，
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-146-btrace-v0.2.0/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
