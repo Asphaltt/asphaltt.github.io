@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 23 Nov 2025 23:32:18 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 12 Jan 2026 00:08:00 +0800</lastBuildDate>
     <atom:link href="https://blog.leonhw.com/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 新增 BPF_F_CPU 和 BPF_F_ALL_CPUS flag</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-156-percpu-map-flags/</link>
+      <pubDate>Mon, 12 Jan 2026 00:08:00 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-156-percpu-map-flags/</guid>
+      <description>给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU + cpu 指定查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU + cpu 指定更新指定 CPU 上的值。 update_elem()</description>
+    </item>
     <item>
       <title>Linux 网络：让 page 飞</title>
       <link>https://blog.leonhw.com/post/linux-networking-6-inflight-page/</link>

@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2025-11-23T23:32:18+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2026-01-12T00:08:00+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-156-percpu-map-flags/">eBPF Talk: 新增 BPF_F_CPU 和 BPF_F_ALL_CPUS flag</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2026-01-12 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 709 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU + cpu 指定查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU + cpu 指定更新指定 CPU 上的值。 update_elem()
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-156-percpu-map-flags/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/linux-networking-6-inflight-page/">Linux 网络：让 page 飞</a></h1>
@@ -358,30 +382,6 @@
   </div>
 </article>
 
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/">eBPF Talk: tracepoint vs raw_tp/tp_btf vs kprobe vs fentry/fexit 静态地对比运行时性能</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2025-03-17 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 3709 字 </span>
-        <span class="more-meta"> 预计阅读 8 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      凑个热闹，静态地对比一下 tracepoint、raw_tp/tp_btf、kprobe 和 fentry/fexit 四种 bpf 动态追踪技术的运行时性能。 eBPF代码性能调
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-147-tracepoint-vs-raw_tp-tp_btf-vs-kprobe-vs-fentry-fexit/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
     </section>
   
   <nav class="pagination">
@@ -423,7 +423,7 @@
   <span class="copyright-year">
     &copy;
     2021 -
-    2025<span class="heart"><i class="iconfont icon-heart"></i></span>
+    2026<span class="heart"><i class="iconfont icon-heart"></i></span>
     
     <span> Leon Hwang </span>
   </span>

@@ -2,21 +2,91 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://blog.leonhw.com/tags/bpfsnoop/</loc>
-    <lastmod>2025-11-23T23:32:18+08:00</lastmod>
+    <loc>https://blog.leonhw.com/categories/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
-    <loc>https://blog.leonhw.com/categories/</loc>
-    <lastmod>2025-11-23T23:32:18+08:00</lastmod>
+    <loc>https://blog.leonhw.com/tags/ebpf/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/categories/ebpf/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/categories/ebpf-talk/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/post/ebpf-talk-156-percpu-map-flags/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   
   <url>
     <loc>https://blog.leonhw.com/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/tags/lru-percpu-hash-map/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/tags/percpu-array-map/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/tags/percpu-cgroup-storage/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/tags/percpu-hash-map/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/post/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/tags/</loc>
+    <lastmod>2026-01-12T00:08:00+08:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://blog.leonhw.com/tags/bpfsnoop/</loc>
     <lastmod>2025-11-23T23:32:18+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
@@ -58,20 +128,6 @@
   </url>
   
   <url>
-    <loc>https://blog.leonhw.com/post/</loc>
-    <lastmod>2025-11-23T23:32:18+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://blog.leonhw.com/tags/</loc>
-    <lastmod>2025-11-23T23:32:18+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
     <loc>https://blog.leonhw.com/tags/tcp/</loc>
     <lastmod>2025-11-23T23:32:18+08:00</lastmod>
     <changefreq>weekly</changefreq>
@@ -80,27 +136,6 @@
   
   <url>
     <loc>https://blog.leonhw.com/categories/bpfsnoop/</loc>
-    <lastmod>2025-08-31T21:40:58+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://blog.leonhw.com/tags/ebpf/</loc>
-    <lastmod>2025-08-31T21:40:58+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://blog.leonhw.com/categories/ebpf/</loc>
-    <lastmod>2025-08-31T21:40:58+08:00</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  
-  <url>
-    <loc>https://blog.leonhw.com/categories/ebpf-talk/</loc>
     <lastmod>2025-08-31T21:40:58+08:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
