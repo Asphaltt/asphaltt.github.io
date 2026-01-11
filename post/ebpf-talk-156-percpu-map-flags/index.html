@@ -52,7 +52,7 @@
   <meta itemprop="description" content="给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU &#43; cpu 查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU &#43; cpu 更新指定 CPU 上的值。 update_elem() 时，可以">
   <meta itemprop="datePublished" content="2026-01-12T00:08:00+08:00">
   <meta itemprop="dateModified" content="2026-01-12T00:08:00+08:00">
-  <meta itemprop="wordCount" content="705">
+  <meta itemprop="wordCount" content="706">
   <meta itemprop="keywords" content="EBPF,Percpu Array Map,Percpu Hash Map,Lru Percpu Hash Map,Percpu Cgroup Storage"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 新增 BPF_F_CPU 和 BPF_F_ALL_CPUS flag"/>
 <meta name="twitter:description" content="给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU &#43; cpu 查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU &#43; cpu 更新指定 CPU 上的值。 update_elem() 时，可以"/>
 
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 705 字 </span>
+      <span class="more-meta"> 约 706 字 </span>
       <span class="more-meta"> 预计阅读 2 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -380,13 +380,13 @@
 </span></span></code></pre></td></tr></table>
 </div>
 </div><h2 id="题外">题外</h2>
-<p>顺手修复了给 HASH maps <code>update_elem()</code> 时泄漏 <em>特殊字段</em> 的问题。</p>
+<p>顺手修复了给 PERCPU HASH maps <code>update_elem()</code> 时泄漏 <em>特殊字段</em> 的问题。</p>
 <p>即，如果在 <code>value</code> 里使用了 <code>bpf_timer</code> 这类字段时，<code>update_elem()</code> 不会释放已有的
 <code>bpf_timer</code> 字段；要等到 <code>value</code> 被删除、或者整个 map 被销毁时，才会被释放。</p>
 <h2 id="小结">小结</h2>
 <p>其实，该补丁集历经了半年多、一共 13 个版本才合入社区。</p>
 <p>在这个过程中，逐渐熟悉了社区的代码品味；期间，也经历了社区 AI review 的建设过程。</p>
-<p>苦痛中成长，也收获满满。</p>
+<p>痛苦中成长，也收获满满。</p>
 
   </div>
 
