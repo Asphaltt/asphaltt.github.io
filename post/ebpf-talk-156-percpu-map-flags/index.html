@@ -17,7 +17,7 @@
 
 
 <meta name="author"
-  content="" /><meta name="description" content="给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU &#43; cpu 指定查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU &#43; cpu 指定更新指定 CPU 上的值。 update_elem()" /><meta name="keywords"
+  content="" /><meta name="description" content="给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU &#43; cpu 查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU &#43; cpu 更新指定 CPU 上的值。 update_elem() 时，可以" /><meta name="keywords"
   content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
 
 
@@ -42,19 +42,19 @@
 
 
 <meta property="og:title" content="eBPF Talk: 新增 BPF_F_CPU 和 BPF_F_ALL_CPUS flag" />
-<meta property="og:description" content="给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU &#43; cpu 指定查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU &#43; cpu 指定更新指定 CPU 上的值。 update_elem()" />
+<meta property="og:description" content="给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU &#43; cpu 查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU &#43; cpu 更新指定 CPU 上的值。 update_elem() 时，可以" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://blog.leonhw.com/post/ebpf-talk-156-percpu-map-flags/" /><meta property="article:section" content="post" />
 <meta property="article:published_time" content="2026-01-12T00:08:00+08:00" />
 <meta property="article:modified_time" content="2026-01-12T00:08:00+08:00" />
 
   <meta itemprop="name" content="eBPF Talk: 新增 BPF_F_CPU 和 BPF_F_ALL_CPUS flag">
-  <meta itemprop="description" content="给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU &#43; cpu 指定查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU &#43; cpu 指定更新指定 CPU 上的值。 update_elem()">
+  <meta itemprop="description" content="给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU &#43; cpu 查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU &#43; cpu 更新指定 CPU 上的值。 update_elem() 时，可以">
   <meta itemprop="datePublished" content="2026-01-12T00:08:00+08:00">
   <meta itemprop="dateModified" content="2026-01-12T00:08:00+08:00">
-  <meta itemprop="wordCount" content="709">
+  <meta itemprop="wordCount" content="705">
   <meta itemprop="keywords" content="EBPF,Percpu Array Map,Percpu Hash Map,Lru Percpu Hash Map,Percpu Cgroup Storage"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 新增 BPF_F_CPU 和 BPF_F_ALL_CPUS flag"/>
-<meta name="twitter:description" content="给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU &#43; cpu 指定查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU &#43; cpu 指定更新指定 CPU 上的值。 update_elem()"/>
+<meta name="twitter:description" content="给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU &#43; cpu 查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU &#43; cpu 更新指定 CPU 上的值。 update_elem() 时，可以"/>
 
 
 <!--[if lte IE 9]>
@@ -154,7 +154,7 @@
         <a href="/%20categories/ebpf/"> eBPF </a>
         <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
         </div>
-      <span class="more-meta"> 约 709 字 </span>
+      <span class="more-meta"> 约 705 字 </span>
       <span class="more-meta"> 预计阅读 2 分钟 </span>
       <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
     </div>
@@ -188,8 +188,8 @@
 </ul>
 <p>这 2 个 flag 的作用：</p>
 <ul>
-<li><code>lookup_elem()</code> 时，可以通过 <code>BPF_F_CPU</code> + <code>cpu</code> 指定查询指定 CPU 上的值。</li>
-<li><code>update_elem()</code> 时，可以通过 <code>BPF_F_CPU</code> + <code>cpu</code> 指定更新指定 CPU 上的值。</li>
+<li><code>lookup_elem()</code> 时，可以通过 <code>BPF_F_CPU</code> + <code>cpu</code> 查询指定 CPU 上的值。</li>
+<li><code>update_elem()</code> 时，可以通过 <code>BPF_F_CPU</code> + <code>cpu</code> 更新指定 CPU 上的值。</li>
 <li><code>update_elem()</code> 时，可以通过 <code>BPF_F_ALL_CPUS</code> 使用一个 <code>value</code> 更新所有 CPU 上的值。</li>
 </ul>
 <h2 id="背景">背景</h2>

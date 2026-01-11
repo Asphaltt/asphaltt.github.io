@@ -150,14 +150,14 @@
           <a href="/categories/ebpf/"> eBPF </a>
           <a href="/categories/ebpf-talk/"> eBPF Talk </a>
           </div>
-        <span class="more-meta"> 约 709 字 </span>
+        <span class="more-meta"> 约 705 字 </span>
         <span class="more-meta"> 预计阅读 2 分钟 </span>
     </div>
   </header>
   
   <div class="post-content">
     <div class="post-summary">
-      给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU + cpu 指定查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU + cpu 指定更新指定 CPU 上的值。 update_elem()
+      给以下 bpf maps 增加了 BPF_F_CPU 和 BPF_F_ALL_CPUS flag 支持： BPF_MAP_TYPE_PERCPU_ARRAY BPF_MAP_TYPE_PERCPU_HASH BPF_MAP_TYPE_LRU_PERCPU_HASH BPF_MAP_TYPE_PERCPU_CGROUP_STORAGE 这 2 个 flag 的作用： lookup_elem() 时，可以通过 BPF_F_CPU + cpu 查询指定 CPU 上的值。 update_elem() 时，可以通过 BPF_F_CPU + cpu 更新指定 CPU 上的值。 update_elem() 时，可以
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-156-percpu-map-flags/" class="read-more-link">阅读更多</a>
