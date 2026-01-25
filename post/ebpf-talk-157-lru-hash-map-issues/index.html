@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: LRU hash map 的问题以及。。。 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="在开发 percpu map CPU flags 补丁集的过程中，遇到了 2 个 LRU hash map 的问题。 在尝试修复这 2 个问题时，得到社区的反馈：留着它们吧。 屎山别动 能不用 LRU hash map 就别用 问题 1：" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://blog.leonhw.com/post/ebpf-talk-157-lru-hash-map-issues/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: LRU hash map 的问题以及。。。" />
+<meta property="og:description" content="在开发 percpu map CPU flags 补丁集的过程中，遇到了 2 个 LRU hash map 的问题。 在尝试修复这 2 个问题时，得到社区的反馈：留着它们吧。 屎山别动 能不用 LRU hash map 就别用 问题 1：" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.leonhw.com/post/ebpf-talk-157-lru-hash-map-issues/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2026-01-26T00:08:00+08:00" />
+<meta property="article:modified_time" content="2026-01-26T00:08:00+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: LRU hash map 的问题以及。。。">
+  <meta itemprop="description" content="在开发 percpu map CPU flags 补丁集的过程中，遇到了 2 个 LRU hash map 的问题。 在尝试修复这 2 个问题时，得到社区的反馈：留着它们吧。 屎山别动 能不用 LRU hash map 就别用 问题 1：">
+  <meta itemprop="datePublished" content="2026-01-26T00:08:00+08:00">
+  <meta itemprop="dateModified" content="2026-01-26T00:08:00+08:00">
+  <meta itemprop="wordCount" content="1117">
+  <meta itemprop="keywords" content="EBPF,Lru Hash Map,Lru Percpu Hash Map"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: LRU hash map 的问题以及。。。"/>
+<meta name="twitter:description" content="在开发 percpu map CPU flags 补丁集的过程中，遇到了 2 个 LRU hash map 的问题。 在尝试修复这 2 个问题时，得到社区的反馈：留着它们吧。 屎山别动 能不用 LRU hash map 就别用 问题 1："/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: LRU hash map 的问题以及。。。</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2026-01-26 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1117 字 </span>
+      <span class="more-meta"> 预计阅读 3 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#问题-1丢数据">问题 1：丢数据</a></li>
+        <li><a href="#问题-2死锁">问题 2：死锁</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>在开发 percpu map CPU flags 补丁集的过程中，遇到了 2 个 LRU hash map 的问题。</p>
+<p>在尝试修复这 2 个问题时，得到社区的反馈：留着它们吧。</p>
+<p><del>屎山别动</del></p>
+<p><del>能不用 LRU hash map 就别用</del></p>
+<h2 id="问题-1丢数据">问题 1：丢数据</h2>
+<p>早有耳闻：LRU hash map 会丢数据。</p>
+<p>在给 percpu map CPU flags 编写自测用例时，就遇上了丢数据问题：当 LRU hash map 满了时，再次 <code>update_elem()</code> 就会丢数据，即使想要更新的是已有条目。</p>
+<p><code>update_elem()</code> 发生了什么？</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">htab_lru_map_update_elem</span><span class="p">()</span>    <span class="c1">// kernel/bpf/hashtab.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="o">|--&gt;</span><span class="nf">prealloc_lru_pop</span><span class="p">()</span>        <span class="c1">// kernel/bpf/bpf_lru_list.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>    <span class="o">|--&gt;</span><span class="nf">bpf_common_lru_pop_free</span><span class="p">()</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">            <span class="n">node</span> <span class="o">=</span> <span class="nf">__local_list_pop_free</span><span class="p">(</span><span class="n">loc_l</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">node</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="nf">bpf_lru_list_pop_free_to_local</span><span class="p">(</span><span class="n">lru</span><span class="p">,</span> <span class="n">loc_l</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">                <span class="n">node</span> <span class="o">=</span> <span class="nf">__local_list_pop_free</span><span class="p">(</span><span class="n">loc_l</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">            <span class="p">}</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|--&gt;</span><span class="nf">bpf_lru_list_pop_free_to_local</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">            <span class="o">|--&gt;</span><span class="nf">__bpf_lru_list_shrink</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">                <span class="o">|--&gt;</span><span class="nf">__bpf_lru_list_shrink_inactive</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">                <span class="o">|</span>   <span class="o">|--&gt;</span><span class="n">lru</span><span class="o">-&gt;</span><span class="nf">del_from_htab</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">                <span class="o">|--&gt;</span><span class="n">lru</span><span class="o">-&gt;</span><span class="nf">del_from_htab</span><span class="p">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>解决办法：<del>？？？</del></p>
+<p>算了吧，LRU 作者并不喜欢我提出的办法。</p>
+<h2 id="问题-2死锁">问题 2：死锁</h2>
+<p>社区 CI、以及 syzbot、以及本地跑 LRU 测试用例，都能复现死锁问题：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">  1
+</span><span class="lnt">  2
+</span><span class="lnt">  3
+</span><span class="lnt">  4
+</span><span class="lnt">  5
+</span><span class="lnt">  6
+</span><span class="lnt">  7
+</span><span class="lnt">  8
+</span><span class="lnt">  9
+</span><span class="lnt"> 10
+</span><span class="lnt"> 11
+</span><span class="lnt"> 12
+</span><span class="lnt"> 13
+</span><span class="lnt"> 14
+</span><span class="lnt"> 15
+</span><span class="lnt"> 16
+</span><span class="lnt"> 17
+</span><span class="lnt"> 18
+</span><span class="lnt"> 19
+</span><span class="lnt"> 20
+</span><span class="lnt"> 21
+</span><span class="lnt"> 22
+</span><span class="lnt"> 23
+</span><span class="lnt"> 24
+</span><span class="lnt"> 25
+</span><span class="lnt"> 26
+</span><span class="lnt"> 27
+</span><span class="lnt"> 28
+</span><span class="lnt"> 29
+</span><span class="lnt"> 30
+</span><span class="lnt"> 31
+</span><span class="lnt"> 32
+</span><span class="lnt"> 33
+</span><span class="lnt"> 34
+</span><span class="lnt"> 35
+</span><span class="lnt"> 36
+</span><span class="lnt"> 37
+</span><span class="lnt"> 38
+</span><span class="lnt"> 39
+</span><span class="lnt"> 40
+</span><span class="lnt"> 41
+</span><span class="lnt"> 42
+</span><span class="lnt"> 43
+</span><span class="lnt"> 44
+</span><span class="lnt"> 45
+</span><span class="lnt"> 46
+</span><span class="lnt"> 47
+</span><span class="lnt"> 48
+</span><span class="lnt"> 49
+</span><span class="lnt"> 50
+</span><span class="lnt"> 51
+</span><span class="lnt"> 52
+</span><span class="lnt"> 53
+</span><span class="lnt"> 54
+</span><span class="lnt"> 55
+</span><span class="lnt"> 56
+</span><span class="lnt"> 57
+</span><span class="lnt"> 58
+</span><span class="lnt"> 59
+</span><span class="lnt"> 60
+</span><span class="lnt"> 61
+</span><span class="lnt"> 62
+</span><span class="lnt"> 63
+</span><span class="lnt"> 64
+</span><span class="lnt"> 65
+</span><span class="lnt"> 66
+</span><span class="lnt"> 67
+</span><span class="lnt"> 68
+</span><span class="lnt"> 69
+</span><span class="lnt"> 70
+</span><span class="lnt"> 71
+</span><span class="lnt"> 72
+</span><span class="lnt"> 73
+</span><span class="lnt"> 74
+</span><span class="lnt"> 75
+</span><span class="lnt"> 76
+</span><span class="lnt"> 77
+</span><span class="lnt"> 78
+</span><span class="lnt"> 79
+</span><span class="lnt"> 80
+</span><span class="lnt"> 81
+</span><span class="lnt"> 82
+</span><span class="lnt"> 83
+</span><span class="lnt"> 84
+</span><span class="lnt"> 85
+</span><span class="lnt"> 86
+</span><span class="lnt"> 87
+</span><span class="lnt"> 88
+</span><span class="lnt"> 89
+</span><span class="lnt"> 90
+</span><span class="lnt"> 91
+</span><span class="lnt"> 92
+</span><span class="lnt"> 93
+</span><span class="lnt"> 94
+</span><span class="lnt"> 95
+</span><span class="lnt"> 96
+</span><span class="lnt"> 97
+</span><span class="lnt"> 98
+</span><span class="lnt"> 99
+</span><span class="lnt">100
+</span><span class="lnt">101
+</span><span class="lnt">102
+</span><span class="lnt">103
+</span><span class="lnt">104
+</span><span class="lnt">105
+</span><span class="lnt">106
+</span><span class="lnt">107
+</span><span class="lnt">108
+</span><span class="lnt">109
+</span><span class="lnt">110
+</span><span class="lnt">111
+</span><span class="lnt">112
+</span><span class="lnt">113
+</span><span class="lnt">114
+</span><span class="lnt">115
+</span><span class="lnt">116
+</span><span class="lnt">117
+</span><span class="lnt">118
+</span><span class="lnt">119
+</span><span class="lnt">120
+</span><span class="lnt">121
+</span><span class="lnt">122
+</span><span class="lnt">123
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-fallback" data-lang="fallback"><span class="line"><span class="cl">  [  418.260323] bpf_testmod: oh no, recursing into test_1, recursion_misses 1
+</span></span><span class="line"><span class="cl">  [  424.982201]
+</span></span><span class="line"><span class="cl">  [  424.982207] ================================
+</span></span><span class="line"><span class="cl">  [  424.982216] WARNING: inconsistent lock state
+</span></span><span class="line"><span class="cl">  [  424.982219] 6.18.0-rc1-gbb1b9387787c-dirty #1 Tainted: G        W  OE
+</span></span><span class="line"><span class="cl">  [  424.982221] --------------------------------
+</span></span><span class="line"><span class="cl">  [  424.982223] inconsistent {INITIAL USE} -&gt; {IN-NMI} usage.
+</span></span><span class="line"><span class="cl">  [  424.982225] new_name/11207 [HC1[1]:SC0[0]:HE0:SE1] takes:
+</span></span><span class="line"><span class="cl">  [  424.982229] ffffe8ffffd9c000 (&amp;loc_l-&gt;lock){....}-{2:2}, at:
+</span></span><span class="line"><span class="cl">bpf_lru_pop_free+0x2c6/0x1a50
+</span></span><span class="line"><span class="cl">  [  424.982244] {INITIAL USE} state was registered at:
+</span></span><span class="line"><span class="cl">  [  424.982246]   lock_acquire+0x154/0x2d0
+</span></span><span class="line"><span class="cl">  [  424.982252]   _raw_spin_lock_irqsave+0x39/0x60
+</span></span><span class="line"><span class="cl">  [  424.982259]   bpf_lru_pop_free+0x2c6/0x1a50
+</span></span><span class="line"><span class="cl">  [  424.982262]   htab_lru_map_update_elem+0x17e/0xa90
+</span></span><span class="line"><span class="cl">  [  424.982266]   bpf_map_update_value+0x5aa/0x1230
+</span></span><span class="line"><span class="cl">  [  424.982272]   __sys_bpf+0x33b4/0x4ef0
+</span></span><span class="line"><span class="cl">  [  424.982275]   __x64_sys_bpf+0x78/0xe0
+</span></span><span class="line"><span class="cl">  [  424.982278]   do_syscall_64+0x6a/0x2f0
+</span></span><span class="line"><span class="cl">  [  424.982282]   entry_SYSCALL_64_after_hwframe+0x76/0x7e
+</span></span><span class="line"><span class="cl">  [  424.982287] irq event stamp: 236
+</span></span><span class="line"><span class="cl">  [  424.982288] hardirqs last  enabled at (235): [&lt;ffffffff959e4e70&gt;]
+</span></span><span class="line"><span class="cl">do_syscall_64+0x30/0x2f0
+</span></span><span class="line"><span class="cl">  [  424.982292] hardirqs last disabled at (236): [&lt;ffffffff959e65df&gt;]
+</span></span><span class="line"><span class="cl">exc_nmi+0x7f/0x110
+</span></span><span class="line"><span class="cl">  [  424.982296] softirqs last  enabled at (0): [&lt;ffffffff933fe7cf&gt;]
+</span></span><span class="line"><span class="cl">copy_process+0x1c3f/0x6ab0
+</span></span><span class="line"><span class="cl">  [  424.982302] softirqs last disabled at (0): [&lt;0000000000000000&gt;] 0x0
+</span></span><span class="line"><span class="cl">  [  424.982305]
+</span></span><span class="line"><span class="cl">  [  424.982305] other info that might help us debug this:
+</span></span><span class="line"><span class="cl">  [  424.982306]  Possible unsafe locking scenario:
+</span></span><span class="line"><span class="cl">  [  424.982306]
+</span></span><span class="line"><span class="cl">  [  424.982307]        CPU0
+</span></span><span class="line"><span class="cl">  [  424.982308]        ----
+</span></span><span class="line"><span class="cl">  [  424.982309]   lock(&amp;loc_l-&gt;lock);
+</span></span><span class="line"><span class="cl">  [  424.982311]   &lt;Interrupt&gt;
+</span></span><span class="line"><span class="cl">  [  424.982312]     lock(&amp;loc_l-&gt;lock);
+</span></span><span class="line"><span class="cl">  [  424.982314]
+</span></span><span class="line"><span class="cl">  [  424.982314]  *** DEADLOCK ***
+</span></span><span class="line"><span class="cl">  [  424.982314]
+</span></span><span class="line"><span class="cl">  [  424.982315] no locks held by new_name/11207.
+</span></span><span class="line"><span class="cl">  [  424.982317]
+</span></span><span class="line"><span class="cl">  [  424.982317] stack backtrace:
+</span></span><span class="line"><span class="cl">  [  424.982326] CPU: 1 UID: 0 PID: 11207 Comm: new_name Tainted: G
+</span></span><span class="line"><span class="cl">    W  OE       6.18.0-rc1-gbb1b9387787c-dirty #1 PREEMPT(full)
+</span></span><span class="line"><span class="cl">  [  424.982332] Tainted: [W]=WARN, [O]=OOT_MODULE, [E]=UNSIGNED_MODULE
+</span></span><span class="line"><span class="cl">  [  424.982334] Hardware name: QEMU Ubuntu 25.04 PC (i440FX + PIIX,
+</span></span><span class="line"><span class="cl">1996), BIOS 1.16.3-debian-1.16.3-2 04/01/2014
+</span></span><span class="line"><span class="cl">  [  424.982337] Call Trace:
+</span></span><span class="line"><span class="cl">  [  424.982340]  &lt;NMI&gt;
+</span></span><span class="line"><span class="cl">  [  424.982342]  dump_stack_lvl+0x5d/0x80
+</span></span><span class="line"><span class="cl">  [  424.982356]  print_usage_bug.part.0+0x22b/0x2c0
+</span></span><span class="line"><span class="cl">  [  424.982360]  lock_acquire+0x278/0x2d0
+</span></span><span class="line"><span class="cl">  [  424.982364]  ? __irq_work_queue_local+0x133/0x360
+</span></span><span class="line"><span class="cl">  [  424.982371]  ? bpf_lru_pop_free+0x2c6/0x1a50
+</span></span><span class="line"><span class="cl">  [  424.982375]  _raw_spin_lock_irqsave+0x39/0x60
+</span></span><span class="line"><span class="cl">  [  424.982379]  ? bpf_lru_pop_free+0x2c6/0x1a50
+</span></span><span class="line"><span class="cl">  [  424.982382]  bpf_lru_pop_free+0x2c6/0x1a50
+</span></span><span class="line"><span class="cl">  [  424.982387]  ? arch_irq_work_raise+0x3f/0x60
+</span></span><span class="line"><span class="cl">  [  424.982394]  ? __pfx___irq_work_queue_local+0x10/0x10
+</span></span><span class="line"><span class="cl">  [  424.982399]  htab_lru_map_update_elem+0x17e/0xa90
+</span></span><span class="line"><span class="cl">  [  424.982405]  ? __pfx_htab_lru_map_update_elem+0x10/0x10
+</span></span><span class="line"><span class="cl">  [  424.982408]  ? __kasan_check_byte+0x16/0x60
+</span></span><span class="line"><span class="cl">  [  424.982414]  ? __htab_map_lookup_elem+0x95/0x220
+</span></span><span class="line"><span class="cl">  [  424.982420]  bpf_prog_2c77131b3c031599_oncpu_lru_map+0xe4/0x168
+</span></span><span class="line"><span class="cl">  [  424.982423]  __perf_event_overflow+0x8e8/0xea0
+</span></span><span class="line"><span class="cl">  [  424.982430]  ? __pfx___perf_event_overflow+0x10/0x10
+</span></span><span class="line"><span class="cl">  [  424.982436]  handle_pmi_common+0x3fe/0x810
+</span></span><span class="line"><span class="cl">  [  424.982441]  ? __pfx_handle_pmi_common+0x10/0x10
+</span></span><span class="line"><span class="cl">  [  424.982452]  ? __pfx_intel_bts_interrupt+0x10/0x10
+</span></span><span class="line"><span class="cl">  [  424.982458]  intel_pmu_handle_irq+0x1c5/0x5d0
+</span></span><span class="line"><span class="cl">  [  424.982461]  ? lock_acquire+0x1ef/0x2d0
+</span></span><span class="line"><span class="cl">  [  424.982465]  ? nmi_handle.part.0+0x2f/0x380
+</span></span><span class="line"><span class="cl">  [  424.982469]  perf_event_nmi_handler+0x3e/0x70
+</span></span><span class="line"><span class="cl">  [  424.982476]  nmi_handle.part.0+0x13f/0x380
+</span></span><span class="line"><span class="cl">  [  424.982480]  ? trace_rcu_watching+0x105/0x170
+</span></span><span class="line"><span class="cl">  [  424.982486]  default_do_nmi+0x3b/0x110
+</span></span><span class="line"><span class="cl">  [  424.982490]  ? irqentry_nmi_enter+0x6f/0x80
+</span></span><span class="line"><span class="cl">  [  424.982493]  exc_nmi+0xe3/0x110
+</span></span><span class="line"><span class="cl">  [  424.982497]  end_repeat_nmi+0xf/0x53
+</span></span><span class="line"><span class="cl">  [  424.982502] RIP: 0010:fput_close_sync+0x56/0x1a0
+</span></span><span class="line"><span class="cl">  [  424.982509] Code: 48 89 e5 48 c7 04 24 b3 8a b5 41 48 c7 44 24 08
+</span></span><span class="line"><span class="cl">5c a2 3e 96 48 c1 ed 03 48 c7 44 24 10 10 a7 e0 93 42 c7 44 2d 00 f1
+</span></span><span class="line"><span class="cl">f1 f1 f1 &lt;42&gt; c7 44 2d 04 00 f3 f3 f3 65 48 8b 05 91 98 56 04 48 89 44
+</span></span><span class="line"><span class="cl">24 58
+</span></span><span class="line"><span class="cl">  [  424.982513] RSP: 0018:ffffc900099d7e88 EFLAGS: 00000a06
+</span></span><span class="line"><span class="cl">  [  424.982517] RAX: 0000000000000000 RBX: ffff888109fb48c0 RCX:
+</span></span><span class="line"><span class="cl">0000000000000000
+</span></span><span class="line"><span class="cl">  [  424.982520] RDX: 1ffff110099572bb RSI: 0000000000000008 RDI:
+</span></span><span class="line"><span class="cl">ffff888109fb4a20
+</span></span><span class="line"><span class="cl">  [  424.982522] RBP: 1ffff9200133afd1 R08: ffff888109fb48c0 R09:
+</span></span><span class="line"><span class="cl">ffff888109278b40
+</span></span><span class="line"><span class="cl">  [  424.982524] R10: ffff888109fb4920 R11: 0000000000000000 R12:
+</span></span><span class="line"><span class="cl">0000000000000003
+</span></span><span class="line"><span class="cl">  [  424.982526] R13: dffffc0000000000 R14: 0000000000000003 R15:
+</span></span><span class="line"><span class="cl">0000000000000000
+</span></span><span class="line"><span class="cl">  [  424.982532]  ? fput_close_sync+0x56/0x1a0
+</span></span><span class="line"><span class="cl">  [  424.982537]  ? fput_close_sync+0x56/0x1a0
+</span></span><span class="line"><span class="cl">  [  424.982541]  &lt;/NMI&gt;
+</span></span><span class="line"><span class="cl">  [  424.982542]  &lt;TASK&gt;
+</span></span><span class="line"><span class="cl">  [  424.982544]  ? __pfx_fput_close_sync+0x10/0x10
+</span></span><span class="line"><span class="cl">  [  424.982548]  ? do_raw_spin_unlock+0x59/0x250
+</span></span><span class="line"><span class="cl">  [  424.982553]  __x64_sys_close+0x7d/0xd0
+</span></span><span class="line"><span class="cl">  [  424.982559]  do_syscall_64+0x6a/0x2f0
+</span></span><span class="line"><span class="cl">  [  424.982563]  entry_SYSCALL_64_after_hwframe+0x76/0x7e
+</span></span><span class="line"><span class="cl">  [  424.982566] RIP: 0033:0x7faae0f88fe2
+</span></span><span class="line"><span class="cl">  [  424.982569] Code: 08 0f 85 71 3a ff ff 49 89 fb 48 89 f0 48 89 d7
+</span></span><span class="line"><span class="cl">48 89 ce 4c 89 c2 4d 89 ca 4c 8b 44 24 08 4c 8b 4c 24 10 4c 89 5c 24
+</span></span><span class="line"><span class="cl">08 0f 05 &lt;c3&gt; 66 2e 0f 1f 84 00 00 00 00 00 66 2e 0f 1f 84 00 00 00 00
+</span></span><span class="line"><span class="cl">00 66
+</span></span><span class="line"><span class="cl">  [  424.982571] RSP: 002b:00007ffe58ee5b08 EFLAGS: 00000246 ORIG_RAX:
+</span></span><span class="line"><span class="cl">0000000000000003
+</span></span><span class="line"><span class="cl">  [  424.982574] RAX: ffffffffffffffda RBX: 00007faae0a6cb00 RCX:
+</span></span><span class="line"><span class="cl">00007faae0f88fe2
+</span></span><span class="line"><span class="cl">  [  424.982577] RDX: 0000000000000000 RSI: 0000000000000000 RDI:
+</span></span><span class="line"><span class="cl">0000000000000072
+</span></span><span class="line"><span class="cl">  [  424.982579] RBP: 00007ffe58ee5b30 R08: 0000000000000000 R09:
+</span></span><span class="line"><span class="cl">0000000000000000
+</span></span><span class="line"><span class="cl">  [  424.982581] R10: 0000000000000000 R11: 0000000000000246 R12:
+</span></span><span class="line"><span class="cl">0000000000000008
+</span></span><span class="line"><span class="cl">  [  424.982583] R13: 0000000000000000 R14: 0000556f5e250c90 R15:
+</span></span><span class="line"><span class="cl">00007faae11e9000
+</span></span><span class="line"><span class="cl">  [  424.982588]  &lt;/TASK&gt;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>注意：<strong>WARNING: inconsistent lock state</strong></p>
+<p>仅是一个 <strong>WARNING</strong>，不是一定要解决的问题。</p>
+<p>因而，当我将解决办法发到社区后，maintainer 回复：&ldquo;If it&rsquo;s too hard, then leave it as-is.&quot;。意即：太难了，就别动。</p>
+<h2 id="小结">小结</h2>
+<p>经过这 2 次经历后，对社区风格有了更加深刻的体会。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2026-01-26
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <img align="center" src="/profile.png" alt="profile.png" style="height: 120px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/lru-hash-map/">lru hash map</a>
+      <a href="/%20tags/lru-percpu-hash-map/">lru percpu hash map</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-156-percpu-map-flags/">
+        <span class="next-text nav-default">eBPF Talk: 新增 BPF_F_CPU 和 BPF_F_ALL_CPUS flag</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.leonhw.com/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2026<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

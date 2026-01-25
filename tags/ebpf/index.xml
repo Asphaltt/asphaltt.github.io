@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Mon, 12 Jan 2026 00:08:00 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 26 Jan 2026 00:08:00 +0800</lastBuildDate>
     <atom:link href="https://blog.leonhw.com/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: LRU hash map 的问题以及。。。</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-157-lru-hash-map-issues/</link>
+      <pubDate>Mon, 26 Jan 2026 00:08:00 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-157-lru-hash-map-issues/</guid>
+      <description>在开发 percpu map CPU flags 补丁集的过程中，遇到了 2 个 LRU hash map 的问题。 在尝试修复这 2 个问题时，得到社区的反馈：留着它们吧。 屎山别动 能不用 LRU hash map 就别用 问题 1：</description>
+    </item>
     <item>
       <title>eBPF Talk: 新增 BPF_F_CPU 和 BPF_F_ALL_CPUS flag</title>
       <link>https://blog.leonhw.com/post/ebpf-talk-156-percpu-map-flags/</link>
