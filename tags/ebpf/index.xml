@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Mon, 26 Jan 2026 00:08:00 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 02 Feb 2026 00:40:00 +0800</lastBuildDate>
     <atom:link href="https://blog.leonhw.com/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: fsession 简介</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-158-introduce-fsession/</link>
+      <pubDate>Mon, 02 Feb 2026 00:40:00 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-158-introduce-fsession/</guid>
+      <description>fsession 是我跟 Menglong 大佬合作的杰作，已合入 bpf 社区，将在 v7.0 合入 Linux 主线。 目前，fsession 已支持 x86_64 和 arm64 架构。 TL;DR fsession 指的是一个新的 tracing attach type: BPF_TRACE</description>
+    </item>
     <item>
       <title>eBPF Talk: LRU hash map 的问题以及。。。</title>
       <link>https://blog.leonhw.com/post/ebpf-talk-157-lru-hash-map-issues/</link>

@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2026-01-26T00:08:00+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2026-02-02T00:40:00+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-75-introduce-bpf_timer/">eBPF Talk: introduce bpf_timer</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2024-04-03 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 911 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      bpf_timer 是 eBPF 里基于 hrtimer 实现的定时器。 hrtimers - subsystem for high-resolution kernel timers LWN bpf: Introduce BPF timers. bpf: Introduce bpf timers. since 5.15 kernel bpf_timer 最初的需求是在 perf events bpf prog 中做定期采样；后来在 XDP 中可以用来做垃圾回收和健康检
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-75-introduce-bpf_timer/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-74-introduce-bpf_iter/">eBPF Talk: introduce bpf_iter</a></h1>
@@ -351,30 +375,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-68-xdp-shit-on-mellanox/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-67-redirect-pkt-with-tc-bpf/">eBPF Talk: tc-bpf 转发网络包</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2024-04-03 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 518 字 </span>
-        <span class="more-meta"> 预计阅读 2 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      在 tc-bpf 里转发网络包，跟 XDP 里转发网络包有什么不同呢？ eBPF Talk: XDP 转发失败了 eBPF Talk: 揭秘 XDP 转发网络包 eBPF Talk: 揭秘 XDP 转发网络包【续】 呃，其实还是那个奇葩的需求，不
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-67-redirect-pkt-with-tc-bpf/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
