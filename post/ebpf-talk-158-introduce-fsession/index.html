@@ -325,7 +325,7 @@
 进行 <code>fentry</code> 和 <code>fexit</code>，就想着在 <code>trampoline</code> 里复用一个 bpf prog 对内核函数同时进行
 <code>fentry</code> + <code>fexit</code> 处理；即新增一个 tracing attach type <code>farount</code>。</p>
 <p>在 2025 年上半年便完成了 PoC，但忙着推进
-<a href="/post/ebpf-talk-157-lru-hash-map-issues/">eBPF Talk: 新增 BPF_F_CPU 和 BPF_F_ALL_CPUS flag</a>
+<a href="/post/ebpf-talk-156-percpu-map-flags/">eBPF Talk: 新增 BPF_F_CPU 和 BPF_F_ALL_CPUS flag</a>
 和 <code>bpf: Extend BPF syscall with common attributes support</code>，就没有精力同时将 <code>faround</code>
 推向社区。</p>
 <p>在 2025 年下半年，跟 Menglong 大佬讨论时，一拍即合：由 Menglong 大佬基于 <code>faround</code> PoC
@@ -362,7 +362,11 @@
       <a href="/%20tags/fsession/">fsession</a>
       </div>
     <nav class="post-nav">
-      
+      <a class="prev" href="/post/ebpf-talk-159-extend-bpf-syscall/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 震惊！居然有人扩展了 BPF syscall</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
       <a class="next" href="/post/ebpf-talk-157-lru-hash-map-issues/">
         <span class="next-text nav-default">eBPF Talk: LRU hash map 的问题以及。。。</span>
         <span class="next-text nav-mobile">下一篇</span>
