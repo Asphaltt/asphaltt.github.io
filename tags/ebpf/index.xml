@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 24 May 2026 21:53:33 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 14 Jun 2026 21:33:33 +0800</lastBuildDate>
     <atom:link href="https://blog.leonhw.com/tags/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 填个 lwt_bpf 的坑</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-160-fix-lwt_bpf-bug/</link>
+      <pubDate>Sun, 14 Jun 2026 21:33:33 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-160-fix-lwt_bpf-bug/</guid>
+      <description>某天，同事反馈个问题：升级某个网络组件后，server 直接失联了。 看了下事故报告，问题不复杂： 复现 使用 10.0.0.0/8 来复现过于危险了。既然是 ip route</description>
+    </item>
     <item>
       <title>eBPF Talk: 震惊！居然有人扩展了 BPF syscall</title>
       <link>https://blog.leonhw.com/post/ebpf-talk-159-extend-bpf-syscall/</link>

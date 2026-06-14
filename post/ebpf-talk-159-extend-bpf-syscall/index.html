@@ -226,7 +226,7 @@
 <h2 id="3-计划给-bpf_link_create-增加-common-attributes-支持">3. 计划给 BPF_LINK_CREATE 增加 common attributes 支持</h2>
 <p><code>BPF_LINK_CREATE</code> 是一个比 <code>BPF_MAP_CREATE</code> 更加复杂的 BPF 子命令。</p>
 <p>当 <code>BPF_LINK_CREATE</code> 失败时，很多时候一头雾水，难以推测是哪里出了问题。</p>
-<p>比如，我最近修的一个 BUG: <a href="https://lore.kernel.org/bpf/20260331145353.87606-1-leon.hwang@linux.dev/">bpf: Fix abuse of kprobe_write_ctx via freplace</a>。背景是我给 #bpfsnoop <a href="https://github.com/bpfsnoop/bpfsnoop/pull/134">kfuncs: Add multi mode support using kprobe.{multi,session}</a> 时，<code>BPF_LINK_CREATE</code> 直接返回 <code>-EINVAL</code>；通过修改内核，确认是 <code>kprobe_write_ctx=true</code> 的 prog 不允许 attach 到内核函数导致的。如果不修改内核，<code>BPF_LINK_CREATE</code> 是否可以直接提供 <code>kprobe_write_ctx=true prog is not allowed to attach to kernel functions.</code> 错误提示呢？</p>
+<p>比如，我最近修的一个 BUG: <a href="https://lore.kernel.org/bpf/20260331145353.87606-1-leon.hwang@linux.dev/">bpf: Fix abuse of kprobe_write_ctx via freplace</a>。背景是我给 bpfsnoop <a href="https://github.com/bpfsnoop/bpfsnoop/pull/134">kfuncs: Add multi mode support using kprobe.{multi,session}</a> 时，<code>BPF_LINK_CREATE</code> 直接返回 <code>-EINVAL</code>；通过修改内核，确认是 <code>kprobe_write_ctx=true</code> 的 prog 不允许 attach 到内核函数导致的。如果不修改内核，<code>BPF_LINK_CREATE</code> 是否可以直接提供 <code>kprobe_write_ctx=true prog is not allowed to attach to kernel functions.</code> 错误提示呢？</p>
 <p>比如，我当初给 XDP 新增 tracepoint: <a href="https://lore.kernel.org/all/20230801142621.7925-1-hffilwlqm@gmail.com/">bpf, xdp: Add tracepoint to xdp attaching failure</a>。一开始的想法就是直接向用户态空间报告底层驱动提供的错误提示。如今，终于可以通过 common attributes 实现这个想法了；从而去掉这个丑陋的 tracepoint。</p>
 <h2 id="4-小结">4. 小结</h2>
 <p>在跟 Alexei 来回拉扯的过程中，得到了一点启发：通过机制解决一系列痛点，而不是逐个痛点去解决。</p>
@@ -257,7 +257,11 @@
       <a href="/%20tags/bpf-syscall/">BPF syscall</a>
       </div>
     <nav class="post-nav">
-      
+      <a class="prev" href="/post/ebpf-talk-160-fix-lwt_bpf-bug/">
+        <i class="iconfont icon-left"></i>
+        <span class="prev-text nav-default">eBPF Talk: 填个 lwt_bpf 的坑</span>
+        <span class="prev-text nav-mobile">上一篇</span>
+      </a>
       <a class="next" href="/post/ebpf-talk-158-introduce-fsession/">
         <span class="next-text nav-default">eBPF Talk: fsession 简介</span>
         <span class="next-text nav-mobile">下一篇</span>
