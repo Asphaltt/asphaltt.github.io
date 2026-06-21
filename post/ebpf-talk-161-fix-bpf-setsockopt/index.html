@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 使用 bpf 给流量设置 TOS - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="给流量（特指 TCP 流量）打上 TOS，可以在 cgroup bpf sockops 的这 3 个 HOOK 里调 bpf_setsockopt(skops, SOL_IP, IP_TOS, &amp;amp;tos, sizeof(tos)) 给 socket 设置 TOS。 BPF_SOCK_OPS_TCP_CONNECT_CB BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB 不过，同事最近遇到个问题：bpf_setsocko" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://blog.leonhw.com/post/ebpf-talk-161-fix-bpf-setsockopt/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 使用 bpf 给流量设置 TOS" />
+<meta property="og:description" content="给流量（特指 TCP 流量）打上 TOS，可以在 cgroup bpf sockops 的这 3 个 HOOK 里调 bpf_setsockopt(skops, SOL_IP, IP_TOS, &amp;tos, sizeof(tos)) 给 socket 设置 TOS。 BPF_SOCK_OPS_TCP_CONNECT_CB BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB 不过，同事最近遇到个问题：bpf_setsocko" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.leonhw.com/post/ebpf-talk-161-fix-bpf-setsockopt/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2026-06-21T21:31:29+08:00" />
+<meta property="article:modified_time" content="2026-06-21T21:31:29+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 使用 bpf 给流量设置 TOS">
+  <meta itemprop="description" content="给流量（特指 TCP 流量）打上 TOS，可以在 cgroup bpf sockops 的这 3 个 HOOK 里调 bpf_setsockopt(skops, SOL_IP, IP_TOS, &amp;tos, sizeof(tos)) 给 socket 设置 TOS。 BPF_SOCK_OPS_TCP_CONNECT_CB BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB 不过，同事最近遇到个问题：bpf_setsocko">
+  <meta itemprop="datePublished" content="2026-06-21T21:31:29+08:00">
+  <meta itemprop="dateModified" content="2026-06-21T21:31:29+08:00">
+  <meta itemprop="wordCount" content="1671">
+  <meta itemprop="keywords" content="EBPF"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 使用 bpf 给流量设置 TOS"/>
+<meta name="twitter:description" content="给流量（特指 TCP 流量）打上 TOS，可以在 cgroup bpf sockops 的这 3 个 HOOK 里调 bpf_setsockopt(skops, SOL_IP, IP_TOS, &amp;tos, sizeof(tos)) 给 socket 设置 TOS。 BPF_SOCK_OPS_TCP_CONNECT_CB BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB 不过，同事最近遇到个问题：bpf_setsocko"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 使用 bpf 给流量设置 TOS</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2026-06-21 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 1671 字 </span>
+      <span class="more-meta"> 预计阅读 4 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#背景">背景</a></li>
+        <li><a href="#分析">分析</a></li>
+        <li><a href="#修复">修复</a></li>
+        <li><a href="#绕过">绕过</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>给流量（特指 TCP 流量）打上 TOS，可以在 cgroup bpf sockops 的这 3 个 HOOK 里调 <code>bpf_setsockopt(skops, SOL_IP, IP_TOS, &amp;tos, sizeof(tos))</code> 给 socket 设置 TOS。</p>
+<ol>
+<li><code>BPF_SOCK_OPS_TCP_CONNECT_CB</code></li>
+<li><code>BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB</code></li>
+<li><code>BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB</code></li>
+</ol>
+<p>不过，同事最近遇到个问题：<code>bpf_setsockopt()</code> 返回了 <code>-EINVAL</code> 导致 TOS 没打上。</p>
+<h2 id="背景">背景</h2>
+<p>同事需要按需给特定流量打上 TOS，从而更好地搞流量治理。</p>
+<p>他分析发现，<code>bpf_setsockopt()</code> 失败的 socket 的 <code>sk_family</code> 是 <code>AF_INET6</code>，但 tcpdump 抓包却是 IPv4，觉得有点奇怪；经过一番分析，发现是内核协议栈的 IPv4 over IPv6 的特性，也就是 ipv4-mapped ipv6，内核代码里的 <code>ipv6-mapped</code>。</p>
+<h2 id="分析">分析</h2>
+<p>看下 <code>bpf_setsockopt()</code> helper 的源代码就知道了：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span><span class="lnt">31
+</span><span class="lnt">32
+</span><span class="lnt">33
+</span><span class="lnt">34
+</span><span class="lnt">35
+</span><span class="lnt">36
+</span><span class="lnt">37
+</span><span class="lnt">38
+</span><span class="lnt">39
+</span><span class="lnt">40
+</span><span class="lnt">41
+</span><span class="lnt">42
+</span><span class="lnt">43
+</span><span class="lnt">44
+</span><span class="lnt">45
+</span><span class="lnt">46
+</span><span class="lnt">47
+</span><span class="lnt">48
+</span><span class="lnt">49
+</span><span class="lnt">50
+</span><span class="lnt">51
+</span><span class="lnt">52
+</span><span class="lnt">53
+</span><span class="lnt">54
+</span><span class="lnt">55
+</span><span class="lnt">56
+</span><span class="lnt">57
+</span><span class="lnt">58
+</span><span class="lnt">59
+</span><span class="lnt">60
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// net/core/filter.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">sol_ip_sockopt</span><span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="kt">int</span> <span class="n">optname</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                          <span class="kt">char</span> <span class="o">*</span><span class="n">optval</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="n">optlen</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                          <span class="kt">bool</span> <span class="n">getopt</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_family</span> <span class="o">!=</span> <span class="n">AF_INET</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">switch</span> <span class="p">(</span><span class="n">optname</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">case</span> <span class="nl">IP_TOS</span><span class="p">:</span>
+</span></span><span class="line"><span class="cl">                <span class="k">if</span> <span class="p">(</span><span class="o">*</span><span class="n">optlen</span> <span class="o">!=</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">                        <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="k">break</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">default</span><span class="o">:</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">getopt</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="nf">do_ip_getsockopt</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">SOL_IP</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nf">KERNEL_SOCKPTR</span><span class="p">(</span><span class="n">optval</span><span class="p">),</span>
+</span></span><span class="line"><span class="cl">                                        <span class="nf">KERNEL_SOCKPTR</span><span class="p">(</span><span class="n">optlen</span><span class="p">));</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">do_ip_setsockopt</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">SOL_IP</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                                <span class="nf">KERNEL_SOCKPTR</span><span class="p">(</span><span class="n">optval</span><span class="p">),</span> <span class="o">*</span><span class="n">optlen</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">__bpf_setsockopt</span><span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="kt">int</span> <span class="n">level</span><span class="p">,</span> <span class="kt">int</span> <span class="n">optname</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                            <span class="kt">char</span> <span class="o">*</span><span class="n">optval</span><span class="p">,</span> <span class="kt">int</span> <span class="n">optlen</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="nf">sk_fullsock</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">level</span> <span class="o">==</span> <span class="n">SOL_SOCKET</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="nf">sol_socket_sockopt</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span> <span class="n">optval</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">optlen</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nf">IS_ENABLED</span><span class="p">(</span><span class="n">CONFIG_INET</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">level</span> <span class="o">==</span> <span class="n">SOL_IP</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="nf">sol_ip_sockopt</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span> <span class="n">optval</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">optlen</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nf">IS_ENABLED</span><span class="p">(</span><span class="n">CONFIG_IPV6</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">level</span> <span class="o">==</span> <span class="n">SOL_IPV6</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="nf">sol_ipv6_sockopt</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span> <span class="n">optval</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">optlen</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="nf">IS_ENABLED</span><span class="p">(</span><span class="n">CONFIG_INET</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">level</span> <span class="o">==</span> <span class="n">SOL_TCP</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="nf">sol_tcp_sockopt</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span> <span class="n">optval</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">optlen</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="o">-</span><span class="n">EINVAL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="k">static</span> <span class="kt">int</span> <span class="nf">_bpf_setsockopt</span><span class="p">(</span><span class="k">struct</span> <span class="n">sock</span> <span class="o">*</span><span class="n">sk</span><span class="p">,</span> <span class="kt">int</span> <span class="n">level</span><span class="p">,</span> <span class="kt">int</span> <span class="n">optname</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">                           <span class="kt">char</span> <span class="o">*</span><span class="n">optval</span><span class="p">,</span> <span class="kt">int</span> <span class="n">optlen</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">sk_fullsock</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">                <span class="nf">sock_owned_by_me</span><span class="p">(</span><span class="n">sk</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="nf">__bpf_setsockopt</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span> <span class="n">optval</span><span class="p">,</span> <span class="n">optlen</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="nf">BPF_CALL_5</span><span class="p">(</span><span class="n">bpf_sock_ops_setsockopt</span><span class="p">,</span> <span class="k">struct</span> <span class="n">bpf_sock_ops_kern</span> <span class="o">*</span><span class="p">,</span> <span class="n">bpf_sock</span><span class="p">,</span>
+</span></span><span class="line"><span class="cl">           <span class="kt">int</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="p">,</span> <span class="n">optval</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="n">optlen</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="c1">// ...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>        <span class="k">return</span> <span class="nf">_bpf_setsockopt</span><span class="p">(</span><span class="n">bpf_sock</span><span class="o">-&gt;</span><span class="n">sk</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span> <span class="n">optval</span><span class="p">,</span> <span class="n">optlen</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>sol_ip_sockopt()</code> 里检查 <code>sk-&gt;sk_family</code> 是否为 <code>AF_INET</code>；对于 ipv4-mapped ipv6 socket，这里就会返回 <code>-EINVAL</code>。</p>
+<h2 id="修复">修复</h2>
+<p>修起来并不难；只需要在这里放开 <code>AF_INET6</code> 的检查就好：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span><span class="lnt">26
+</span><span class="lnt">27
+</span><span class="lnt">28
+</span><span class="lnt">29
+</span><span class="lnt">30
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-diff" data-lang="diff"><span class="line"><span class="cl"><span class="gh">diff --git a/net/core/filter.c b/net/core/filter.c
+</span></span></span><span class="line"><span class="cl"><span class="gh">index 9590877b0714..57b00c6cc8cc 100644
+</span></span></span><span class="line"><span class="cl"><span class="gh"></span><span class="gd">--- a/net/core/filter.c
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+++ b/net/core/filter.c
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span><span class="gu">@@ -5544,11 +5544,24 @@ static int sol_tcp_sockopt(struct sock *sk, int optname,
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span>                                  KERNEL_SOCKPTR(optval), *optlen);
+</span></span><span class="line"><span class="cl"> }
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="gi">+static bool sk_allows_sol_ip_sockopt(struct sock *sk)
+</span></span></span><span class="line"><span class="cl"><span class="gi">+{
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       switch (sk-&gt;sk_family) {
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       case AF_INET:
+</span></span></span><span class="line"><span class="cl"><span class="gi">+               return true;
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       case AF_INET6:
+</span></span></span><span class="line"><span class="cl"><span class="gi">+               /* Allow getting/setting sockopt for possible ipv4-mapped ipv6 socket. */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+               return sk-&gt;sk_type != SOCK_RAW &amp;&amp; !ipv6_only_sock(sk);
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       default:
+</span></span></span><span class="line"><span class="cl"><span class="gi">+               return false;
+</span></span></span><span class="line"><span class="cl"><span class="gi">+       }
+</span></span></span><span class="line"><span class="cl"><span class="gi">+}
+</span></span></span><span class="line"><span class="cl"><span class="gi">+
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span> static int sol_ip_sockopt(struct sock *sk, int optname,
+</span></span><span class="line"><span class="cl">                           char *optval, int *optlen,
+</span></span><span class="line"><span class="cl">                           bool getopt)
+</span></span><span class="line"><span class="cl"> {
+</span></span><span class="line"><span class="cl"><span class="gd">-       if (sk-&gt;sk_family != AF_INET)
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+       if (!sk_allows_sol_ip_sockopt(sk))
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>                 return -EINVAL;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">         switch (optname) {
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里并不能简单地放行 <code>AF_INET6</code>：</p>
+<ul>
+<li><code>SOCK_RAW</code>: 参考 <code>ipv6_setsockopt()</code> 的做法：</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl">          <span class="k">if</span> <span class="p">(</span><span class="n">level</span> <span class="o">==</span> <span class="n">SOL_IP</span> <span class="o">&amp;&amp;</span> <span class="n">sk</span><span class="o">-&gt;</span><span class="n">sk_type</span> <span class="o">!=</span> <span class="n">SOCK_RAW</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="n">udp_prot</span><span class="p">.</span><span class="nf">setsockopt</span><span class="p">(</span><span class="n">sk</span><span class="p">,</span> <span class="n">level</span><span class="p">,</span> <span class="n">optname</span><span class="p">,</span> <span class="n">optval</span><span class="p">,</span> <span class="n">optlen</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li><code>ipv6_only_sock()</code>: <code>tcp_v6_connect()</code> 里处理 ipv4-mapped ipv6 case 的逻辑：</li>
+</ul>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">addr_type</span> <span class="o">&amp;</span> <span class="n">IPV6_ADDR_MAPPED</span><span class="p">)</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">//...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="k">if</span> <span class="p">(</span><span class="nf">ipv6_only_sock</span><span class="p">(</span><span class="n">sk</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">                        <span class="k">return</span> <span class="o">-</span><span class="n">ENETUNREACH</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">                <span class="c1">//...
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>                <span class="nf">WRITE_ONCE</span><span class="p">(</span><span class="n">icsk</span><span class="o">-&gt;</span><span class="n">icsk_af_ops</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ipv6_mapped</span><span class="p">);</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><ul>
+<li>PATCH: <a href="https://lore.kernel.org/bpf/20260613162443.60515-1-leon.hwang@linux.dev/">bpf: Fix bpf_get/setsockopt to tos for ipv4-mapped ipv6 socket</a></li>
+</ul>
+<p>翻看了一下 <code>tcp_ipv6.c::tcp_v6_connect()</code> 和 <code>ipv6_sockglue.c::ipv6_setsockopt()</code>，就确定了要这么改。</p>
+<p>有趣的是，字节的 Feng Zhou 大佬在 2 年前就尝试修复这个问题；我在 tg 频道上发了个碎碎念，他看到后就聊了起来。</p>
+<h2 id="绕过">绕过</h2>
+<p>内核里修复起来并不复杂；可是，受到影响的线上机器有好多，全都要升级内核就不合适了。合适的做法是：热补丁、或者绕过。</p>
+<p>其实，维护热补丁还挺麻烦的，就研究了一下绕过该问题的办法：如何给 ipv4-mapped ipv6 socket 设置 TOS？</p>
+<p>用 AI 分析一下，它说通过用户态可以设置 TOS，并且给另一个进程的 socket 设置 TOS 也是可行的。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// net/ipv6/ip_sockglue.c
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span>
+</span></span><span class="line"><span class="cl"><span class="nf">ip_setsockopt</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl"><span class="o">|--&gt;</span><span class="nf">do_ip_setsockopt</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">    <span class="o">|--&gt;</span><span class="nf">ip_sock_set_tos</span><span class="p">()</span>
+</span></span><span class="line"><span class="cl">        <span class="o">|--&gt;</span><span class="nf">__ip_sock_set_tos</span><span class="p">()</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>在这条路径上，确实没有 <code>sk-&gt;sk_family != AF_INET</code> 的检查。</p>
+<p>给另一个进程设置 TOS 的核心逻辑：</p>
+<ul>
+<li><code>int syscall(SYS_pidfd_open, pid_t pid, unsigned int flags);</code></li>
+<li><code>int syscall(SYS_pidfd_getfd, int pidfd, int targetfd, unsigned int flags);</code></li>
+<li><code>int setsockopt(int sockfd, int level, int optname, const void optval[.optlen], socklen_t optlen);</code></li>
+</ul>
+<p>其中，<code>pid</code> 和 <code>fd</code> 信息可以通过 <code>fexit __sys_socket</code> 拿到：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="nf">SEC</span><span class="p">(</span><span class="s">&#34;fexit/__sys_socket&#34;</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="kt">int</span> <span class="nf">BPF_PROG</span><span class="p">(</span><span class="n">handle_socket</span><span class="p">,</span> <span class="kt">int</span> <span class="n">family</span><span class="p">,</span> <span class="kt">int</span> <span class="n">type</span><span class="p">,</span> <span class="kt">int</span> <span class="n">protocol</span><span class="p">,</span> <span class="kt">int</span> <span class="n">ret</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">family</span> <span class="o">!=</span> <span class="n">AF_INET</span> <span class="o">&amp;&amp;</span> <span class="n">family</span> <span class="o">!=</span> <span class="n">AF_INET6</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="n">ret</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">                <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="k">struct</span> <span class="n">event</span> <span class="o">*</span><span class="n">e</span> <span class="o">=</span> <span class="nf">bpf_ringbuf_reserve</span><span class="p">(</span><span class="o">&amp;</span><span class="n">events</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">e</span><span class="p">),</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="n">e</span><span class="o">-&gt;</span><span class="n">pid</span> <span class="o">=</span> <span class="nf">bpf_get_current_pid_tgid</span><span class="p">()</span> <span class="o">&gt;&gt;</span> <span class="mi">32</span><span class="p">;</span> <span class="cm">/* tgid: fd table is per-process */</span>
+</span></span><span class="line"><span class="cl">        <span class="n">e</span><span class="o">-&gt;</span><span class="n">fd</span>  <span class="o">=</span> <span class="n">ret</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">bpf_ringbuf_submit</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>使用 2 个 netns 来验证一下：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span><span class="lnt">19
+</span><span class="lnt">20
+</span><span class="lnt">21
+</span><span class="lnt">22
+</span><span class="lnt">23
+</span><span class="lnt">24
+</span><span class="lnt">25
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># ./tos-marker -netns /var/run/netns/cli -tos 0x1c</span>
+</span></span><span class="line"><span class="cl">2026/06/19 21:25:12 marked <span class="nv">pid</span><span class="o">=</span><span class="m">186808</span> <span class="nv">fd</span><span class="o">=</span><span class="m">3</span> <span class="nv">IP_TOS</span><span class="o">=</span>0x1c
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ./run_case.sh tos 2</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>cli<span class="o">]</span> <span class="nb">set</span> <span class="nv">IP_TOS</span>      <span class="o">=</span> 0x02
+</span></span><span class="line"><span class="cl"><span class="o">[</span>cli<span class="o">]</span> connect ::ffff:10.0.0.2:5201  <span class="o">(</span>v4-mapped<span class="o">)</span>
+</span></span><span class="line"><span class="cl"><span class="o">[</span>cli<span class="o">]</span> <span class="nv">peer</span><span class="o">=</span>::ffff:10.0.0.2  readback <span class="nv">IPV6_TCLASS</span><span class="o">=</span>0x00 <span class="nv">IP_TOS</span><span class="o">=</span>0x1c
+</span></span><span class="line"><span class="cl"><span class="o">[</span>cli<span class="o">]</span> ^ wire ToS is driven by IP_TOS <span class="o">(</span>inet-&gt;tos<span class="o">)</span> <span class="k">for</span> mapped <span class="nv">sockets</span>
+</span></span><span class="line"><span class="cl"><span class="o">=====</span> wire ToS seen <span class="o">(</span><span class="nv">opt</span><span class="o">=</span>tos <span class="nv">val</span><span class="o">=</span>2<span class="o">)</span> <span class="o">=====</span>
+</span></span><span class="line"><span class="cl">      <span class="m">2</span> tos 0x0
+</span></span><span class="line"><span class="cl">      <span class="m">4</span> tos 0x1c
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"><span class="c1"># ip netns exec srv tcpdump -i any -c 6 -nv</span>
+</span></span><span class="line"><span class="cl">21:25:12.989722 IP <span class="o">(</span>tos 0x0, ttl 64, id 4837, offset 0, flags <span class="o">[</span>DF<span class="o">]</span>, proto TCP <span class="o">(</span>6<span class="o">)</span>, length 60<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    10.0.0.1.46376 &gt; 10.0.0.2.5201: Flags <span class="o">[</span>S<span class="o">]</span>, cksum 0x1431 <span class="o">(</span>incorrect -&gt; 0xb166<span class="o">)</span>, seq 2008149648, win 64240, options <span class="o">[</span>mss 1460,sackOK,TS val <span class="m">2508833376</span> ecr 0,nop,wscale 7<span class="o">]</span>, length <span class="m">0</span>
+</span></span><span class="line"><span class="cl">21:25:12.989753 IP <span class="o">(</span>tos 0x0, ttl 64, id 4838, offset 0, flags <span class="o">[</span>DF<span class="o">]</span>, proto TCP <span class="o">(</span>6<span class="o">)</span>, length 52<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    10.0.0.1.46376 &gt; 10.0.0.2.5201: Flags <span class="o">[</span>.<span class="o">]</span>, cksum 0x1429 <span class="o">(</span>incorrect -&gt; 0xc236<span class="o">)</span>, ack 1718662282, win 502, options <span class="o">[</span>nop,nop,TS val <span class="m">2508833376</span> ecr 183300351<span class="o">]</span>, length <span class="m">0</span>
+</span></span><span class="line"><span class="cl">21:25:12.989827 IP <span class="o">(</span>tos 0x1c, ttl 64, id 4839, offset 0, flags <span class="o">[</span>DF<span class="o">]</span>, proto TCP <span class="o">(</span>6<span class="o">)</span>, length 56<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    10.0.0.1.46376 &gt; 10.0.0.2.5201: Flags <span class="o">[</span>P.<span class="o">]</span>, cksum 0x142d <span class="o">(</span>incorrect -&gt; 0xe359<span class="o">)</span>, seq 0:4, ack 1, win 502, options <span class="o">[</span>nop,nop,TS val <span class="m">2508833376</span> ecr 183300351<span class="o">]</span>, length <span class="m">4</span>
+</span></span><span class="line"><span class="cl">21:25:12.989896 IP <span class="o">(</span>tos 0x1c, ttl 64, id 4840, offset 0, flags <span class="o">[</span>DF<span class="o">]</span>, proto TCP <span class="o">(</span>6<span class="o">)</span>, length 52<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    10.0.0.1.46376 &gt; 10.0.0.2.5201: Flags <span class="o">[</span>.<span class="o">]</span>, cksum 0x1429 <span class="o">(</span>incorrect -&gt; 0xc22e<span class="o">)</span>, ack 5, win 502, options <span class="o">[</span>nop,nop,TS val <span class="m">2508833376</span> ecr 183300351<span class="o">]</span>, length <span class="m">0</span>
+</span></span><span class="line"><span class="cl">21:25:13.289987 IP <span class="o">(</span>tos 0x1c, ttl 64, id 4841, offset 0, flags <span class="o">[</span>DF<span class="o">]</span>, proto TCP <span class="o">(</span>6<span class="o">)</span>, length 56<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    10.0.0.1.46376 &gt; 10.0.0.2.5201: Flags <span class="o">[</span>P.<span class="o">]</span>, cksum 0x142d <span class="o">(</span>incorrect -&gt; 0xe225<span class="o">)</span>, seq 4:8, ack 5, win 502, options <span class="o">[</span>nop,nop,TS val <span class="m">2508833676</span> ecr 183300351<span class="o">]</span>, length <span class="m">4</span>
+</span></span><span class="line"><span class="cl">21:25:13.290025 IP <span class="o">(</span>tos 0x1c, ttl 64, id 4842, offset 0, flags <span class="o">[</span>DF<span class="o">]</span>, proto TCP <span class="o">(</span>6<span class="o">)</span>, length 52<span class="o">)</span>
+</span></span><span class="line"><span class="cl">    10.0.0.1.46376 &gt; 10.0.0.2.5201: Flags <span class="o">[</span>.<span class="o">]</span>, cksum 0x1429 <span class="o">(</span>incorrect -&gt; 0xbfce<span class="o">)</span>, ack 9, win 502, options <span class="o">[</span>nop,nop,TS val <span class="m">2508833676</span> ecr 183300651<span class="o">]</span>, length <span class="m">0</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>通过 <code>tcpdump</code> 抓包确认，<code>tos</code> 确实会被更新为指定的值；不过，前 2 个包没有设置成功。</p>
+<p>该办法的缺陷：因为是异步设置 TOS 的，所以会导致新创的 socket 前几个包还没来得及设置 TOS。</p>
+<p>该办法的 PoC 代码：<a href="https://github.com/Asphaltt/tos-marker">tos-marker</a></p>
+<h2 id="小结">小结</h2>
+<p>使用 tc-bpf 来补上 TOS？不可接受的原因是 tc-bpf 会处理每个经过 tc 的包；而基于 cgroup 的 sockops 是 socket 事件驱动的，性能损耗更低。</p>
+<p>对于内核问题，能绕过则绕过；绕不过，优先考虑热补丁；最后才是升级内核。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2026-06-21
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <img align="center" src="/profile.png" alt="profile.png" style="height: 120px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-160-fix-lwt_bpf-bug/">
+        <span class="next-text nav-default">eBPF Talk: 填个 lwt_bpf 的坑</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.leonhw.com/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2026<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

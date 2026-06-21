@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2026-06-14T21:33:33+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2026-06-21T21:31:29+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-161-fix-bpf-setsockopt/">eBPF Talk: 使用 bpf 给流量设置 TOS</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2026-06-21 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 1671 字 </span>
+        <span class="more-meta"> 预计阅读 4 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      给流量（特指 TCP 流量）打上 TOS，可以在 cgroup bpf sockops 的这 3 个 HOOK 里调 bpf_setsockopt(skops, SOL_IP, IP_TOS, &amp;tos, sizeof(tos)) 给 socket 设置 TOS。 BPF_SOCK_OPS_TCP_CONNECT_CB BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB 不过，同事最近遇到个问题：bpf_setsocko
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-161-fix-bpf-setsockopt/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-160-fix-lwt_bpf-bug/">eBPF Talk: 填个 lwt_bpf 的坑</a></h1>
@@ -354,30 +378,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-153-bpfsnoop-v0.5.0/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/">eBPF Talk: 使用 bpfsnoop 调试 i40e 网卡驱动丢包问题</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2025-06-23 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1978 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      遇到个 i40e 驱动丢包问题：在挂载 native 模式的 XDP 程序的情况下，如果网卡发生 toggle，XDP 程序 XDP_TX 的包就无法发出去，同时 tx_busy 计数不断增大。 经过一番排查
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-152-debug-i40e-using-bpfsnoop/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

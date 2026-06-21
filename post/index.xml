@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 14 Jun 2026 21:33:33 +0800</lastBuildDate>
+    <lastBuildDate>Sun, 21 Jun 2026 21:31:29 +0800</lastBuildDate>
     <atom:link href="https://blog.leonhw.com/post/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: 使用 bpf 给流量设置 TOS</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-161-fix-bpf-setsockopt/</link>
+      <pubDate>Sun, 21 Jun 2026 21:31:29 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-161-fix-bpf-setsockopt/</guid>
+      <description>给流量（特指 TCP 流量）打上 TOS，可以在 cgroup bpf sockops 的这 3 个 HOOK 里调 bpf_setsockopt(skops, SOL_IP, IP_TOS, &amp;amp;tos, sizeof(tos)) 给 socket 设置 TOS。 BPF_SOCK_OPS_TCP_CONNECT_CB BPF_SOCK_OPS_ACTIVE_ESTABLISHED_CB BPF_SOCK_OPS_PASSIVE_ESTABLISHED_CB 不过，同事最近遇到个问题：bpf_setsocko</description>
+    </item>
     <item>
       <title>eBPF Talk: 填个 lwt_bpf 的坑</title>
       <link>https://blog.leonhw.com/post/ebpf-talk-160-fix-lwt_bpf-bug/</link>
