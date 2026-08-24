@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2026-06-21T21:31:29+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2026-08-24T22:53:41+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-162-global-percpu-data/">eBPF Talk: global percpu data</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2026-08-24 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 765 字 </span>
+        <span class="more-meta"> 预计阅读 2 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      global percpu data 是我近期向 BPF 社区贡献的一个特性：类似于 int data SEC(&quot;.data&quot;) 这样的全局变量，实现了 int pdata SEC(&quot;.percpu&quot;) per-CPU 的全局变量。 bpf: Introduce global percpu data Demo percpu data 不限制程序类型，任何程序类型都能
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-162-global-percpu-data/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-161-fix-bpf-setsockopt/">eBPF Talk: 使用 bpf 给流量设置 TOS</a></h1>
@@ -354,30 +378,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-154-bond0-rx_dropped/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-153-bpfsnoop-v0.5.0/">eBPF Talk: bpfsnoop v0.5.0 发布：实现 bpf 版本的 funcgraph 功能</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2025-07-21 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          </div>
-        <span class="more-meta"> 约 1934 字 </span>
-        <span class="more-meta"> 预计阅读 4 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      bpfsnoop 是一款 bpf 时代的现代化内核函数、内核跟踪点和 bpf 程序的动态追踪工具。 v0.1.0 v0.2.0 v0.3.0 v0.4.0 bpfsnoop 发布 v0.5.0 版本，主要更新如下： 使用 fentry 和 fexit 实现 bpf 版本的 funcgraph 功能。 给 --output-arg 新增
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-153-bpfsnoop-v0.5.0/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>

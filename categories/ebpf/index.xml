@@ -7,8 +7,15 @@
     <generator>Hugo 0.125.0-DEV</generator>
     <language>zh</language>
     <copyright>Leon Hwang</copyright>
-    <lastBuildDate>Sun, 21 Jun 2026 21:31:29 +0800</lastBuildDate>
+    <lastBuildDate>Mon, 24 Aug 2026 22:53:41 +0800</lastBuildDate>
     <atom:link href="https://blog.leonhw.com/categories/ebpf/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>eBPF Talk: global percpu data</title>
+      <link>https://blog.leonhw.com/post/ebpf-talk-162-global-percpu-data/</link>
+      <pubDate>Mon, 24 Aug 2026 22:53:41 +0800</pubDate>
+      <guid>https://blog.leonhw.com/post/ebpf-talk-162-global-percpu-data/</guid>
+      <description>global percpu data 是我近期向 BPF 社区贡献的一个特性：类似于 int data SEC(&amp;quot;.data&amp;quot;) 这样的全局变量，实现了 int pdata SEC(&amp;quot;.percpu&amp;quot;) per-CPU 的全局变量。 bpf: Introduce global percpu data Demo percpu data 不限制程序类型，任何程序类型都能</description>
+    </item>
     <item>
       <title>eBPF Talk: 使用 bpf 给流量设置 TOS</title>
       <link>https://blog.leonhw.com/post/ebpf-talk-161-fix-bpf-setsockopt/</link>
