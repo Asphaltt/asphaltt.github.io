@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>eBPF Talk: 研究内核是为了避免将内核搞挂 - LeonHwang&#39;s Blogs</title>
+  <meta name="renderer" content="webkit" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+<meta name="author"
+  content="" /><meta name="description" content="某天，在内核 6.8 的 Ubuntu 24.04 VM 上跑 bpfsnoop 的 e2e 测试时，VM 挂了。当场蒙逼，跑几个 BPF 程序，VM 为什么会挂？ 幸亏，VM 重启后，生成了 dump 和 dmesg 文件；然后使用 Codex 对着" /><meta name="keywords"
+  content="Go, eBPF, eBPF Talk, skbtracer, go-nfnetlink, iptables, iptables-nfqueue" />
+
+
+
+
+
+
+<meta name="generator" content="Hugo 0.125.0-DEV with theme even" />
+
+
+<link rel="canonical" href="https://blog.leonhw.com/post/ebpf-talk-163-fix-optkprobe/" />
+<link rel="apple-touch-icon" sizes="180x180" href="/%20apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/%20favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/%20favicon-16x16.png">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+<link href="/sass/main.min.e319aa82b43bd5b3901ce5d09fd243a802bbfb6a468c088e063c7136d36ae4a7.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.css" integrity="sha256-7TyXnr2YU040zfSP+rEcz29ggW4j56/ujTPwjMzyqFY=" crossorigin="anonymous">
+
+
+<meta property="og:title" content="eBPF Talk: 研究内核是为了避免将内核搞挂" />
+<meta property="og:description" content="某天，在内核 6.8 的 Ubuntu 24.04 VM 上跑 bpfsnoop 的 e2e 测试时，VM 挂了。当场蒙逼，跑几个 BPF 程序，VM 为什么会挂？ 幸亏，VM 重启后，生成了 dump 和 dmesg 文件；然后使用 Codex 对着" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://blog.leonhw.com/post/ebpf-talk-163-fix-optkprobe/" /><meta property="article:section" content="post" />
+<meta property="article:published_time" content="2026-10-11T23:58:04+08:00" />
+<meta property="article:modified_time" content="2026-10-11T23:58:04+08:00" />
+
+  <meta itemprop="name" content="eBPF Talk: 研究内核是为了避免将内核搞挂">
+  <meta itemprop="description" content="某天，在内核 6.8 的 Ubuntu 24.04 VM 上跑 bpfsnoop 的 e2e 测试时，VM 挂了。当场蒙逼，跑几个 BPF 程序，VM 为什么会挂？ 幸亏，VM 重启后，生成了 dump 和 dmesg 文件；然后使用 Codex 对着">
+  <meta itemprop="datePublished" content="2026-10-11T23:58:04+08:00">
+  <meta itemprop="dateModified" content="2026-10-11T23:58:04+08:00">
+  <meta itemprop="wordCount" content="3744">
+  <meta itemprop="keywords" content="EBPF,Bpfsnoop,Kprobe"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="eBPF Talk: 研究内核是为了避免将内核搞挂"/>
+<meta name="twitter:description" content="某天，在内核 6.8 的 Ubuntu 24.04 VM 上跑 bpfsnoop 的 e2e 测试时，VM 挂了。当场蒙逼，跑几个 BPF 程序，VM 为什么会挂？ 幸亏，VM 重启后，生成了 dump 和 dmesg 文件；然后使用 Codex 对着"/>
+
+
+<!--[if lte IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/classlist/1.1.20170427/classList.min.js"></script>
+<![endif]-->
+
+
+<!--[if lt IE 9]>
+  <script src="https://cdn.jsdelivr.net/npm/html5shiv@3.7.3/dist/html5shiv.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/respond.js@1.4.2/dest/respond.min.js"></script>
+<![endif]-->
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1873931068599582"
+  crossorigin="anonymous"></script>
+
+
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-X2X9EP3K14"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-X2X9EP3K14');
+
+  gtag('set', 'linker', {
+    'domains': ['asphaltt.github.io', 'le0nhwan9.github.io'],
+    'decorate_forms': true
+  });
+</script>
+</head>
+<body>
+  <div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    <a href="/">
+        <li class="mobile-menu-item">Home</li>
+      </a><a href="/post/">
+        <li class="mobile-menu-item">Archives</li>
+      </a><a href="/tags/">
+        <li class="mobile-menu-item">Tags</li>
+      </a><a href="/categories/">
+        <li class="mobile-menu-item">Categories</li>
+      </a>
+  </ul>
+
+  
+
+
+</nav>
+
+  <div class="container" id="mobile-panel">
+    <header id="header" class="header">
+        <div class="logo-wrapper">
+  <a href="/" class="logo">Leon Hwang&#39;s Blogs</a>
+</div>
+
+
+
+
+
+<nav class="site-navbar">
+  <ul id="menu" class="menu">
+    <li class="menu-item">
+        <a class="menu-item-link" href="/">Home</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/post/">Archives</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/tags/">Tags</a>
+      </li><li class="menu-item">
+        <a class="menu-item-link" href="/categories/">Categories</a>
+      </li>
+  </ul>
+</nav>
+
+    </header>
+
+    <main id="main" class="main">
+      <div class="content-wrapper">
+        <div id="content" class="content">
+          <article class="post">
+  
+  <header class="post-header">
+    <h1 class="post-title">eBPF Talk: 研究内核是为了避免将内核搞挂</h1>
+
+    <div class="post-meta">
+      <span class="post-time"> 2026-10-11 </span>
+      <div class="post-category">
+        <a href="/%20categories/ebpf/"> eBPF </a>
+        <a href="/%20categories/ebpf-talk/"> eBPF Talk </a>
+        </div>
+      <span class="more-meta"> 约 3744 字 </span>
+      <span class="more-meta"> 预计阅读 8 分钟 </span>
+      <span id="busuanzi_container_page_pv" class="more-meta"> <span id="busuanzi_value_page_pv"><img src="/img/spinner.svg" alt="spinner.svg" /></span> 次阅读 </span>
+    </div>
+  </header>
+
+  <div class="post-toc" id="post-toc">
+  <h2 class="post-toc-title">文章目录</h2>
+  <div class="post-toc-content always-active">
+    <nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#跑-bpfsnoop-搞挂内核">跑 bpfsnoop 搞挂内核</a></li>
+        <li><a href="#跳到了哪里">跳到了哪里？</a></li>
+        <li><a href="#kprobe-为什么会写入-jmp">kprobe 为什么会写入 jmp？</a></li>
+        <li><a href="#被-disabled-probe-挡住了">被 disabled probe 挡住了</a></li>
+        <li><a href="#用-3-个-probe-复现">用 3 个 probe 复现</a></li>
+        <li><a href="#修复">修复</a></li>
+        <li><a href="#bpfsnoop-里绕过">bpfsnoop 里绕过</a></li>
+        <li><a href="#小结">小结</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+  </div>
+</div>
+  <div class="post-content">
+    <p>某天，在内核 6.8 的 Ubuntu 24.04 VM 上跑 bpfsnoop 的 e2e 测试时，VM 挂了。当场蒙逼，跑几个 BPF 程序，VM 为什么会挂？</p>
+<p>幸亏，VM 重启后，生成了 dump 和 dmesg 文件；然后使用 Codex 对着 dump、dmesg 和源代码分析了之后，发现是 kprobe 的 BUG。遂发 patch 修之。</p>
+<p>TLDR: 发 patch 修了一个存在了 16 年的 BUG，并被移植回所有 stable 分支。并在 bpfsnoop 里规避了该 BUG，避免将内核搞挂。</p>
+<ul>
+<li><a href="https://lore.kernel.org/all/20260930053618.104498-1-leon.hwang@linux.dev/">kprobes: Skip disarmed probes when checking optkprobe overlap</a></li>
+<li><a href="https://github.com/bpfsnoop/bpfsnoop/pull/166">fninsn: Disable kprobes-optimization</a></li>
+</ul>
+<h2 id="跑-bpfsnoop-搞挂内核">跑 bpfsnoop 搞挂内核</h2>
+<p>问题出现在 bpfsnoop 的函数指令追踪测试中。先看 dmesg 里的关键信息（省略无关日志）：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl">BUG: unable to handle page fault for address: ffffffff7ff92442
+</span></span><span class="line"><span class="cl">#PF: supervisor instruction fetch in kernel mode
+</span></span><span class="line"><span class="cl">#PF: error_code(0x0010) - not-present page
+</span></span><span class="line"><span class="cl">RIP: 0010:0xffffffff7ff92442
+</span></span><span class="line"><span class="cl">...
+</span></span><span class="line"><span class="cl">Call Trace:
+</span></span><span class="line"><span class="cl"> ...
+</span></span><span class="line"><span class="cl"> bpf_trampoline_6442570808+0x81/0x128
+</span></span><span class="line"><span class="cl"> __sys_connect+0x5/0xe0
+</span></span><span class="line"><span class="cl"> __x64_sys_connect+0x18/0x30
+</span></span><span class="line"><span class="cl"> x64_sys_call+0x251b/0x25c0
+</span></span><span class="line"><span class="cl"> do_syscall_64+0x7f/0x180
+</span></span><span class="line"><span class="cl"> ...
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>从调用栈可以看出，crash 发生在 <code>__sys_connect()</code> 的执行路径上。不过，<code>__sys_connect+0x5</code> 并不是被破坏的指令所在的位置；这需要结合 dump 里的反汇编来看。</p>
+<h2 id="跳到了哪里">跳到了哪里？</h2>
+<p>先看 dump 里的 BPF trampoline，摘出调用原函数的位置：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl">0xffffffffc03bb3fc: call 0xffffffff962c2fa5 &lt;__sys_connect+5&gt;
+</span></span><span class="line"><span class="cl">0xffffffffc03bb401: mov  %rax,-0x8(%rbp)
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>trampoline 调用的是 <code>__sys_connect+5</code>，返回地址是 <code>0xffffffffc03bb401</code>，也就是调用栈里的 <code>bpf_trampoline_6442570808+0x81</code>。</p>
+<p>继续往下看 <code>__sys_connect()</code>，真正异常的是 <code>+20</code> 处：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl"># dump 中的指令字节与反汇编，按地址整理
+</span></span><span class="line"><span class="cl">0xffffffff962c2fb4 &lt;__sys_connect+20&gt;:
+</span></span><span class="line"><span class="cl">    e9 89 f4 cc e9    jmp 0xffffffff7ff92442
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这个跳转目标，正好就是 dmesg 里的异常地址 <code>0xffffffff7ff92442</code>。</p>
+<p>x86 的 <code>e9</code> 是一个带 32 位相对偏移的 <code>jmp</code> 指令，总共占 5 个字节。它的目标地址按下面的方式计算：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl">目标地址 = 当前指令地址 + 5 + sign_extend_32(相对偏移)
+</span></span><span class="line"><span class="cl">         = 0xffffffff962c2fb4 + 5 + sign_extend_32(0xe9ccf489)
+</span></span><span class="line"><span class="cl">         = 0xffffffff7ff92442
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>其中，<code>89 f4 cc e9</code> 按小端序解释，就是 <code>0xe9ccf489</code>。</p>
+<p>而对应版本的 vmlinux 里，这里原本是：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl"># 原始指令
+</span></span><span class="line"><span class="cl">__sys_connect+20: 49 89 f4       mov %rsi,%r12
+</span></span><span class="line"><span class="cl">__sys_connect+23: 53             push %rbx
+</span></span><span class="line"><span class="cl">__sys_connect+24: 48 81 ec ...    sub $0x88,%rsp
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>原本的 <code>mov</code> 怎么变成 <code>jmp</code> 了？而且跳到了一个根本不能执行的地址。</p>
+<p>在运行中的内核上，可以用 bpfsnoop 查看指令：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl">sudo bpfsnoop -d -k __sys_connect
+</span></span><span class="line"><span class="cl">sudo bpfsnoop -d -k icmp_rcv
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>这里的 <code>-d</code> 是反汇编，<code>-k</code> 指定内核函数。不过，它读的是当前内核的指令；重启后再看，并不能还原 crash 前被改坏的现场。上面的异常指令来自保存下来的 dump。</p>
+<h2 id="kprobe-为什么会写入-jmp">kprobe 为什么会写入 jmp？</h2>
+<p>普通的 x86 kprobe 会把探测位置的指令首字节改成 <code>0xcc</code>，也就是 <code>INT3</code>。CPU 执行到这里时，进入异常处理流程，再执行 kprobe 对应的处理函数。</p>
+<p>每次都经过异常处理，开销比较大。所以，kprobe 有一个 jump optimization：满足优化条件时，将探测位置的 5 个字节替换为 <code>jmp</code>，跳到内核准备好的 detour buffer；在里面执行探测处理和搬过去的原指令，再跳回原函数。</p>
+<p>这就是 optkprobe。</p>
+<p>问题在于，x86 的指令是变长的。一个 5 字节的 <code>jmp</code>，可能覆盖原来的好几条指令。如果此时又要在被覆盖的某条原指令上安装 kprobe，就必须先撤销前面那个 kprobe 的优化，还原对应字节。</p>
+<p>内核确实有这段逻辑：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="c1">// kernel/kprobes.c，省略锁检查等代码
+</span></span></span><span class="line"><span class="cl"><span class="c1"></span><span class="k">static</span> <span class="kt">void</span> <span class="nf">__arm_kprobe</span><span class="p">(</span><span class="k">struct</span> <span class="n">kprobe</span> <span class="o">*</span><span class="n">p</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">kprobe</span> <span class="o">*</span><span class="n">_p</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="n">_p</span> <span class="o">=</span> <span class="nf">get_optimized_kprobe</span><span class="p">(</span><span class="n">p</span><span class="o">-&gt;</span><span class="n">addr</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="nf">unlikely</span><span class="p">(</span><span class="n">_p</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">        <span class="nf">unoptimize_kprobe</span><span class="p">(</span><span class="n">_p</span><span class="p">,</span> <span class="nb">true</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="nf">arch_arm_kprobe</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">    <span class="nf">optimize_kprobe</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>先找覆盖当前位置的 optkprobe，将它退回普通 kprobe，再往当前位置写 <code>INT3</code>。</p>
+<p>此次修复的问题，就出在 <code>get_optimized_kprobe()</code> 没有找到真正需要撤销优化的那个 probe。</p>
+<h2 id="被-disabled-probe-挡住了">被 disabled probe 挡住了</h2>
+<p>另一次 <code>icmp_rcv()</code> crash 的 dump，把这个问题展示得更直接。这里与前面的 <code>__sys_connect()</code> 是两次不同的 crash，地址和被破坏的字节也不同。</p>
+<p><code>icmp_rcv()</code> 起始地址是 <code>0xffffffffb5a15630</code>，其中有 3 个值得关注的 probe：</p>
+<table>
+<thead>
+<tr>
+<th>probe</th>
+<th>位置</th>
+<th>dump 中的状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td><code>icmp_rcv+15</code></td>
+<td>已优化，detour 地址为 <code>0xffffffffc0cd9489</code></td>
+</tr>
+<tr>
+<td>B</td>
+<td><code>icmp_rcv+17</code></td>
+<td>已 disabled，但仍保留准备好的 optinsns</td>
+</tr>
+<tr>
+<td>C</td>
+<td><code>icmp_rcv+19</code></td>
+<td>已启用的普通 kprobe，写入 <code>INT3</code></td>
+</tr>
+</tbody>
+</table>
+<p>先看 A 处的指令字节。根据 A 的地址和 detour 地址，可以算出正确的跳转指令；但 dump 里最后一个字节已经变了：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl"># 根据 detour 地址计算出的正确指令
+</span></span><span class="line"><span class="cl">icmp_rcv+15: e9 45 3e 2c 0b    jmp 0xffffffffc0cd9489
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl"># dump 中实际保存的指令
+</span></span><span class="line"><span class="cl">icmp_rcv+15: e9 45 3e 2c cc    jmp 0xffffffff81cd9489
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>最后一个字节由 <code>0x0b</code> 变成了 <code>0xcc</code>，正好位于 <code>icmp_rcv+19</code>，也就是 C 的位置。</p>
+<p>CPU 执行到 A 时，会把这个 <code>0xcc</code> 当成跳转偏移的一部分，而不会把它当成一条独立的 <code>INT3</code> 指令。于是，跳转目标从 detour buffer 变成了 <code>0xffffffff81cd9489</code>，与这次 crash 的异常地址完全一致。</p>
+<p>把地址简化一下，就更容易看清了：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-text" data-lang="text"><span class="line"><span class="cl">位置             A    A+1  A+2  A+3  A+4
+</span></span><span class="line"><span class="cl">probe            A         B         C
+</span></span><span class="line"><span class="cl">A 优化后       | e9 | d0 | d1 | d2 | d3 |
+</span></span><span class="line"><span class="cl">C 写入 INT3 后 | e9 | d0 | d1 | d2 | cc |
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>为什么安装 C 时，没有先撤销 A 的优化？看看修复前的查找逻辑：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span><span class="lnt">18
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">static</span> <span class="k">struct</span> <span class="n">kprobe</span> <span class="o">*</span><span class="nf">get_optimized_kprobe</span><span class="p">(</span><span class="kt">kprobe_opcode_t</span> <span class="o">*</span><span class="n">addr</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl"><span class="p">{</span>
+</span></span><span class="line"><span class="cl">    <span class="kt">int</span> <span class="n">i</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">kprobe</span> <span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="k">struct</span> <span class="n">optimized_kprobe</span> <span class="o">*</span><span class="n">op</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="cm">/* Don&#39;t check i == 0, since that is a breakpoint case. */</span>
+</span></span><span class="line"><span class="cl">    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="o">!</span><span class="n">p</span> <span class="o">&amp;&amp;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">MAX_OPTIMIZED_LENGTH</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">kprobe_opcode_t</span><span class="p">);</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span>
+</span></span><span class="line"><span class="cl">        <span class="n">p</span> <span class="o">=</span> <span class="nf">get_kprobe</span><span class="p">(</span><span class="n">addr</span> <span class="o">-</span> <span class="n">i</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">if</span> <span class="p">(</span><span class="n">p</span> <span class="o">&amp;&amp;</span> <span class="nf">kprobe_optready</span><span class="p">(</span><span class="n">p</span><span class="p">))</span> <span class="p">{</span>
+</span></span><span class="line"><span class="cl">        <span class="n">op</span> <span class="o">=</span> <span class="nf">container_of</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="k">struct</span> <span class="n">optimized_kprobe</span><span class="p">,</span> <span class="n">kp</span><span class="p">);</span>
+</span></span><span class="line"><span class="cl">        <span class="k">if</span> <span class="p">(</span><span class="nf">arch_within_optimized_kprobe</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">addr</span><span class="p">))</span>
+</span></span><span class="line"><span class="cl">            <span class="k">return</span> <span class="n">p</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl">    <span class="p">}</span>
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+</span></span><span class="line"><span class="cl"><span class="p">}</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>关键是循环条件里的 <code>!p</code>：往前找，只要找到一个已经注册的 probe，就停止搜索。</p>
+<p>从 C 往前找，先遇到的是 B。虽然 B 已经 disabled，但它仍然注册在 kprobe 的 hash table 里，所以能被 <code>get_kprobe()</code> 找到。</p>
+<p>而 <code>kprobe_optready()</code> 检查的是优化所需的 optinsns 是否准备好了，不代表当前位置真的装着一个优化后的 <code>jmp</code>。B 可以已经准备好 optinsns，却没有正在使用的跳转。</p>
+<p>在这个布局下，查找返回 B，后续尝试撤销 B 的优化，却没有继续找到 A。接着，在 C 处写入 <code>INT3</code>，就把 A 的跳转偏移改坏了。</p>
+<p>需要区分的是：dump 保存的是 crash 时的状态，并没有记录全部 attach、disable、detach 的先后顺序。上面的过程解释了这种布局如何破坏跳转；原始测试里具体在哪一步产生这个状态，不能只凭调用栈下结论。</p>
+<h2 id="用-3-个-probe-复现">用 3 个 probe 复现</h2>
+<p>为了把问题缩小，可以构造一个只包含 3 个 probe 的用例。测试函数中放入连续的双字节 NOP，让指令布局足够简单：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span><span class="lnt">4
+</span><span class="lnt">5
+</span><span class="lnt">6
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-c" data-lang="c"><span class="line"><span class="cl"><span class="k">asm</span> <span class="nf">volatile</span><span class="p">(</span><span class="s">&#34;leaq 1f(%%rip)</span><span class="p">,</span> <span class="o">%</span><span class="mi">0</span><span class="err">\</span><span class="n">n</span><span class="s">&#34;</span>
+</span></span><span class="line"><span class="cl">             <span class="s">&#34;1:</span><span class="se">\n</span><span class="s">&#34;</span>
+</span></span><span class="line"><span class="cl">             <span class="s">&#34;.rept 16</span><span class="se">\n</span><span class="s">&#34;</span>
+</span></span><span class="line"><span class="cl">             <span class="s">&#34;.byte 0x66, 0x90</span><span class="se">\n</span><span class="s">&#34;</span>
+</span></span><span class="line"><span class="cl">             <span class="s">&#34;.endr</span><span class="se">\n</span><span class="s">&#34;</span>
+</span></span><span class="line"><span class="cl">             <span class="o">:</span> <span class="s">&#34;=r&#34;</span><span class="p">(</span><span class="n">first</span><span class="p">));</span>
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p><code>66 90</code> 是一条 2 字节的 NOP。这样，A、A+2、A+4 都是原始指令的起始位置；同时，A+4 又恰好落在 A 的 5 字节跳转的最后一个字节上。</p>
+<p>用例先执行一次目标函数，记录第一条 NOP 相对函数入口的偏移，避免把编译器生成的函数前导指令长度写死。之后按以下顺序构造布局：</p>
+<ol>
+<li>通过 tracefs 注册 A+2 处的 B，但不启用它，让它保持 registered、disabled 状态。</li>
+<li>在 A 处 attach BPF kprobe。</li>
+<li>等待 A 的首字节变为 <code>0xe9</code>，确认优化后的跳转已经写入。</li>
+<li>在 A+4 处 attach BPF kprobe C。</li>
+<li>再次执行目标函数，触发被改坏的跳转。</li>
+</ol>
+<p>第 3 步很重要。<code>KPROBE_FLAG_OPTIMIZED</code> 可以在后台优化任务真正写入 <code>jmp</code> 前就被设置，所以用例检查的是实际指令字节，而不是只看这个 flag。</p>
+<p>这里的 disabled B 是主动构造出来的，不需要碰运气等某次 detach 恰好留下这个状态。这个用例针对开启 kprobe optimization 的 x86_64 内核。</p>
+<p>修复后的预期行为是：安装 C 时找到 A，先撤销 A 的优化，再写入 C 的断点。这样再次执行目标函数时，就不会沿着被改坏的相对偏移跳走。</p>
+<h2 id="修复">修复</h2>
+<p>修复的思路很直接：向前查找时，跳过已经 disarmed 或没有准备好 optinsns 的 probe，继续寻找覆盖目标地址的 probe。</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt"> 1
+</span><span class="lnt"> 2
+</span><span class="lnt"> 3
+</span><span class="lnt"> 4
+</span><span class="lnt"> 5
+</span><span class="lnt"> 6
+</span><span class="lnt"> 7
+</span><span class="lnt"> 8
+</span><span class="lnt"> 9
+</span><span class="lnt">10
+</span><span class="lnt">11
+</span><span class="lnt">12
+</span><span class="lnt">13
+</span><span class="lnt">14
+</span><span class="lnt">15
+</span><span class="lnt">16
+</span><span class="lnt">17
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-diff" data-lang="diff"><span class="line"><span class="cl"><span class="gu">@@
+</span></span></span><span class="line"><span class="cl"><span class="gu"></span><span class="gd">-    struct kprobe *p = NULL;
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+    struct kprobe *p;
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>     struct optimized_kprobe *op;
+</span></span><span class="line"><span class="cl">
+</span></span><span class="line"><span class="cl">     /* Don&#39;t check i == 0, since that is a breakpoint case. */
+</span></span><span class="line"><span class="cl"><span class="gd">-    for (i = 1; !p &amp;&amp; i &lt; MAX_OPTIMIZED_LENGTH / sizeof(kprobe_opcode_t); i++)
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span><span class="gi">+    for (i = 1; i &lt; MAX_OPTIMIZED_LENGTH / sizeof(kprobe_opcode_t); i++) {
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>         p = get_kprobe(addr - i);
+</span></span><span class="line"><span class="cl"><span class="gi">+        /* A disabled probe can have prepared, but inactive, optinsns. */
+</span></span></span><span class="line"><span class="cl"><span class="gi">+        if (!p || !kprobe_optready(p) || kprobe_disarmed(p))
+</span></span></span><span class="line"><span class="cl"><span class="gi">+            continue;
+</span></span></span><span class="line"><span class="cl"><span class="gi"></span>
+</span></span><span class="line"><span class="cl"><span class="gd">-    if (p &amp;&amp; kprobe_optready(p)) {
+</span></span></span><span class="line"><span class="cl"><span class="gd"></span>         op = container_of(p, struct optimized_kprobe, kp);
+</span></span><span class="line"><span class="cl">         if (arch_within_optimized_kprobe(op, addr))
+</span></span><span class="line"><span class="cl">             return p;
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>核心改动如上。完整补丁：<a href="https://lore.kernel.org/all/20260930053618.104498-1-leon.hwang@linux.dev/">kprobes: Skip disarmed probes when checking optkprobe overlap</a>。</p>
+<p>如此，从 C 往前查找，遇到 B 时继续往前，最终找到 A，再由 <code>__arm_kprobe()</code> 撤销 A 的优化。</p>
+<p>这里用的是 <code>kprobe_disarmed()</code>，没有简单地检查 disabled flag。对于聚合 probe，它还会检查优化相关的链表是否为空；如果仍处于异步优化或撤销优化的队列中，就不能仅凭 disabled flag 将它跳过。</p>
+<p>补丁的 <code>Fixes</code> 指向 <code>afd66255b9a4</code>（<code>kprobes: Introduce kprobes jump optimization</code>），该 commit 的作者日期是 2010 年 2 月 25 日。到这次修复，已经过去了 16 年。</p>
+<h2 id="bpfsnoop-里绕过">bpfsnoop 里绕过</h2>
+<p>修了内核里的问题，还得考虑正在使用旧内核的机器。</p>
+<p>bpfsnoop 的函数指令追踪，会在同一个函数的多个指令位置安装 kprobe，容易遇到这种相邻 probe 的情况。既然出问题的是 jump optimization，就在这段追踪期间把它关闭：</p>
+<div class="highlight"><div class="chroma">
+<table class="lntable"><tr><td class="lntd">
+<pre tabindex="0" class="chroma"><code><span class="lnt">1
+</span><span class="lnt">2
+</span><span class="lnt">3
+</span></code></pre></td>
+<td class="lntd">
+<pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash"><span class="line"><span class="cl"><span class="c1"># 内核提供的全局开关；bpfsnoop 在 fninsn 路径中自动管理它</span>
+</span></span><span class="line"><span class="cl">cat /proc/sys/debug/kprobes-optimization
+</span></span><span class="line"><span class="cl"><span class="nb">echo</span> <span class="m">0</span> &gt; /proc/sys/debug/kprobes-optimization
+</span></span></code></pre></td></tr></table>
+</div>
+</div><p>关闭后，现有 optkprobe 会撤销优化，新注册的 probe 也不会再被优化成跳转。这会影响整台机器上的 kprobe optimization，并不只影响 bpfsnoop 自己的 probe。</p>
+<p>对应修改：<a href="https://github.com/bpfsnoop/bpfsnoop/pull/166">fninsn: Disable kprobes-optimization</a>。处理顺序是：</p>
+<ol>
+<li>发现本次需要函数指令追踪时，读取并保存原来的开关值。</li>
+<li>原来开启时，先关闭 optimization，再安装指令 probe。</li>
+<li>结束追踪时，先卸载所有 tracing attachment，再恢复原来的开关值。</li>
+</ol>
+<p>原来就是关闭状态，就保持关闭。安装中途出错，也要等正在进行的 attach 完成并清理已有 attachment，之后才能恢复开关。</p>
+<p>测试程序也改成优先通过 <code>SIGTERM</code> 结束 bpfsnoop，让清理和恢复逻辑有机会执行。直接 <code>SIGKILL</code> 不会执行 Go 的 defer，可能留下未恢复的开关状态。</p>
+<p>这里最重要的是顺序：<strong>先卸载 probe，再恢复 optimization</strong>。只在启动时关一下、退出时随手打开，还不够。</p>
+<h2 id="小结">小结</h2>
+<p>这次问题里，一个 disabled probe 本身没有正在使用的优化跳转，却挡住了前面真正需要撤销优化的 probe。最终，新写入的一个 <code>0xcc</code>，变成了另一条指令的跳转偏移。</p>
+<p>排查这类问题，除了看调用栈，还得对照原始指令、dump 里的实际字节和 probe 状态。<code>optinsns</code> 准备好了、probe 已经启用、优化跳转已经写入，是不同的状态。</p>
+<p>研究内核，是为了知道工具背后发生了什么，也为了在工具里规避这些问题，避免将内核搞挂。</p>
+
+  </div>
+
+  <div class="post-copyright">
+  <p class="copyright-item">
+    <span class="item-title">文章作者</span>
+    
+    <span class="item-content"> Leon Hwang </span>
+  </p>
+  <p class="copyright-item">
+    <span class="item-title">上次更新</span>
+    <span class="item-content">
+        2026-10-11
+        
+    </span>
+  </p>
+  
+  
+</div>
+<div class="post-reward">
+    <img align="center" src="/profile.png" alt="profile.png" style="height: 120px;">
+</div><footer class="post-footer">
+    <div class="post-tags">
+      <a href="/%20tags/ebpf/">eBPF</a>
+      <a href="/%20tags/bpfsnoop/">bpfsnoop</a>
+      <a href="/%20tags/kprobe/">kprobe</a>
+      </div>
+    <nav class="post-nav">
+      
+      <a class="next" href="/post/ebpf-talk-162-global-percpu-data/">
+        <span class="next-text nav-default">eBPF Talk: global percpu data</span>
+        <span class="next-text nav-mobile">下一篇</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    </nav>
+  </footer>
+</article>
+        </div>
+        
+
+
+
+
+<script src="https://giscus.app/client.js" data-repo="Asphaltt/asphaltt.github.io"
+  data-repo-id="R_kgDOGUj7jQ" data-category="Announcements"
+  data-category-id="DIC_kwDOGUj7jc4CSSYW" data-mapping="pathname" data-strict="0"
+  data-reactions-enabled="1" data-emit-metadata="0" data-input-position="top" data-theme="dark_dimmed" data-lang="zh-CN"
+  data-loading="lazy" crossorigin="anonymous" async>
+  </script>
+<noscript>Please enable JavaScript to view the <a href="https://github.com/giscus/giscus">comments powered by
+    giscus.</a></noscript>
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="social-links">
+      <a href="mailto:le0nhwan9@gmail.com" class="iconfont icon-email" title="email"></a>
+      <a href="https://twitter.com/LeonHuayra" class="iconfont icon-twitter" title="twitter"></a>
+      <a href="https://github.com/Asphaltt" class="iconfont icon-github" title="github"></a>
+  <a href="https://blog.leonhw.com/index.xml" type="application/rss+xml" class="iconfont icon-rss" title="rss"></a>
+</div>
+
+<div class="copyright">
+  <span class="power-by">
+    由 <a class="hexo-link" href="https://gohugo.io">Hugo</a> 强力驱动
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    主题 -
+    <a class="theme-link" href="https://github.com/olOwOlo/hugo-theme-even">Even</a>
+  </span>
+
+  <div class="busuanzi-footer">
+    <span id="busuanzi_container_site_pv"> 本站总访问量 <span id="busuanzi_value_site_pv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 次 </span>
+      <span class="division">|</span>
+    <span id="busuanzi_container_site_uv"> 本站总访客数 <span id="busuanzi_value_site_uv"><img src="/img/spinner.svg" alt="spinner.svg"/></span> 人 </span>
+  </div>
+
+  <span class="copyright-year">
+    &copy;
+    2021 -
+    2026<span class="heart"><i class="iconfont icon-heart"></i></span>
+    
+    <span> Leon Hwang </span>
+  </span>
+</div>
+
+    </footer>
+
+    <div class="back-to-top" id="back-to-top">
+      <i class="iconfont icon-up"></i>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.2.1/dist/jquery.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/slideout@1.0.1/dist/slideout.min.js" integrity="sha256-t+zJ/g8/KXIJMjSVQdnibt4dlaDxc9zXr/9oNPeWqdg=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.1.20/dist/jquery.fancybox.min.js" integrity="sha256-XVLffZaxoWfGUEbdzuLi7pwaUJv1cecsQJQqGLe7axY=" crossorigin="anonymous"></script>
+
+
+
+<script type="text/javascript" src="/js/main.min.4ae89da218555efa0e7093a20b92017d2e1202b66fff9fc2edf4cb8d44b44c6e.js"></script><script id="baidu_analytics">
+  var _hmt = _hmt || [];
+  (function() {
+    if (window.location.hostname === 'localhost') return;
+    var hm = document.createElement("script"); hm.async = true;
+    hm.src = "https://hm.baidu.com/hm.js?ce3c909090b0d435716d2679ef1989cf";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+
+
+
+
+
+
+</body>
+</html>

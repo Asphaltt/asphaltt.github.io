@@ -50,7 +50,7 @@
 
   <meta itemprop="name" content="LeonHwang&#39;s Blogs">
   <meta itemprop="description" content="Overcome Challenges, Master the Details. -- Leon Hwang">
-  <meta itemprop="dateModified" content="2026-08-24T22:53:41+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
+  <meta itemprop="dateModified" content="2026-10-11T23:58:04+08:00"><meta name="twitter:card" content="summary"/><meta name="twitter:title" content="LeonHwang&#39;s Blogs"/>
 <meta name="twitter:description" content="Overcome Challenges, Master the Details. -- Leon Hwang"/>
 
 
@@ -141,6 +141,30 @@
       <div class="content-wrapper">
         <div id="content" class="content">
           <section id="posts" class="posts">
+    <article class="post">
+  <header class="post-header">
+    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-163-fix-optkprobe/">eBPF Talk: 研究内核是为了避免将内核搞挂</a></h1>
+    <div class="post-meta">
+      <span class="post-time"> 2026-10-11 </span>
+      <div class="post-category">
+          <a href="/categories/ebpf/"> eBPF </a>
+          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
+          </div>
+        <span class="more-meta"> 约 3744 字 </span>
+        <span class="more-meta"> 预计阅读 8 分钟 </span>
+    </div>
+  </header>
+  
+  <div class="post-content">
+    <div class="post-summary">
+      某天，在内核 6.8 的 Ubuntu 24.04 VM 上跑 bpfsnoop 的 e2e 测试时，VM 挂了。当场蒙逼，跑几个 BPF 程序，VM 为什么会挂？ 幸亏，VM 重启后，生成了 dump 和 dmesg 文件；然后使用 Codex 对着
+    </div>
+    <div class="read-more">
+      <a href="/post/ebpf-talk-163-fix-optkprobe/" class="read-more-link">阅读更多</a>
+    </div>
+  </div>
+</article>
+
     <article class="post">
   <header class="post-header">
     <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-162-global-percpu-data/">eBPF Talk: global percpu data</a></h1>
@@ -353,31 +377,6 @@
     </div>
     <div class="read-more">
       <a href="/post/ebpf-talk-155-bpfsnoop-python-repl/" class="read-more-link">阅读更多</a>
-    </div>
-  </div>
-</article>
-
-    <article class="post">
-  <header class="post-header">
-    <h1 class="post-title"><a class="post-link" href="/post/ebpf-talk-154-bond0-rx_dropped/">eBPF Talk: 排查 bond 设备丢包问题</a></h1>
-    <div class="post-meta">
-      <span class="post-time"> 2025-07-27 </span>
-      <div class="post-category">
-          <a href="/categories/ebpf/"> eBPF </a>
-          <a href="/categories/ebpf-talk/"> eBPF Talk </a>
-          <a href="/categories/linux-%E7%BD%91%E7%BB%9C/"> Linux 网络 </a>
-          </div>
-        <span class="more-meta"> 约 2511 字 </span>
-        <span class="more-meta"> 预计阅读 6 分钟 </span>
-    </div>
-  </header>
-  
-  <div class="post-content">
-    <div class="post-summary">
-      遇到个奇怪的丢包统计问题： 1 2 3 4 5 6 # netstat -i Kernel Interface table Iface MTU RX-OK RX-ERR RX-DRP RX-OVR TX-OK TX-ERR TX-DRP TX-OVR Flg bond0 1500 4714238062 0 9955805 0 4206040873 0 2 0 BMmRU ens1f0 1500 2145684247 0 3 0 1917444695 0 0 0 BMsRU ens1f1 1500 2568553815 0 0 0 2288596177 0 0 0 BMsRU 如
-    </div>
-    <div class="read-more">
-      <a href="/post/ebpf-talk-154-bond0-rx_dropped/" class="read-more-link">阅读更多</a>
     </div>
   </div>
 </article>
